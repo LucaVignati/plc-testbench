@@ -6,7 +6,9 @@ import glob
 
 wave_files = glob.glob('../*/**/*.wav', recursive=True)
 
+
 class test_ecc_testbench(unittest.TestCase):
+
     def setUp(self):
         self.ea = zeros_ecc
         self.testbench = tb(ecc_algorithm=self.ea)
@@ -17,7 +19,9 @@ class test_ecc_testbench(unittest.TestCase):
         expected_results = zeros(len(wave_files))
         results = self.testbench.run(wave_files)
         self.assertEqual(expected_results, results)
-        print (results)
+        print(results)
+
 
 if __name__ == '__main__':
+
     unittest.main()

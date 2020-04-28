@@ -1,9 +1,9 @@
 import numpy as np
 
+
 class output_plugins(object):
 
-
-    def __init__(self, buffer_size, amax= 1, fs= 44100):
+    def __init__(self, buffer_size, amax=1, fs=44100):
 
         self.fs = fs
         self.buffer_size = buffer_size
@@ -13,9 +13,10 @@ class output_plugins(object):
     def compute_mse(self, ref_signal, ecc_signal):
 
         '''
-            Calculation of Mean Square Error between the reference and signal under test
+            Calculation of Mean Square Error between the reference and signal \
+                under test
 
-            ref_signal: 
+            ref_signal: original N-length signal array
 
             ecc_signal: test signal
         '''
@@ -30,5 +31,3 @@ class output_plugins(object):
         mse = np.mean(sqrd_err)
 
         return mse
-
-        
