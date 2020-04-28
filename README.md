@@ -16,5 +16,5 @@
 ## Unit Testing
 
 ```bash
-    python -m test.test_ecc_testbench.test_ecc_testbench -v
+    python -m unittest test.test_ecc_testbench.test_ecc_testbench -v
 ```
