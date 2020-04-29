@@ -57,7 +57,7 @@ and their corrected copies when packet loss simulation and error correction\
             # TODO:conditional array shape checking to remove wavs in fileset \
             # with >= n channels before processing
 
-            print("Processing Audio ... %s \n" % wave)
+            print("\nProcessing Audio ... %s \n" % wave)
 
             w_s = len(input_waves)
 

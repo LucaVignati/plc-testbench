@@ -24,6 +24,8 @@ class output_plugins(object):
         self.sig_ref = ref_signal
         self.sig_ecc = ecc_signal
 
+        self.__scale()
+
         error = self.sig_ref - self.sig_ecc
 
         sqrd_err = np.square(error)
@@ -31,3 +33,13 @@ class output_plugins(object):
         mse = np.mean(sqrd_err)
 
         return mse
+
+    def __scale(self):
+        if np.amax(abs(self.sig_ref)) != self.amax:
+            self.sig_ref = \
+                self.amax*self.sig_ref/float(np.amax(abs(self.sig_ref)))
+            self.sig_ecc = \
+                self.amax*self.sig_ecc/float(np.amax(abs(self.sig_ecc)))
+            print('Signals scaled, max reference value = ' +
+                  str(np.amax(abs(self.sig_ref))) +
+                  ', and max test value = ' + str(np.amax(abs(self.sig_ecc))))
