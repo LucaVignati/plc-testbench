@@ -13,10 +13,10 @@ class ecc_testbench(object):
     def __init__(self, ecc_algorithm,
                  packet_drop_simulator=packet_drop_simulator,
                  output_plugins=output_plugins,
-                 buffer_size=32, fs=44100):
+                 chans=1, buffer_size=32, fs=44100):
 
         """
-            Initialise the parameters and testing components.
+        Initialise the parameters and testing components.
 
             Input:
                 ecc_algorithm: The chosen method of error concealment of the \
@@ -24,8 +24,10 @@ input signal after packet loss is applied
                 buffer_size: Default buffer size. Can be overriden if \
 necessary.
                 fs: Sample Rate. Argument can be overriden if necessary.
+                chans: Number of Channels
         """
 
+        self.chans = chans
         self.buffer_size = buffer_size
         self.ecc_algorithm = ecc_algorithm(self.buffer_size)
         self.packet_drop_simulator = packet_drop_simulator(self.buffer_size)
@@ -35,6 +37,9 @@ necessary.
     def run(self, wave_files):
 
         '''
+        Run the testbench.
+
+
             Input:
                 wave_files: list of input file sources for testing
 

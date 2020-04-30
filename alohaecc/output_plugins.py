@@ -13,12 +13,15 @@ class output_plugins(object):
     def compute_mse(self, ref_signal, ecc_signal):
 
         '''
-            Calculation of Mean Square Error between the reference and signal \
-                under test
+        Calculation of Mean Square Error between the reference and signal \
+            under test.
 
+        Input:
             ref_signal: original N-length signal array
-
             ecc_signal: test signal
+
+        Output:
+            mse: Mean Square Error Calculated between the two signals
         '''
 
         self.sig_ref = ref_signal
