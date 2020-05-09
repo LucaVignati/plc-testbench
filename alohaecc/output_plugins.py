@@ -1,48 +1,90 @@
 import numpy as np
 
 
-class output_plugins(object):
+def normalise(x, amp_scale=1.0):
+    return(amp_scale * x / np.amax(np.abs(x)))
 
-    def __init__(self, buffer_size, amax=1, fs=44100):
 
-        self.fs = fs
-        self.buffer_size = buffer_size
-        self.adv = self.buffer_size/2
-        self.amax = amax
+class OutPutAnalyser(object):
 
-    def compute_mse(self, ref_signal, ecc_signal):
+    def __init__(self, buffer_size, amp_scale=1.0, fs=48000, N=1024):
+        '''
+        Base Class Initialisation for the Output Analyser classes
+
+            Input:
+                Fs: Sample Rate
+                Buffer Size:
+                N: Window Size
+                amp_scale: Maximum Amplitude Scalar for normalisation
 
         '''
-        Calculation of Mean Square Error between the reference and signal \
-            under test.
+        self._fs = fs
+        self._buffer_size = buffer_size
+        self._N = N
+        self._hop = N//2
+        self._amp_scale = amp_scale
 
-        Input:
-            ref_signal: original N-length signal array
-            ecc_signal: test signal
 
-        Output:
-            mse: Mean Square Error Calculated between the two signals
+class MSECalculator(OutPutAnalyser):
+
+    def run(self, ref_signal, ecc_signal):
         '''
+        Calculation of Mean Square Error between the reference and signal
+        under test.
 
-        self.sig_ref = ref_signal
-        self.sig_ecc = ecc_signal
+            Input:
+                ref_signal: original N-length signal array.
+                ecc_signal: N-length test signal array.
 
-        self.__scale()
+            Output:
+                mse: Mean Square Error calculated between the two signals.
+        '''
+        x_r = normalise(ref_signal, self._amp_scale)
+        x_e = normalise(ecc_signal, self._amp_scale)
 
-        error = self.sig_ref - self.sig_ecc
+        num_samples = len(x_r)
 
-        sqrd_err = np.square(error)
+        w = np.hanning(self._N+1)[:-1]
 
-        mse = np.mean(sqrd_err)
+        x_rw = np.array([w*x_r[i:i+self._N] for i in
+                        range(0, num_samples-self._N, self._hop)])
+        x_ew = np.array([w*x_e[i:i+self._N] for i in
+                        range(0, num_samples-self._N, self._hop)])
+        mse = [np.mean((x_rw[n] - x_ew[n])**2) for n in range(len(x_rw))]
 
         return mse
 
-    def __scale(self):
-        if np.amax(abs(self.sig_ref)) != self.amax:
-            self.sig_ref = \
-                self.amax*self.sig_ref/float(np.amax(abs(self.sig_ref)))
-            self.sig_ecc = \
-                self.amax*self.sig_ecc/float(np.amax(abs(self.sig_ecc)))
-            print('Signals scaled, max reference value = ' +
-                  str(np.amax(abs(self.sig_ref))) +
-                  ', and max test value = ' + str(np.amax(abs(self.sig_ecc))))
+
+class SpectralEnergyCalculator(OutPutAnalyser):
+
+    def run(self, ref_signal, ecc_signal):
+        '''
+        Calculate a difference magnitude signal from the DFT energies of the
+        reference and signal under test.
+
+            Input:
+                ref_signal: original N-length signal array.
+                ecc_signal: N-length test signal array.
+
+            Output:
+                se: Difference Magnitude signal array calulated from the
+                Short-Time spectral differences between the reference and test.
+        '''
+
+        w = np.hanning(self._N+1)[:-1]
+
+        x_r = normalise(ref_signal, self._amp_scale)
+        x_e = normalise(ecc_signal, self._amp_scale)
+
+        num_samples = len(x_r)
+
+        x_rk = np.array([np.fft.fft(w*x_r[i:i+self._N]) for i in
+                        range(0, num_samples-self._N, self._hop)])
+        x_ek = np.array([np.fft.fft(w*x_e[i:i+self._N]) for i in
+                        range(0, num_samples-self._N, self._hop)])
+        x_2rk = np.abs(x_rk)**2
+        x_2ek = np.abs(x_ek)**2
+
+        se = np.array(x_2rk - 2*np.sqrt(x_2rk * x_2ek) + x_2ek)
+
+        return se

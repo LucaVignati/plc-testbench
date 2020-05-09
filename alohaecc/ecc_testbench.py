@@ -1,32 +1,31 @@
 import soundfile as sf
-from .ecc_algorithm import zeros_ecc, last_packet_ecc
-from .packet_drop_simulator import packet_drop_simulator
-from .output_plugins import output_plugins
+from .ecc_algorithm import ZerosEcc, LastPacketEcc
+from .output_plugins import MSECalculator, PEAQCalculator
+from .packet_drop_simulator import (BasePacketLossSimulator,
+                                    BinomialPacketLossSimulator,
+                                    BinomialSampleLossSimulator)
 
 
-class ecc_testbench(object):
-
+class ECCTestbench(object):
     '''
     The testbench class for the alohaecc algorithm.
     '''
 
     def __init__(self, ecc_algorithm,
-                 packet_drop_simulator=packet_drop_simulator,
-                 output_plugins=output_plugins,
+                 packet_drop_simulator,
+                 output_plugins,
                  chans=1, buffer_size=32, fs=44100):
-
-        """
+        '''
         Initialise the parameters and testing components.
 
             Input:
-                ecc_algorithm: The chosen method of error concealment of the \
-input signal after packet loss is applied
-                buffer_size: Default buffer size. Can be overriden if \
-necessary.
+                ecc_algorithm: The chosen method of error concealment of the
+                input signal after packet loss is applied
+                buffer_size: Default buffer size. Can be overriden if
+                necessary.
                 fs: Sample Rate. Argument can be overriden if necessary.
                 chans: Number of Channels
-        """
-
+        '''
         self.chans = chans
         self.buffer_size = buffer_size
         self.ecc_algorithm = ecc_algorithm(self.buffer_size)
@@ -35,7 +34,6 @@ necessary.
         self.output_plugins = output_plugins(self.buffer_size, fs=self.fs)
 
     def run(self, wave_files):
-
         '''
         Run the testbench.
 
@@ -44,11 +42,11 @@ necessary.
                 wave_files: list of input file sources for testing
 
             Output:
-                mse: Mean Square Error calculated for all input audio files \
-and their corrected copies when packet loss simulation and error correction\
- has been applied
+                mse: Mean Square Error values spanning each buffer length
+                calculated for all input audio files and their corrected
+                copies when packet loss simulation and error correction
+                has been applied
         '''
-
         self.wave_files = wave_files
 
         mse = []
@@ -69,6 +67,6 @@ and their corrected copies when packet loss simulation and error correction\
             lost_packet_mask = \
                 self.packet_drop_simulator.generate_lost_packet_mask(w_s)
             ecc_wave = self.ecc_algorithm.run(input_waves, lost_packet_mask)
-            mse.append(self.output_plugins.compute_mse(input_waves, ecc_wave))
+            mse.append(self.output_plugins.run(input_waves, ecc_wave))
 
         return mse
