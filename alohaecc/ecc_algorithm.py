@@ -46,18 +46,18 @@ class LastPacketEcc(ECCAlgorithm):
                 output_wave: length-N error corrected numpy array
         '''
         output_wave = np.array(input_wave) * lost_packet_mask
-        for n, x in enumerate(output_wave):
-            n
+        # for n, x in enumerate(output_wave):
+        #     n
 
         return output_wave
 
 
-class LMSRegressionECC(ECCAlgorithm):
+# class LMSRegressionECC(ECCAlgorithm):
 
-    def run(self, input_wave, lost_packet_mask):
-        '''
+#     def run(self, input_wave, lost_packet_mask):
+#         '''
 
-        '''
-        output_wave = input_wave + lost_packet_mask
+#         '''
+#         output_wave = input_wave * lost_packet_mask
 
-        return output_wave
+#         return output_wave
