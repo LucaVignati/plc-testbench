@@ -5,3 +5,6 @@
 *.ipynb_checkpoints
 
 .vscode/
+alohaecc.egg-info
+build
+dist

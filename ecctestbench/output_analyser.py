@@ -1,13 +1,20 @@
+from typing import Tuple
 import numpy as np
+from ecctestbench.data_manager import DataManager
+from .node import Node
 
+def retrieve_data(node: Node) -> Tuple[np.ndarray, np.ndarray]:
+    original_track_data = DataManager.get_original_track(node).read()
+    ecc_track_data = DataManager.get_original_track(node).read()
+    return original_track_data, ecc_track_data
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
 
 
-class OutPutAnalyser(object):
+class OutputAnalyser(object):
 
-    def __init__(self, buffer_size, amp_scale=1.0, fs=48000, N=1024):
+    def __init__(self, settings):
         '''
         Base Class Initialisation for the Output Analyser classes
 
@@ -18,16 +25,19 @@ class OutPutAnalyser(object):
                 amp_scale: Maximum Amplitude Scalar for normalisation
 
         '''
-        self._fs = fs
-        self._buffer_size = buffer_size
-        self._N = N
-        self._hop = N//2
-        self._amp_scale = amp_scale
+        self._fs = settings.fs
+        self._buffer_size = settings.buffer_size
+        self._N = settings.N
+        self._hop = settings.N//2
+        self._amp_scale = settings.amp_scale
+
+    def __str__(self) -> str:
+        return __class__.__name__
 
 
-class MSECalculator(OutPutAnalyser):
+class MSECalculator(OutputAnalyser):
 
-    def run(self, ref_signal, ecc_signal):
+    def run(self, node: Node) -> None:
         '''
         Calculation of Mean Square Error between the reference and signal
         under test.
@@ -39,8 +49,10 @@ class MSECalculator(OutPutAnalyser):
             Output:
                 mse: Mean Square Error calculated between the two signals.
         '''
-        x_r = normalise(ref_signal, self._amp_scale)
-        x_e = normalise(ecc_signal, self._amp_scale)
+        original_track, ecc_track = retrieve_data(node)
+
+        x_r = normalise(original_track, self._amp_scale)
+        x_e = normalise(ecc_track, self._amp_scale)
 
         num_samples = len(x_r)
 
@@ -52,12 +64,15 @@ class MSECalculator(OutPutAnalyser):
                         range(0, num_samples-self._N, self._hop)])
         mse = [np.mean((x_rw[n] - x_ew[n])**2) for n in range(len(x_rw))]
 
-        return mse
+        DataManager.store_data(node, mse)
+
+    def __str__(self) -> str:
+        return __class__.__name__
 
 
-class SpectralEnergyCalculator(OutPutAnalyser):
+class SpectralEnergyCalculator(OutputAnalyser):
 
-    def run(self, ref_signal, ecc_signal):
+    def run(self, node: Node) -> None:
         '''
         Calculate a difference magnitude signal from the DFT energies of the
         reference and signal under test.
@@ -70,11 +85,12 @@ class SpectralEnergyCalculator(OutPutAnalyser):
                 se: Difference Magnitude signal array calulated from the
                 Short-Time spectral differences between the reference and test.
         '''
+        original_track, ecc_track = retrieve_data(node)
 
         w = np.hanning(self._N+1)[:-1]
 
-        x_r = normalise(ref_signal, self._amp_scale)
-        x_e = normalise(ecc_signal, self._amp_scale)
+        x_r = normalise(original_track, self._amp_scale)
+        x_e = normalise(ecc_track, self._amp_scale)
 
         num_samples = len(x_r)
 
@@ -87,4 +103,15 @@ class SpectralEnergyCalculator(OutPutAnalyser):
 
         se = np.array(x_2rk - 2*np.sqrt(x_2rk * x_2ek) + x_2ek)
 
-        return se
+        DataManager.store_data(node, se)
+
+    def __str__(self) -> str:
+        return __class__.__name__
+
+class PEAQCalculator(OutputAnalyser):
+
+    def run(self, node: Node) -> None:
+        pass
+
+    def __str__(self) -> str:
+        return __class__.__name__
