@@ -3,11 +3,6 @@ import numpy as np
 from ecctestbench.data_manager import DataManager
 from .node import Node
 
-def retrieve_data(node: Node) -> Tuple[np.ndarray, np.ndarray]:
-    original_track_data = DataManager.get_original_track(node).read()
-    lost_samples_mask = np.load(DataManager.get_lost_samples_mask(node))
-    return original_track_data, lost_samples_mask
-
 class ECCAlgorithm(object):
 
     def __init__(self, settings):
@@ -20,7 +15,7 @@ class ECCAlgorithm(object):
 
 class ZerosEcc(ECCAlgorithm):
 
-    def run(self, node: Node):
+    def run(self, original_track: np.ndarray, lost_packet_mask: np.ndarray):
         '''
         Run the ECC algorithm on the input_wave signal and
         generate an output signal of the same length using the
@@ -34,11 +29,10 @@ class ZerosEcc(ECCAlgorithm):
             Output:
                 output_wave: length-N error corrected numpy array
         '''
-        original_track, lost_packet_mask = retrieve_data(node)
 
         ecc_track = original_track * lost_packet_mask
 
-        DataManager.store_audio(node, ecc_track)
+        return ecc_track
 
     def __str__(self) -> str:
         return __class__.__name__
@@ -46,7 +40,7 @@ class ZerosEcc(ECCAlgorithm):
 
 class LastPacketEcc(ECCAlgorithm):
 
-    def run(self, node: Node):
+    def run(self, original_track: np.ndarray, lost_packet_mask: np.ndarray):
         '''
         Run the ECC algorithm on the input_wave signal and
         generate an output signal of the same length using the
@@ -60,13 +54,12 @@ class LastPacketEcc(ECCAlgorithm):
             Output:
                 output_wave: length-N error corrected numpy array
         '''
-        original_track, lost_packet_mask = retrieve_data(node)
 
         ecc_track = original_track * lost_packet_mask
         # for n, x in enumerate(output_wave):
         #     n
 
-        DataManager.store_audio(node, ecc_track)
+        return ecc_track
 
     def __str__(self) -> str:
         return __class__.__name__

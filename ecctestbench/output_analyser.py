@@ -3,11 +3,6 @@ import numpy as np
 from ecctestbench.data_manager import DataManager
 from .node import Node
 
-def retrieve_data(node: Node) -> Tuple[np.ndarray, np.ndarray]:
-    original_track_data = DataManager.get_original_track(node).read()
-    ecc_track_data = DataManager.get_original_track(node).read()
-    return original_track_data, ecc_track_data
-
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
 
@@ -37,7 +32,7 @@ class OutputAnalyser(object):
 
 class MSECalculator(OutputAnalyser):
 
-    def run(self, node: Node) -> None:
+    def run(self, original_track: np.ndarray, ecc_track: np.ndarray) -> None:
         '''
         Calculation of Mean Square Error between the reference and signal
         under test.
@@ -49,7 +44,6 @@ class MSECalculator(OutputAnalyser):
             Output:
                 mse: Mean Square Error calculated between the two signals.
         '''
-        original_track, ecc_track = retrieve_data(node)
 
         x_r = normalise(original_track, self._amp_scale)
         x_e = normalise(ecc_track, self._amp_scale)
@@ -64,7 +58,7 @@ class MSECalculator(OutputAnalyser):
                         range(0, num_samples-self._N, self._hop)])
         mse = [np.mean((x_rw[n] - x_ew[n])**2) for n in range(len(x_rw))]
 
-        DataManager.store_data(node, mse)
+        return mse
 
     def __str__(self) -> str:
         return __class__.__name__
@@ -72,7 +66,7 @@ class MSECalculator(OutputAnalyser):
 
 class SpectralEnergyCalculator(OutputAnalyser):
 
-    def run(self, node: Node) -> None:
+    def run(self, original_track: np.ndarray, ecc_track: np.ndarray) -> None:
         '''
         Calculate a difference magnitude signal from the DFT energies of the
         reference and signal under test.
@@ -85,7 +79,6 @@ class SpectralEnergyCalculator(OutputAnalyser):
                 se: Difference Magnitude signal array calulated from the
                 Short-Time spectral differences between the reference and test.
         '''
-        original_track, ecc_track = retrieve_data(node)
 
         w = np.hanning(self._N+1)[:-1]
 
@@ -103,7 +96,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
         se = np.array(x_2rk - 2*np.sqrt(x_2rk * x_2ek) + x_2ek)
 
-        DataManager.store_data(node, se)
+        return se
 
     def __str__(self) -> str:
         return __class__.__name__

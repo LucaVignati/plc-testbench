@@ -50,13 +50,13 @@ class PathManager(object):
             Inputs:
                 node:   the node instance to compute the absolute path for
         '''
-        track_path = node.get_file().name
+        track_path = node.get_file().get_path()
         folder_name = track_path.split('.wav')[0] + '-' + folder_suffixes[0]
         node.set_folder_name(folder_name)
         if not path.exists(folder_name):
             os.mkdir(folder_name)
 
-    def set_node_relative_path(node: Node) -> None:
+    def set_node_paths(node: Node) -> None:
         '''
         This function computes the relative path of the node, creates its
         directory and stores it in the node.
@@ -65,26 +65,15 @@ class PathManager(object):
             node:   the node instance to compute the relative path for
         '''
         index = node.depth
+        node_path = compute_absolute_folder_path(node)
+        worker_name = str(node.get_worker())
+        node.set_path(path.join(node_path, worker_name))
         if index < len(folder_suffixes):
-            node_path = compute_absolute_folder_path(node)
-            worker_name = str(node.get_worker())
             folder_name = worker_name + '-' + folder_suffixes[index]
-            folder_path = path.join(node_path, folder_name)
             node.set_folder_name(folder_name)
+            folder_path = path.join(node_path, folder_name)
             if not path.exists(folder_path):
                 os.mkdir(folder_path)
-
-    def get_file_path(node: Node) -> str:
-        '''
-        This function computes the absolute path of the given node and
-        returns it.
-
-            Inputs:
-                node:   the node instance to compute the absolute path for
-        '''
-        abs_folder_path = compute_absolute_folder_path(node)
-        filename = str(node.get_worker())
-        return path.join(abs_folder_path, filename)
 
     def change_file_extension(filepath: str, new_extension: str) -> str:
         '''

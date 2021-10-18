@@ -4,9 +4,10 @@ from numpy import ndarray
 import soundfile as sf
 import numpy as np
 from ecctestbench.path_manager import PathManager
-from .node import Node
+from .node import ECCTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
+from .file_wrapper import AudioFile, DataFile
 
-def recursive_tree_init(parent: Node, worker_classes: list, idx: int):
+def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, idx: int):
     '''
     This function recursively instanciates all the nodes in the tree.
 
@@ -22,10 +23,11 @@ def recursive_tree_init(parent: Node, worker_classes: list, idx: int):
     if idx == len(worker_classes):
         return
     worker_class = worker_classes[idx]
+    node_class = node_classes[idx + 1]
     for worker in worker_class:
-        child = Node(worker=worker, parent=parent)
-        PathManager.set_node_relative_path(child)
-        recursive_tree_init(child, worker_classes, idx + 1)
+        child = node_class(worker=worker, parent=parent)
+        PathManager.set_node_paths(child)
+        recursive_tree_init(child, worker_classes, node_classes, idx + 1)
 
 class DataManager(object):
 
@@ -41,6 +43,12 @@ class DataManager(object):
         self.path_manager = path_manager
         self.root_nodes = list()
         self.worker_classes = list()
+        self.node_classes = [
+            OriginalTrackNode,
+            LostSamplesMaskNode,
+            ECCTrackNode,
+            OutputAnalysisNode
+        ]
 
     def set_workers(self, packet_loss_simulators: list(),
                           ecc_algorithms: list(),
@@ -81,11 +89,11 @@ class DataManager(object):
                 track_path: a string representing the absolute path to an original audio
                             track.
         '''
-        track = sf.SoundFile(track_path, 'r')
-        root_node = Node(file=track)
+        track = AudioFile.from_path(track_path)
+        root_node = OriginalTrackNode(file=track)
         PathManager.set_root_node_path(root_node)
         self.root_nodes.append(root_node)
-        recursive_tree_init(root_node, self.worker_classes, 0)
+        recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
 
     def get_nodes_by_depth(self, depth: int) -> typing.Tuple:
         '''
@@ -108,72 +116,3 @@ class DataManager(object):
         It returns the nodes at level 4, which are leaf nodes.
         '''
         return self.get_nodes_by_depth(4)
-
-    def get_original_track(node: Node) -> sf.SoundFile:
-        '''
-        This function returns the original track related to the given node.
-        
-            Inputs:
-                node:   The given node must be a child of the node containing
-                        the lost packet mask.
-        '''
-        return node.root.get_file()
-
-    def get_lost_samples_mask(node: Node) -> typing.BinaryIO:
-        '''
-        This function returns the lost samples mask related to the given node.
-        
-            Inputs:
-                node:   The given node must be a child of the node containing
-                        the lost packet mask.
-        ''' 
-        return node.ancestors[1].get_file()
-
-    def get_ecc_track(node: Node) -> sf.SoundFile:
-        '''
-        This function returns the ecc track related to the given node.
-        
-            Inputs:
-                node:   The given node must be a child of the node containing
-                        the lost packet mask.
-        '''
-        return node.ancestors[2].get_file()
-
-    def store_data(node: Node, data: ndarray) -> None:
-        '''
-        This function stores the provided data into a file. The filepath
-        depends on the position of the node in the tree and is retrieved
-        by the path manager. This function takes also care of storing
-        the file reference into the node.
-
-            Inputs:
-                node:   the node where to store the data.
-                data:   the data to be stored.
-        '''
-        filepath = PathManager.get_file_path(node) + '.npy'
-        data_file = open(filepath, 'wb+')
-        np.save(data_file, data)
-        node.set_file(data_file)
-
-    def store_audio(node: Node, audio: ndarray) -> None:
-        '''
-        This function stores the provided audio into a file. The filepath
-        depends on the position of the node in the tree and is retrieved
-        by the path manager. This function takes also care of storing
-        the file reference into the node.
-
-            Inputs:
-                node:   the node where to store the audio.
-                audio:  the audio to be stored.
-        '''
-        original_track = DataManager.get_original_track(node)
-        filepath = PathManager.get_file_path(node) + '.wav'
-        ecc_track_file = sf.SoundFile(filepath,
-                                        'wb+',
-                                        original_track.samplerate,
-                                        original_track.channels,
-                                        original_track.subtype,
-                                        original_track.endian,
-                                        original_track.format)
-        ecc_track_file.write(audio)
-        node.set_file(ecc_track_file)

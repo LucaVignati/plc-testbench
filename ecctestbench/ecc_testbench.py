@@ -66,15 +66,6 @@ class ECCTestbench(object):
                 node.run()
                 #print(node)
 
-    def stop(self) -> None:
-        '''
-        Close all the files.
-        '''
-        data_trees = self.data_manager.get_data_trees()
-        for data_tree in data_trees:
-            for node in LevelOrderIter(data_tree):
-                node.file.close()
-
     # def plot(self) -> None:
     #     '''
     #     Plot all the results

@@ -3,11 +3,6 @@ import numpy.random as npr
 from ecctestbench.data_manager import DataManager
 from .node import Node
 
-def retrieve_data(node: Node) -> int:
-    original_track = DataManager.get_original_track(node)
-    num_samples = len(original_track.read())
-    return num_samples
-
 class PacketLossSimulator(object):
     '''
     Base class for the Packet Loss Generator that uses a
@@ -41,13 +36,11 @@ class PacketLossSimulator(object):
 
 class BasePacketLossSimulator(PacketLossSimulator):
 
-    def run(self, node: Node):
-
-        num_samples = retrieve_data(node)
+    def run(self, num_samples: int):
 
         lost_samples_mask = np.ones(num_samples)
 
-        DataManager.store_data(node, lost_samples_mask)
+        return lost_samples_mask
 
     def __str__(self) -> str:
         return __class__.__name__ + '_' + str(self.seed)
@@ -55,7 +48,7 @@ class BasePacketLossSimulator(PacketLossSimulator):
 
 class BinomialSampleLossSimulator(PacketLossSimulator):
 
-    def run(self, node: Node):
+    def run(self, num_samples: int):
         '''
         Generate a mask consisting of randomly distributed 1's or 0's across
         the whole N-length.
@@ -67,12 +60,10 @@ class BinomialSampleLossSimulator(PacketLossSimulator):
                 lost_packet_mask: N-length array where individual values
                 are either 1 (valid sample) or 0 (dropped sample).
         '''
-        num_samples = retrieve_data(node)
-        
         lost_samples_mask = npr.choice(2, num_samples,
                                       p=[self._per, 1.0 - self._per])
 
-        DataManager.store_data(node, lost_samples_mask)
+        return lost_samples_mask
 
     def __str__(self) -> str:
         return __class__.__name__ + '_' + str(self.seed)
@@ -80,7 +71,7 @@ class BinomialSampleLossSimulator(PacketLossSimulator):
 
 class BinomialPacketLossSimulator(PacketLossSimulator):
 
-    def run(self, node: Node):
+    def run(self, num_samples: int):
         '''
         Generate a mask that drops whole buffers within an audio sample.
         This allocates fills each number of buffer lengths spanning the
@@ -93,8 +84,6 @@ class BinomialPacketLossSimulator(PacketLossSimulator):
                 lost_packet_mask: N-length array where values within each
                 buffer are either 1 (valid sample) or 0 (dropped sample).
         '''
-        num_samples = retrieve_data(node)
-
         Nb = int(num_samples//self._buffer_size)
 
         lost_samples_mask = npr.choice(2, Nb+1, p=[self._per, 1.0 - self._per])
@@ -103,7 +92,7 @@ class BinomialPacketLossSimulator(PacketLossSimulator):
         lost_samples_mask = np.concatenate(lost_buffers)
         lost_samples_mask = lost_samples_mask[0:num_samples]
 
-        DataManager.store_data(node, lost_samples_mask)
+        return lost_samples_mask
 
     def __str__(self) -> str:
         return __class__.__name__ + '_' + str(self.seed)
