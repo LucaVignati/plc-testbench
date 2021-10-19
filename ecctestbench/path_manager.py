@@ -53,6 +53,7 @@ class PathManager(object):
         track_path = node.get_file().get_path()
         folder_name = track_path.split('.wav')[0] + '-' + folder_suffixes[0]
         node.set_folder_name(folder_name)
+        node.set_path(track_path.split('.wav')[0])
         if not path.exists(folder_name):
             os.mkdir(folder_name)
 

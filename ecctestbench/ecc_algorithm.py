@@ -15,7 +15,7 @@ class ECCAlgorithm(object):
 
 class ZerosEcc(ECCAlgorithm):
 
-    def run(self, original_track: np.ndarray, lost_packet_mask: np.ndarray):
+    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
         '''
         Run the ECC algorithm on the input_wave signal and
         generate an output signal of the same length using the
@@ -29,8 +29,9 @@ class ZerosEcc(ECCAlgorithm):
             Output:
                 output_wave: length-N error corrected numpy array
         '''
-
-        ecc_track = original_track * lost_packet_mask
+        ecc_track = original_track
+        for idx in lost_samples_idx:
+            ecc_track[idx] = 0
 
         return ecc_track
 
@@ -40,7 +41,7 @@ class ZerosEcc(ECCAlgorithm):
 
 class LastPacketEcc(ECCAlgorithm):
 
-    def run(self, original_track: np.ndarray, lost_packet_mask: np.ndarray):
+    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
         '''
         Run the ECC algorithm on the input_wave signal and
         generate an output signal of the same length using the
@@ -55,7 +56,9 @@ class LastPacketEcc(ECCAlgorithm):
                 output_wave: length-N error corrected numpy array
         '''
 
-        ecc_track = original_track * lost_packet_mask
+        ecc_track = original_track
+        for idx in lost_samples_idx:
+            ecc_track[idx] = 0
         # for n, x in enumerate(output_wave):
         #     n
 

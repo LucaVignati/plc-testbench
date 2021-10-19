@@ -2,11 +2,9 @@ from sys import path
 from typing import Set
 import matplotlib.pyplot as plt
 import numpy as np
-import soundfile as sf
 
-from ecctestbench.path_manager import PathManager
-from .settings import Settings
-from .data_manager import DataManager
+from ecctestbench.settings import Settings
+from .file_wrapper import AudioFile, DataFile
 
 class PlotManager(object):
 
@@ -20,15 +18,29 @@ class PlotManager(object):
         self.rows = rows
         self.cols = cols
 
-    def plot_audio_track(self, audio_track: sf.SoundFile, show=True, to_file=False, to_subplots=False) -> None:
+    def plot_audio_track(audio_track: AudioFile, path: str, show=True, to_file=False, to_subplots=False) -> None:
         '''
         Plot the original input file
         '''
-        plt.plot(audio_track.read())
+        plt.plot(audio_track.get_data())
+        if to_file:
+            plt.savefig(path)
         if show:
             plt.show()
+
+        plt.clf()
+    
+    def plot_lost_samples_mask(lost_samples_idx: np.ndarray, path: str, show=True, to_file=False) -> None:
+        '''
+        Plot the lost samples mask data
+        '''
+        plt.vlines(lost_samples_idx, 0, 1)
         if to_file:
-            plt.savefig(PathManager.change_file_extension(audio_track.name, 'png'))
+            plt.savefig(path)
+        if show:
+            plt.show()
+
+        plt.clf()
 
 
     def plot_mse(self) -> None:

@@ -2,8 +2,7 @@ from os import path
 from alohaecc.path_manager import PathManager
 from anytree import LevelOrderIter
 
-from ecctestbench.plot import PlotManager
-from .settings import Settings
+from ecctestbench.settings import Settings
 from .data_manager import DataManager
 from .ecc_algorithm import ECCAlgorithm, ZerosEcc, LastPacketEcc
 from .output_analyser import OutputAnalyser, MSECalculator, PEAQCalculator
@@ -66,11 +65,15 @@ class ECCTestbench(object):
                 node.run()
                 #print(node)
 
-    # def plot(self) -> None:
-    #     '''
-    #     Plot all the results
-    #     '''
-    #     plot_manager = PlotManager(self.settings)
-    #     leaf_nodes = self.data_manager.get_leaf_nodes()
-    #     for leaf_node in leaf_nodes:
-    #         plot_manager.plot_audio_track(leaf_node.root.get_file(), to_file=True)
+    def plot(self) -> None:
+        '''
+        Plot all the results
+        '''
+        original_audio_nodes = self.data_manager.get_nodes_by_depth(0)
+        for original_audio_node in original_audio_nodes:
+            original_audio_node.plot(to_file=True)
+        
+        lost_samples_mask_nodes = self.data_manager.get_nodes_by_depth(1)
+        for lost_samples_mask_node in lost_samples_mask_nodes:
+            lost_samples_mask_node.plot(to_file=True)
+        
