@@ -38,6 +38,7 @@ class BasePacketLossSimulator(PacketLossSimulator):
 
     def run(self, num_samples: int):
 
+        npr.seed(self.seed)
         lost_samples_mask = np.ones(num_samples)
 
         return []
@@ -60,9 +61,9 @@ class BinomialSampleLossSimulator(PacketLossSimulator):
                 lost_packet_mask: N-length array where individual values
                 are either 1 (valid sample) or 0 (dropped sample).
         '''
+        npr.seed(self.seed)
         lost_samples_mask = npr.choice(2, num_samples,
                                       p=[self._per, 1.0 - self._per])
-
         lost_samples_idx = [i for i in range(len(lost_samples_mask)) if lost_samples_mask[i]==0]
 
         return lost_samples_idx
@@ -86,6 +87,7 @@ class BinomialPacketLossSimulator(PacketLossSimulator):
                 lost_packet_mask: N-length array where values within each
                 buffer are either 1 (valid sample) or 0 (dropped sample).
         '''
+        npr.seed(self.seed)
         Nb = int(num_samples//self._buffer_size)
 
         lost_samples_mask = npr.choice(2, Nb+1, p=[self._per, 1.0 - self._per])
