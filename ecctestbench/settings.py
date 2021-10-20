@@ -10,7 +10,8 @@ class Settings(object):
                        per = 0.0001,
                        seed = 1,
                        dpi = 300,
-                       linewidth = 0.1):
+                       linewidth = 0.2,
+                       figsize = (12, 6)):
         '''
         This class containes all the settings used in the testbench.
 
@@ -35,3 +36,4 @@ class Settings(object):
         self.seed = seed
         self.dpi = dpi
         self.linewidth = linewidth
+        self.figsize = figsize

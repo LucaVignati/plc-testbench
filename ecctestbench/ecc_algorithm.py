@@ -23,7 +23,7 @@ class ZerosEcc(ECCAlgorithm):
             Output:
                 output_wave: length-N error corrected numpy array
         '''
-        ecc_track = original_track
+        ecc_track = np.array(original_track)
         for idx in lost_samples_idx:
             ecc_track[idx] = 0
 
@@ -50,7 +50,7 @@ class LastPacketEcc(ECCAlgorithm):
                 output_wave: length-N error corrected numpy array
         '''
 
-        ecc_track = original_track
+        ecc_track = np.array(original_track)
         for idx in lost_samples_idx:
             ecc_track[idx] = 0
         # for n, x in enumerate(output_wave):

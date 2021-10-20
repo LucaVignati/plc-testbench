@@ -115,4 +115,4 @@ class DataManager(object):
         This function is a wrapper for the get_nodes_by_depth function.
         It returns the nodes at level 4, which are leaf nodes.
         '''
-        return self.get_nodes_by_depth(4)
+        return self.get_nodes_by_depth(3)

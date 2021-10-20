@@ -28,7 +28,7 @@ class BasePacketLossSimulator(PacketLossSimulator):
 
 class BinomialSampleLossSimulator(PacketLossSimulator):
 
-    def run(self, num_samples: int) -> list:
+    def run(self, num_samples: int) -> np.ndarray:
         '''
         Generate a mask consisting of randomly distributed 1's or 0's across
         the whole N-length.
@@ -46,7 +46,7 @@ class BinomialSampleLossSimulator(PacketLossSimulator):
                                       p=[per, 1.0 - per])
         lost_samples_idx = [i for i in range(len(lost_samples_mask)) if lost_samples_mask[i]==0]
 
-        return lost_samples_idx
+        return np.array(lost_samples_idx)
 
     def __str__(self) -> str:
         return __class__.__name__ + '_' + str(self.settings.seed)
@@ -54,7 +54,7 @@ class BinomialSampleLossSimulator(PacketLossSimulator):
 
 class BinomialPacketLossSimulator(PacketLossSimulator):
 
-    def run(self, num_samples: int) -> list:
+    def run(self, num_samples: int) -> np.ndarray:
         '''
         Generate a mask that drops whole buffers within an audio sample.
         This allocates fills each number of buffer lengths spanning the
@@ -79,7 +79,7 @@ class BinomialPacketLossSimulator(PacketLossSimulator):
 
         lost_samples_idx = [i for i in range(len(lost_samples_mask)) if lost_samples_mask[i]==0]
 
-        return lost_samples_idx
+        return np.array(lost_samples_idx)
 
     def __str__(self) -> str:
         return __class__.__name__ + '_' + str(self.settings.seed)
