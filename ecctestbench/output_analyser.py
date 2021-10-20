@@ -38,7 +38,7 @@ class MSECalculator(OutputAnalyser):
 
         x_rw = np.array([w*x_r[i:i+N] for i in
                         range(0, num_samples-N, hop)])
-        x_ew = np.array([w*x_e[i:i+self._N] for i in
+        x_ew = np.array([w*x_e[i:i+N] for i in
                         range(0, num_samples-N, hop)])
         mse = [np.mean((x_rw[n] - x_ew[n])**2) for n in range(len(x_rw))]
 

@@ -40,9 +40,10 @@ class BinomialSampleLossSimulator(PacketLossSimulator):
                 lost_packet_mask: N-length array where individual values
                 are either 1 (valid sample) or 0 (dropped sample).
         '''
+        per = self.settings.per
         npr.seed(self.settings.seed)
         lost_samples_mask = npr.choice(2, num_samples,
-                                      p=[self._per, 1.0 - self._per])
+                                      p=[per, 1.0 - per])
         lost_samples_idx = [i for i in range(len(lost_samples_mask)) if lost_samples_mask[i]==0]
 
         return lost_samples_idx
@@ -66,10 +67,11 @@ class BinomialPacketLossSimulator(PacketLossSimulator):
                 lost_packet_mask: N-length array where values within each
                 buffer are either 1 (valid sample) or 0 (dropped sample).
         '''
+        per = self.settings.per
         npr.seed(self.settings.seed)
         Nb = int(num_samples//self.settings.buffer_size)
 
-        lost_samples_mask = npr.choice(2, Nb+1, p=[self._per, 1.0 - self.settings.per])
+        lost_samples_mask = npr.choice(2, Nb+1, p=[per, 1.0 - per])
         lost_buffers = [np.ones(self.settings.buffer_size, dtype=int) *
                         b for b in lost_samples_mask]
         lost_samples_mask = np.concatenate(lost_buffers)
