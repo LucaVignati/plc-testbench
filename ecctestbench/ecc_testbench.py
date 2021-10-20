@@ -4,6 +4,7 @@ from anytree import LevelOrderIter
 
 from ecctestbench.settings import Settings
 from .data_manager import DataManager
+from .plot_manager import PlotManager
 from .ecc_algorithm import ECCAlgorithm, ZerosEcc, LastPacketEcc
 from .output_analyser import OutputAnalyser, MSECalculator, PEAQCalculator
 from .packet_loss_simulator import (PacketLossSimulator,
@@ -61,19 +62,19 @@ class ECCTestbench(object):
         data_trees = self.data_manager.get_data_trees()
         for data_tree in data_trees:
             for node in LevelOrderIter(data_tree):
-                #print(node)
                 node.run()
-                #print(node)
 
     def plot(self) -> None:
         '''
         Plot all the results
         '''
+        plot_manager = PlotManager(self.settings)
         original_audio_nodes = self.data_manager.get_nodes_by_depth(0)
         for original_audio_node in original_audio_nodes:
-            original_audio_node.plot(to_file=True)
+            plot_manager.plot_audio_track(original_audio_node, to_file=True)
         
+        plot_manager = PlotManager(self.settings)
         lost_samples_mask_nodes = self.data_manager.get_nodes_by_depth(1)
         for lost_samples_mask_node in lost_samples_mask_nodes:
-            lost_samples_mask_node.plot(to_file=True)
+            plot_manager.plot_lost_samples_mask(lost_samples_mask_node, to_file=True)
         

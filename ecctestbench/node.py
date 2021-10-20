@@ -1,7 +1,7 @@
 from anytree import NodeMixin
 import numpy as np
-from ecctestbench.file_wrapper import AudioFile, DataFile
-from .plot_manager import PlotManager
+from ecctestbench.worker import Worker
+from ecctestbench.file_wrapper import FileWrapper, AudioFile, DataFile
 
 class BaseNode(object):
     pass
@@ -20,25 +20,28 @@ class Node(BaseNode, NodeMixin):
     def set_file(self, file) -> None:
         self.file = file
 
-    def get_file(self):
+    def get_file(self) -> FileWrapper:
         return self.file
     
-    def get_folder_name(self):
+    def get_folder_name(self) -> str:
         return self.folder_name
 
-    def set_path(self, absolute_path):
+    def set_path(self, absolute_path) -> None:
         self.absolute_path = absolute_path
 
-    def get_worker(self):
+    def get_path(self) -> str:
+        return self.absolute_path
+
+    def get_worker(self) -> Worker:
         return self.worker
 
-    def get_original_track(self):
+    def get_original_track(self) -> AudioFile:
         return self.root.get_file()
 
-    def get_lost_samples_mask(self):
+    def get_lost_samples_mask(self) -> DataFile:
         return self.ancestors[1].get_file()
 
-    def get_ecc_track(self):
+    def get_ecc_track(self) -> AudioFile:
         return self.ancestors[2].get_file()
     
     def __str__(self) -> str:
@@ -56,9 +59,6 @@ class OriginalTrackNode(Node):
 
     def run(self) -> None:
         pass
-
-    def plot(self, show=True, to_file=False) -> None:
-        PlotManager.plot_audio_track(self.file, self.absolute_path + '.png', show, to_file)
     
 class LostSamplesMaskNode(Node):
     def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
@@ -71,10 +71,7 @@ class LostSamplesMaskNode(Node):
         original_track_data = self.get_original_track().get_data()
         num_samples = len(original_track_data)
         lost_samples_mask = self.get_worker().run(num_samples)
-        self.file = DataFile(self.absolute_path + '.npy', lost_samples_mask)
-
-    def plot(self, show=True, to_file=False) -> None:
-        PlotManager.plot_lost_samples_mask(self.file.get_data(), self.absolute_path + '.png', show, to_file)
+        self.file = DataFile(lost_samples_mask, self.absolute_path + '.npy')
 
 class ECCTrackNode(Node):
     def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
@@ -92,9 +89,6 @@ class ECCTrackNode(Node):
         self.file.set_path(self.absolute_path + '.wav')
         self.file.set_data(ecc_track)
 
-    def plot(self, show=True, to_file=False) -> None:
-        PlotManager.plot_audio_track(self.file, self.absolute_path + '.png', show, to_file)
-
 class OutputAnalysisNode(Node):
     def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
         super().__init__(file=file, worker=worker, absolute_path=absolute_path, parent=parent)
@@ -106,7 +100,4 @@ class OutputAnalysisNode(Node):
         original_track_data = self.get_original_track().get_data()
         ecc_track_data = self.get_ecc_track().get_data()
         output_analysis = self.get_worker().run(original_track_data, ecc_track_data)
-        self.file = DataFile(self.absolute_path + '.npy', output_analysis)
-
-    def plot(self) -> None:
-        pass
+        self.file = DataFile(output_analysis, self.absolute_path + '.npy')

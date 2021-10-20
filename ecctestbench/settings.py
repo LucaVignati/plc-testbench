@@ -8,7 +8,9 @@ class Settings(object):
                        N = 1024,
                        amp_scale = 1.0,
                        per = 0.0001,
-                       seed = 1):
+                       seed = 1,
+                       dpi = 300,
+                       linewidth = 0.1):
         '''
         This class containes all the settings used in the testbench.
 
@@ -31,3 +33,5 @@ class Settings(object):
         self.amp_scale = amp_scale
         self.per = per
         self.seed = seed
+        self.dpi = dpi
+        self.linewidth = linewidth

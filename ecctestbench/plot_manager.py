@@ -5,6 +5,7 @@ import numpy as np
 
 from ecctestbench.settings import Settings
 from .file_wrapper import AudioFile, DataFile
+from .node import Node, OriginalTrackNode, LostSamplesMaskNode
 
 class PlotManager(object):
 
@@ -15,28 +16,32 @@ class PlotManager(object):
         '''
         self.N = settings.N
         self.hop = settings.hop
+        self.dpi = settings.dpi
+        self.linewidth = settings.linewidth
         self.rows = rows
         self.cols = cols
 
-    def plot_audio_track(audio_track: AudioFile, path: str, show=True, to_file=False, to_subplots=False) -> None:
+    def plot_audio_track(self, node: OriginalTrackNode, show=True, to_file=False, to_subplots=False) -> None:
         '''
         Plot the original input file
         '''
-        plt.plot(audio_track.get_data())
+        plt.figure(dpi=self.dpi)
+        plt.plot(node.get_file().get_data(), linewidth=self.linewidth)
         if to_file:
-            plt.savefig(path)
+            plt.savefig(node.get_path())
         if show:
             plt.show()
 
         plt.clf()
     
-    def plot_lost_samples_mask(lost_samples_idx: np.ndarray, path: str, show=True, to_file=False) -> None:
+    def plot_lost_samples_mask(self, node: LostSamplesMaskNode, show=True, to_file=False) -> None:
         '''
         Plot the lost samples mask data
         '''
-        plt.vlines(lost_samples_idx, 0, 1)
+        plt.figure(dpi=self.dpi)
+        plt.vlines(node.get_file().get_data(), 0, 1, linewidth=self.linewidth)
         if to_file:
-            plt.savefig(path)
+            plt.savefig(node.get_path())
         if show:
             plt.show()
 

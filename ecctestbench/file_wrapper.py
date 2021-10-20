@@ -3,7 +3,30 @@ from numpy import ndarray
 import soundfile as sf
 import numpy as np
 
-class AudioFile(object):
+class FileWrapper(object):
+    def __init__(self, data: ndarray, path: str, persist=True) -> None:
+        self.data = data
+        self.path = path
+        self.persist = persist
+
+    def get_data(self) -> ndarray:
+        return self.data
+
+    def set_data(self, data: ndarray) -> None:
+        self.data = data
+        if self.persist:
+            self.save()
+
+    def get_path(self) -> str:
+        return self.path
+
+    def set_path(self, path) -> None:
+        self.path = path
+
+    def save(self) -> None:
+        pass
+
+class AudioFile(FileWrapper):
     def __init__(self, data: ndarray,
                        path: str,
                        samplerate: float,
@@ -12,15 +35,13 @@ class AudioFile(object):
                        endian: str,
                        format: str,
                        persist=True) -> None:
+        super().__init__(data, path, persist)
 
-        self.data = data
-        self.path = path
         self.samplerate = samplerate
         self.channels = channels
         self.subtype = subtype
         self.endian = endian
         self.format = format
-        self.persist = persist
 
     @classmethod
     def from_audio_file(cls, audio_file: AudioFile) -> AudioFile:
@@ -44,20 +65,6 @@ class AudioFile(object):
                                file.endian,
                                file.format)
         return new_instance
-
-    def set_data(self, data) -> None:
-        self.data = data
-        if self.persist:
-            self.save()
-
-    def set_path(self, path) -> None:
-        self.path = path
-        
-    def get_data(self) -> ndarray:
-        return self.data
-    
-    def get_path(self) -> str:
-        return self.path
 
     def get_samplerate(self) -> float:
         return self.samplerate
@@ -94,24 +101,11 @@ class AudioFile(object):
         
         return self.data
 
-class DataFile(object):
-    def __init__(self, path: str, data: ndarray, persist=True) -> None:
-        self.path = path
-        self.data = data
-        self.persist = persist
+class DataFile(FileWrapper):
+    def __init__(self, data: ndarray, path: str, persist=True) -> None:
+        super().__init__(data, path, persist)
         if self.persist:
             self.save()
-
-    def set_data(self, data: ndarray) -> None:
-        self.data = data
-        if self.persist:
-            self.save()
-    
-    def get_data(self) -> ndarray:
-        return self.data
-
-    def get_path(self) -> str:
-        return self.path
 
     def save(self) -> None:
         np.save(self.path, self.data)
