@@ -1,13 +1,7 @@
-from typing import Tuple
 import numpy as np
-from ecctestbench.data_manager import DataManager
-from .node import Node
+from ecctestbench.worker import Worker
 
-class ECCAlgorithm(object):
-
-    def __init__(self, settings):
-
-        self._buffer_size = settings.buffer_size
+class ECCAlgorithm(Worker):
 
     def __str__(self) -> str:
         return __class__.__name__

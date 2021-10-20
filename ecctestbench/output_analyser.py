@@ -1,30 +1,11 @@
-from typing import Tuple
 import numpy as np
-from ecctestbench.data_manager import DataManager
-from .node import Node
+from ecctestbench.worker import Worker
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
 
 
-class OutputAnalyser(object):
-
-    def __init__(self, settings):
-        '''
-        Base Class Initialisation for the Output Analyser classes
-
-            Input:
-                Fs: Sample Rate
-                Buffer Size:
-                N: Window Size
-                amp_scale: Maximum Amplitude Scalar for normalisation
-
-        '''
-        self._fs = settings.fs
-        self._buffer_size = settings.buffer_size
-        self._N = settings.N
-        self._hop = settings.N//2
-        self._amp_scale = settings.amp_scale
+class OutputAnalyser(Worker):
 
     def __str__(self) -> str:
         return __class__.__name__
@@ -44,18 +25,21 @@ class MSECalculator(OutputAnalyser):
             Output:
                 mse: Mean Square Error calculated between the two signals.
         '''
+        amp_scale = self.settings.amp_scale
+        N = self.settings.N
+        hop = self.settings.hop
 
-        x_r = normalise(original_track, self._amp_scale)
-        x_e = normalise(ecc_track, self._amp_scale)
+        x_r = normalise(original_track, amp_scale)
+        x_e = normalise(ecc_track, amp_scale)
 
         num_samples = len(x_r)
 
-        w = np.hanning(self._N+1)[:-1]
+        w = np.hanning(N+1)[:-1]
 
-        x_rw = np.array([w*x_r[i:i+self._N] for i in
-                        range(0, num_samples-self._N, self._hop)])
+        x_rw = np.array([w*x_r[i:i+N] for i in
+                        range(0, num_samples-N, hop)])
         x_ew = np.array([w*x_e[i:i+self._N] for i in
-                        range(0, num_samples-self._N, self._hop)])
+                        range(0, num_samples-N, hop)])
         mse = [np.mean((x_rw[n] - x_ew[n])**2) for n in range(len(x_rw))]
 
         return mse
@@ -79,18 +63,21 @@ class SpectralEnergyCalculator(OutputAnalyser):
                 se: Difference Magnitude signal array calulated from the
                 Short-Time spectral differences between the reference and test.
         '''
+        amp_scale = self.settings.amp_scale
+        N = self.settings.N
+        hop = self.settings.hop
 
-        w = np.hanning(self._N+1)[:-1]
+        w = np.hanning(N+1)[:-1]
 
-        x_r = normalise(original_track, self._amp_scale)
-        x_e = normalise(ecc_track, self._amp_scale)
+        x_r = normalise(original_track, amp_scale)
+        x_e = normalise(ecc_track, amp_scale)
 
         num_samples = len(x_r)
 
-        x_rk = np.array([np.fft.fft(w*x_r[i:i+self._N]) for i in
-                        range(0, num_samples-self._N, self._hop)])
-        x_ek = np.array([np.fft.fft(w*x_e[i:i+self._N]) for i in
-                        range(0, num_samples-self._N, self._hop)])
+        x_rk = np.array([np.fft.fft(w*x_r[i:i+N]) for i in
+                        range(0, num_samples-N, hop)])
+        x_ek = np.array([np.fft.fft(w*x_e[i:i+N]) for i in
+                        range(0, num_samples-N, hop)])
         x_2rk = np.abs(x_rk)**2
         x_2ek = np.abs(x_ek)**2
 
@@ -103,7 +90,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
 class PEAQCalculator(OutputAnalyser):
 
-    def run(self, node: Node) -> None:
+    def run(self, original_track: np.ndarray, ecc_track: np.ndarray) -> None:
         pass
 
     def __str__(self) -> str:
