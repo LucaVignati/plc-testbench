@@ -13,7 +13,7 @@ class PacketLossSimulator(Worker):
     '''
 
     def __str__(self) -> str:
-        return __class__.__name__ + '_' + str(self.settings.seed)
+        return __class__.__name__ + '_s' + str(self.settings.seed)
 
 
 class BasePacketLossSimulator(PacketLossSimulator):
@@ -23,7 +23,7 @@ class BasePacketLossSimulator(PacketLossSimulator):
         return []
 
     def __str__(self) -> str:
-        return __class__.__name__ + '_' + str(self.settings.seed)
+        return __class__.__name__ + '_s' + str(self.settings.seed)
 
 
 class BinomialSampleLossSimulator(PacketLossSimulator):
@@ -49,7 +49,7 @@ class BinomialSampleLossSimulator(PacketLossSimulator):
         return np.array(lost_samples_idx)
 
     def __str__(self) -> str:
-        return __class__.__name__ + '_' + str(self.settings.seed)
+        return __class__.__name__ + '_s' + str(self.settings.seed)
 
 
 class BinomialPacketLossSimulator(PacketLossSimulator):
@@ -82,4 +82,4 @@ class BinomialPacketLossSimulator(PacketLossSimulator):
         return np.array(lost_samples_idx)
 
     def __str__(self) -> str:
-        return __class__.__name__ + '_' + str(self.settings.seed)
+        return __class__.__name__ + '_s' + str(self.settings.seed)
