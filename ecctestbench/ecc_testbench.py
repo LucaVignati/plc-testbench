@@ -7,10 +7,12 @@ from .data_manager import DataManager
 from .plot_manager import PlotManager
 from .ecc_algorithm import ECCAlgorithm, ZerosEcc, LastPacketEcc
 from .output_analyser import OutputAnalyser, MSECalculator, PEAQCalculator
-from .packet_loss_simulator import (PacketLossSimulator,
-                                    BasePacketLossSimulator,
-                                    BinomialPacketLossSimulator,
-                                    BinomialSampleLossSimulator)
+from .packet_loss_simulator import (LossSimulator,
+                                    PacketLossSimulator,
+                                    SampleLossSimulator,
+                                    LossModel,
+                                    BinomialLossModel,
+                                    GilbertElliotLossModel)
 
 
 class ECCTestbench(object):
@@ -18,7 +20,7 @@ class ECCTestbench(object):
     The testbench class for the alohaecc algorithm.
     '''
 
-    def __init__(self, packet_drop_simulators: list,
+    def __init__(self, packet_loss_simulators: list,
                  ecc_algorithms: list,
                  output_analysers: list,
                  settings: Settings,
@@ -38,8 +40,10 @@ class ECCTestbench(object):
         self.packet_drop_simulators = list()
         self.ecc_algorithms = list()
         self.output_analysers = list()
-        for packet_drop_simulator in packet_drop_simulators:
-            self.packet_drop_simulators.append(packet_drop_simulator(settings))
+        for packet_loss_simulator in packet_loss_simulators:
+            simulator = packet_loss_simulator[0]
+            loss_model = packet_loss_simulator[1]
+            self.packet_drop_simulators.append(simulator(loss_model(settings), settings))
         for ecc_algorithm in ecc_algorithms:
             self.ecc_algorithms.append(ecc_algorithm(settings))
         for output_analyser in output_analysers:
