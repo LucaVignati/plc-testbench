@@ -7,7 +7,7 @@ from .data_manager import DataManager
 from .plot_manager import PlotManager
 from .ecc_algorithm import ECCAlgorithm, ZerosEcc, LastPacketEcc
 from .output_analyser import OutputAnalyser, MSECalculator, PEAQCalculator
-from .packet_loss_simulator import (LossSimulator,
+from .loss_simulator import (LossSimulator,
                                     PacketLossSimulator,
                                     SampleLossSimulator,
                                     LossModel,
