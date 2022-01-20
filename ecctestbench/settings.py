@@ -1,21 +1,27 @@
 import numpy.random as npr
+from ecc_external import EccMode
 
 class Settings(object):
 
-    def __init__(self, fs = 44100,
-                       chans = 1,
-                       packet_size = 32,
-                       N = 1024,
-                       amp_scale = 1.0,
-                       seed = 1,
-                       per = 0.0001,
-                       p = 0.0001,
-                       r = 0.05,
-                       h = 0.5,
-                       k = 0.99999900,
-                       dpi = 300,
-                       linewidth = 0.2,
-                       figsize = (12, 6)):
+    def __init__(self, fs: int = 44100,
+                       chans: int = 1,
+                       packet_size: int = 32,
+                       N: int = 1024,
+                       amp_scale: float = 1.0,
+                       seed: int = 1,
+                       per: float = 0.0001,
+                       p: float = 0.0001,
+                       r: float = 0.05,
+                       h: float = 0.5,
+                       k: float = 0.99999900,
+                       ecc_mode: EccMode = EccMode.STEREO,
+                       mid_filter_length: int = 2048,
+                       mid_cross_fade_time: float = 0.01,
+                       side_filter_length: int = 2048,
+                       side_cross_fade_time: float = 0.01,
+                       dpi: int = 300,
+                       linewidth: float = 0.2,
+                       figsize: int = (12, 6)):
         '''
         This class containes all the settings used in the testbench.
 
@@ -52,6 +58,13 @@ class Settings(object):
         self.r = r
         self.h = h
         self.k = k
+
+        # Ecc Algorithm
+        self.ecc_mode = ecc_mode
+        self.mid_filter_length = mid_filter_length
+        self.mid_cross_fade_time = mid_cross_fade_time
+        self.side_filter_length = side_filter_length
+        self.side_cross_fade_time = side_cross_fade_time
 
         # Plot
         self.dpi = dpi

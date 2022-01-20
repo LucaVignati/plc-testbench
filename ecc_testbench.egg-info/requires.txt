@@ -1,0 +1,4 @@
+anytree
+numpy
+pybind11
+soundfile

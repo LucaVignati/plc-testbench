@@ -35,14 +35,16 @@ class MSECalculator(OutputAnalyser):
         num_samples = len(x_r)
 
         w = np.hanning(N+1)[:-1]
+        if x_r.ndim > 1:
+            w = np.transpose(np.tile(w, (np.shape(x_r)[1], 1)))
 
-        x_rw = np.array([w*x_r[i:i+N] for i in
+        x_rw = np.array([np.multiply(w, x_r[i:i+N]) for i in
                         range(0, num_samples-N, hop)])
-        x_ew = np.array([w*x_e[i:i+N] for i in
+        x_ew = np.array([np.multiply(w, x_e[i:i+N]) for i in
                         range(0, num_samples-N, hop)])
-        mse = [np.mean((x_rw[n] - x_ew[n])**2) for n in range(len(x_rw))]
+        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in range(len(x_rw))]
 
-        return mse
+        return np.array(mse)
 
     def __str__(self) -> str:
         return __class__.__name__

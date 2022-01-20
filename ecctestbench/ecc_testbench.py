@@ -1,5 +1,5 @@
 from os import path
-from alohaecc.path_manager import PathManager
+from ecctestbench.path_manager import PathManager
 from anytree import LevelOrderIter
 
 from ecctestbench.settings import Settings
@@ -66,6 +66,7 @@ class ECCTestbench(object):
         data_trees = self.data_manager.get_data_trees()
         for data_tree in data_trees:
             for node in LevelOrderIter(data_tree):
+                #print(node)
                 node.run()
 
     def plot(self, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, ecc_tracks=False, output_analyses=False, group=False) -> None:
