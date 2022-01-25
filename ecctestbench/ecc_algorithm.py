@@ -1,4 +1,6 @@
+from math import ceil
 import numpy as np
+from tqdm.notebook import tqdm, trange
 from ecctestbench.worker import Worker
 from .settings import Settings
 from ecc_external import BurgErrorConcealer, BurgEccParameters
@@ -11,23 +13,27 @@ class ECCAlgorithm(Worker):
         '''
         packet_size = self.settings.packet_size
         is_valid = True
-        lost_packets_idx = lost_samples_idx[::packet_size]
+        lost_packets_idx = lost_samples_idx[::packet_size]/packet_size
         track_length = len(original_track)
-        n_packets = int(track_length/packet_size)
+        n_packets = ceil(track_length/packet_size)
         rounding_difference = packet_size - track_length % packet_size
-        np.pad(original_track, (0, rounding_difference), 'constant')
+        npad = [(0, rounding_difference)]
+        for channel in range(np.shape(original_track)[1] - 1):
+            npad.append((0, 0))
+        original_track = np.pad(original_track, tuple(npad), 'constant')
         ecc_track = np.zeros(np.shape(original_track), np.float32)
+        j = 0
 
-        for i in range(n_packets):
+        for i in tqdm(range(n_packets), desc=self.__str__()):
+            if i > lost_packets_idx[j] and j < len(lost_packets_idx) - 1: j += 1
             start_idx = i*packet_size
             end_idx = (i+1)*packet_size
             buffer = original_track[start_idx:end_idx]
-            is_valid = not (i in lost_packets_idx)
+            is_valid = not i == lost_packets_idx[j]
             buffer_ecc = self.tick(buffer, is_valid)
             ecc_track[start_idx:end_idx] = buffer_ecc
 
         return ecc_track[0:track_length]
-
 
     def tick(self, buffer: np.ndarray, is_valid: bool) -> np.ndarray:
         '''

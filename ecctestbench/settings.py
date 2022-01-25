@@ -10,7 +10,7 @@ class Settings(object):
                        amp_scale: float = 1.0,
                        seed: int = 1,
                        per: float = 0.0001,
-                       p: float = 0.0001,
+                       p: float = 0.001,
                        r: float = 0.05,
                        h: float = 0.5,
                        k: float = 0.99999900,
@@ -19,6 +19,7 @@ class Settings(object):
                        mid_cross_fade_time: float = 0.01,
                        side_filter_length: int = 2048,
                        side_cross_fade_time: float = 0.01,
+                       peaq_mode: str = "basic",
                        dpi: int = 300,
                        linewidth: float = 0.2,
                        figsize: int = (12, 6)):
@@ -65,6 +66,9 @@ class Settings(object):
         self.mid_cross_fade_time = mid_cross_fade_time
         self.side_filter_length = side_filter_length
         self.side_cross_fade_time = side_cross_fade_time
+
+        # PEAQ
+        self.peaq_mode = peaq_mode
 
         # Plot
         self.dpi = dpi

@@ -10,7 +10,6 @@ ecctestbench/__init__.py
 ecctestbench/__version__.py
 ecctestbench/data_manager.py
 ecctestbench/ecc_algorithm.py
-ecctestbench/ecc_ext_bind_gen.py
 ecctestbench/ecc_testbench.py
 ecctestbench/file_wrapper.py
 ecctestbench/loss_simulator.py

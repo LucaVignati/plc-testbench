@@ -1,4 +1,4 @@
-anytree
 numpy
-pybind11
 soundfile
+anytree
+pybind11

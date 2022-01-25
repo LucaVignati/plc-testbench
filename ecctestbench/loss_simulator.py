@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.random as npr
+from tqdm.notebook import tqdm, trange
 from ecctestbench.worker import Worker
 from .settings import Settings
 
@@ -139,7 +140,7 @@ class PacketLossSimulator(LossSimulator):
         the position of lost samples in the original audio track.
         '''
         lost_samples_idx = []
-        for idx in range(num_samples):
+        for idx in tqdm(range(num_samples), desc=self.__str__()):
             if (idx % self.packet_size) == 0:
                 lost_packet = self.loss_model.tick()
             if lost_packet:
@@ -166,7 +167,7 @@ class SampleLossSimulator(LossSimulator):
         the position of lost samples in the original audio track.
         '''
         lost_samples_idx = []
-        for idx in range(num_samples):
+        for idx in tqdm(range(num_samples), desc=self.__str__()):
             if self.loss_model.tick():
                 lost_samples_idx.append(idx)
 

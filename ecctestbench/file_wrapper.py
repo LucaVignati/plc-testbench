@@ -1,10 +1,12 @@
 from __future__ import annotations
 from numpy import ndarray
+import os
 import soundfile as sf
 import numpy as np
+import pickle
 
 class FileWrapper(object):
-    def __init__(self, data: ndarray, path: str, persist=True) -> None:
+    def __init__(self, data, path: str, persist=True) -> None:
         self.data = data
         self.path = path
         self.persist = persist
@@ -25,6 +27,9 @@ class FileWrapper(object):
 
     def save(self) -> None:
         pass
+    
+    def delete(self) -> None:
+        os.remove(self.path)
 
 class AudioFile(FileWrapper):
     def __init__(self, data: ndarray,
@@ -102,14 +107,36 @@ class AudioFile(FileWrapper):
         return self.data
 
 class DataFile(FileWrapper):
-    def __init__(self, data: ndarray, path: str, persist=True) -> None:
+    def __init__(self, data, path: str, persist=True) -> None:
         super().__init__(data, path, persist)
         if self.persist:
             self.save()
 
     def save(self) -> None:
-        np.save(self.path, self.data)
+        file = open(self.path, 'wb')
+        pickle.dump(self.data, file)
 
-    def load(self) -> ndarray:
-        self.data = np.load(self.path)
-        return self.data
+    def load(self) -> None:
+        file = open(self.path, 'rb')
+        self.data = pickle.load(file)
+
+class OutputAnalysis():
+    pass
+
+class MSEData(OutputAnalysis):
+    def __init__(self, mse: ndarray) -> None:
+        self._mse = np.array(mse)
+
+    def get_mse(self) -> ndarray:
+        return self._mse
+
+class PEAQData(OutputAnalysis):
+    def __init__(self, peaq_odg: float, peaq_di: float) -> None:
+        self._peaq_odg = peaq_odg
+        self._peaq_di = peaq_di
+
+    def get_odg(self) -> float:
+        return self._peaq_odg
+
+    def get_di(self) -> float:
+        return self._peaq_di

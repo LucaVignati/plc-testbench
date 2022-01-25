@@ -58,6 +58,7 @@ class OriginalTrackNode(Node):
         return self.file.get_data()
 
     def run(self) -> None:
+        print(str(self.file.get_path().rpartition("/")[2]))
         pass
     
 class LostSamplesMaskNode(Node):
@@ -70,8 +71,8 @@ class LostSamplesMaskNode(Node):
     def run(self) -> None:
         original_track_data = self.get_original_track().get_data()
         num_samples = len(original_track_data)
-        lost_samples_mask = self.get_worker().run(num_samples)
-        self.file = DataFile(lost_samples_mask, self.absolute_path + '.npy')
+        lost_samples_idx = self.get_worker().run(num_samples)
+        self.file = DataFile(lost_samples_idx, self.absolute_path + '.npy')
 
 class ECCTrackNode(Node):
     def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
@@ -83,8 +84,8 @@ class ECCTrackNode(Node):
     def run(self) -> None:
         original_track = self.get_original_track()
         original_track_data = original_track.get_data()
-        lost_samples_mask = self.get_lost_samples_mask().get_data()
-        ecc_track = self.get_worker().run(original_track_data, lost_samples_mask)
+        lost_samples_idx = self.get_lost_samples_mask().get_data()
+        ecc_track = self.get_worker().run(original_track_data, lost_samples_idx)
         self.file = AudioFile.from_audio_file(original_track)
         self.file.set_path(self.absolute_path + '.wav')
         self.file.set_data(ecc_track)
@@ -97,7 +98,7 @@ class OutputAnalysisNode(Node):
         return self.file.get_data()
 
     def run(self) -> None:
-        original_track_data = self.get_original_track().get_data()
-        ecc_track_data = self.get_ecc_track().get_data()
-        output_analysis = self.get_worker().run(original_track_data, ecc_track_data)
-        self.file = DataFile(output_analysis, self.absolute_path + '.npy')
+        original_track = self.get_original_track()
+        ecc_track = self.get_ecc_track()
+        output_analysis = self.get_worker().run(original_track, ecc_track)
+        self.file = DataFile(output_analysis, self.absolute_path + '.pickle')
