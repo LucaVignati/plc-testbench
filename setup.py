@@ -3,7 +3,7 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 ext_modules = [
     Pybind11Extension("ecc_external",
-                      ["bindings/external_ecc_bindings.cpp"])
+                      ["../ecc/bindings/python_bindings.cpp"])
 ]
 
 with open("README.md", "r") as fh:

@@ -1,6 +1,6 @@
 README.md
 setup.py
-bindings/external_ecc_bindings.cpp
+../ecc/bindings/python_bindings.cpp
 ecc_testbench.egg-info/PKG-INFO
 ecc_testbench.egg-info/SOURCES.txt
 ecc_testbench.egg-info/dependency_links.txt

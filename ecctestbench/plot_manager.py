@@ -1,4 +1,5 @@
 from math import ceil, floor
+from typing import Tuple
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -88,7 +89,7 @@ class PlotManager(object):
         original_track = node.get_original_track()
         samplerate = original_track.get_samplerate()
         n_channels = original_track.get_channels()
-        original_track_length = (len(original_track.get_data()) - 1)/samplerate
+        original_track_length = (len(original_track.get_data()))/samplerate
         data = node.get_file().get_data()
         fig = plt.figure(figsize=self.figsize, dpi=self.dpi)
         if issubclass(node.worker.__class__, MSECalculator):
@@ -104,7 +105,9 @@ class PlotManager(object):
                 dots = 500000
             subsampling_factor = floor(len(mse)/dots)
             subsampled_mse = mse[::subsampling_factor]
-            x = np.arange(0, original_track_length, original_track_length/dots)
+            end = original_track_length
+            pace = end/len(subsampled_mse)
+            x = np.arange(0, end, pace)
             for n in range(n_channels):
                 if mse.ndim > 1:
                     channel_data = subsampled_mse[:, n]
@@ -124,10 +127,51 @@ class PlotManager(object):
             file_content = odg_text + str(data.get_odg()) + "\n" + di_text + str(data.get_di())
             print(file_content)
             if to_file:
-                file = open(node.get_path(), "w")
+                file = open(node.get_path() + ".txt", "w")
                 file.write(file_content)
 
         plt.close(fig)
+
+    def plot_peaq_summary(self, nodes: Tuple[OutputAnalysisNode, ...], to_file=False) -> None:
+        '''
+        Plot a graph of the results of PEAQ measurement of all tracks and all ECC algorithms
+        '''
+        track_names = []
+        data_series_collection = {}
+        loss_models = []
+        first_root_node = nodes[0].get_original_track_node()
+        fig_path = first_root_node.get_path().rpartition("/")[0]
+        for node in first_root_node.children:
+            loss_model_name = node.get_worker().__str__()
+            loss_models.append(loss_model_name)
+        for loss_model in loss_models:
+            data_series = {}
+            data_series_collection[loss_model] = data_series
+            for node in nodes:
+                if issubclass(node.worker.__class__, PEAQCalculator) and node.get_lost_samples_mask_node().get_worker().__str__() == loss_model:
+                    data = node.get_file().get_data().get_odg()
+                    ecc_name = node.get_ecc_track_node().get_worker().__str__()
+                    track_name = node.root.get_track_name()
+                    if track_name not in track_names:
+                        track_names.append(track_name)
+                        track_names = sorted(track_names, key=str.lower)
+                    if ecc_name not in data_series.keys(): data_series[ecc_name] = []
+                    index = track_names.index(track_name)
+                    data_series[ecc_name].insert(index, data)
+            fig = plt.figure(figsize=self.figsize, dpi=self.dpi)
+            name = "PEAQ Summary - " + loss_model
+            fig.suptitle(name)
+            ax = fig.add_axes([0, 0, 1, 1])
+            ax.set_xlabel("Track")
+            ax.set_ylabel("Objective Difference Grade")
+            ax.set_xlim(1, len(track_names))
+            ax.set_ylim(-4, 0)
+            ax.set_xticks(np.arange(0, len(track_names)), track_names)
+            for ecc_name in data_series.keys():
+                ax.plot(np.arange(1, len(track_names) + 1), data_series[ecc_name], label=ecc_name)
+            plt.legend(loc="upper left")
+            if to_file:
+                fig.savefig(fig_path + "/" + name, bbox_inches='tight')
 
     def show() -> None:
         plt.show()

@@ -69,14 +69,14 @@ class ECCTestbench(object):
                 #print(node)
                 node.run()
 
-    def plot(self, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, ecc_tracks=False, output_analyses=False, group=False) -> None:
+    def plot(self, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, ecc_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
         '''
         Plot all the results
         '''
         if original_tracks:
             plot_manager = PlotManager(self.settings)
-            original_audio_nodes = self.data_manager.get_nodes_by_depth(0)
-            for original_audio_node in original_audio_nodes:
+            original_track_nodes = self.data_manager.get_nodes_by_depth(0)
+            for original_audio_node in original_track_nodes:
                 plot_manager.plot_audio_track(original_audio_node, to_file)
         
         if lost_samples_masks:
@@ -87,15 +87,15 @@ class ECCTestbench(object):
 
         if ecc_tracks:
             plot_manager = PlotManager(self.settings)
-            lost_samples_mask_nodes = self.data_manager.get_nodes_by_depth(2)
-            for lost_samples_mask_node in lost_samples_mask_nodes:
-                plot_manager.plot_audio_track(lost_samples_mask_node, to_file)
+            ecc_track_nodes = self.data_manager.get_nodes_by_depth(2)
+            for ecc_track_node in ecc_track_nodes:
+                plot_manager.plot_audio_track(ecc_track_node, to_file)
 
         if output_analyses:
             plot_manager = PlotManager(self.settings)
-            lost_samples_mask_nodes = self.data_manager.get_nodes_by_depth(3)
-            for lost_samples_mask_node in lost_samples_mask_nodes:
-                plot_manager.plot_output_analysis(lost_samples_mask_node, to_file)
+            output_analysis_nodes = self.data_manager.get_nodes_by_depth(3)
+            for output_analysis_node in output_analysis_nodes:
+                plot_manager.plot_output_analysis(output_analysis_node, to_file)
 
         if group:
             plot_manager = PlotManager(self.settings)
@@ -106,6 +106,11 @@ class ECCTestbench(object):
                 plot_manager.plot_lost_samples_mask(ancestors[1], to_file)
                 plot_manager.plot_audio_track(ancestors[2], to_file)
                 plot_manager.plot_output_analysis(leaf_node, to_file)
+
+        if peaq_summary:
+            plot_manager = PlotManager(self.settings)
+            output_analysis_nodes = self.data_manager.get_nodes_by_depth(3)
+            plot_manager.plot_peaq_summary(output_analysis_nodes, to_file)
 
         if show:
             PlotManager.show()

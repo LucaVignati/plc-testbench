@@ -7,7 +7,7 @@ class BaseNode(object):
     pass
 
 class Node(BaseNode, NodeMixin):
-    def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
+    def __init__(self, file: FileWrapper=None, worker=None, absolute_path: str=None, parent=None) -> None:
         self.file = file
         self.worker = worker
         self.parent = parent
@@ -57,8 +57,11 @@ class OriginalTrackNode(Node):
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
 
+    def get_track_name(self) -> str:
+        return self.absolute_path.rpartition("/")[2].split(".")[0]
+
     def run(self) -> None:
-        print(str(self.file.get_path().rpartition("/")[2]))
+        print(self.get_track_name())
         pass
     
 class LostSamplesMaskNode(Node):
@@ -67,6 +70,9 @@ class LostSamplesMaskNode(Node):
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
+
+    def get_original_track_node(self) -> OriginalTrackNode:
+        return self.root
     
     def run(self) -> None:
         original_track_data = self.get_original_track().get_data()
@@ -80,6 +86,12 @@ class ECCTrackNode(Node):
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
+
+    def get_original_track_node(self) -> OriginalTrackNode:
+        return self.root
+    
+    def get_lost_samples_mask_node(self) -> LostSamplesMaskNode:
+        return self.ancestors[1]
     
     def run(self) -> None:
         original_track = self.get_original_track()
@@ -96,6 +108,15 @@ class OutputAnalysisNode(Node):
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
+
+    def get_original_track_node(self) -> OriginalTrackNode:
+        return self.root
+    
+    def get_lost_samples_mask_node(self) -> LostSamplesMaskNode:
+        return self.ancestors[1]
+
+    def get_ecc_track_node(self) -> ECCTrackNode:
+        return self.ancestors[2]
 
     def run(self) -> None:
         original_track = self.get_original_track()
