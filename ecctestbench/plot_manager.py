@@ -168,7 +168,7 @@ class PlotManager(object):
             ax.set_ylim(-4, 0)
             ax.set_xticks(np.arange(0, len(track_names)), track_names)
             for ecc_name in data_series.keys():
-                ax.plot(np.arange(1, len(track_names) + 1), data_series[ecc_name], label=ecc_name)
+                ax.plot(np.arange(len(track_names)), data_series[ecc_name], label=ecc_name)
             plt.legend(loc="upper left")
             if to_file:
                 fig.savefig(fig_path + "/" + name, bbox_inches='tight')

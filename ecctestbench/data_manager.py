@@ -1,8 +1,5 @@
 import typing
 import anytree.search as search
-from numpy import ndarray
-import soundfile as sf
-import numpy as np
 from ecctestbench.path_manager import PathManager
 from .node import ECCTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .file_wrapper import AudioFile, DataFile

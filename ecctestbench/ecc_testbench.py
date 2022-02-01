@@ -1,18 +1,10 @@
-from os import path
 from ecctestbench.path_manager import PathManager
 from anytree import LevelOrderIter
+from tqdm.notebook import tqdm
 
 from ecctestbench.settings import Settings
 from .data_manager import DataManager
 from .plot_manager import PlotManager
-from .ecc_algorithm import ECCAlgorithm, ZerosEcc, LastPacketEcc
-from .output_analyser import OutputAnalyser, MSECalculator, PEAQCalculator
-from .loss_simulator import (LossSimulator,
-                                    PacketLossSimulator,
-                                    SampleLossSimulator,
-                                    LossModel,
-                                    BinomialLossModel,
-                                    GilbertElliotLossModel)
 
 
 class ECCTestbench(object):
@@ -64,9 +56,8 @@ class ECCTestbench(object):
         Run the testbench.
         '''
         data_trees = self.data_manager.get_data_trees()
-        for data_tree in data_trees:
+        for data_tree in tqdm(data_trees, desc="Audio Tracks"):
             for node in LevelOrderIter(data_tree):
-                #print(node)
                 node.run()
 
     def plot(self, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, ecc_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:

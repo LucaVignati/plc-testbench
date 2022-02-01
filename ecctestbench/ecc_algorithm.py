@@ -3,6 +3,7 @@ import numpy as np
 from tqdm.notebook import tqdm, trange
 from ecctestbench.worker import Worker
 from .settings import Settings
+from .low_cost_concealment import LowCostConcealment
 from ecc_external import BurgErrorConcealer, BurgEccParameters
 
 class ECCAlgorithm(Worker):
@@ -18,10 +19,12 @@ class ECCAlgorithm(Worker):
         n_packets = ceil(track_length/packet_size)
         rounding_difference = packet_size - track_length % packet_size
         npad = [(0, rounding_difference)]
-        for channel in range(np.shape(original_track)[1] - 1):
+        n_channels = np.shape(original_track)[1]
+        for _ in range(n_channels - 1):
             npad.append((0, 0))
         original_track = np.pad(original_track, tuple(npad), 'constant')
         ecc_track = np.zeros(np.shape(original_track), np.float32)
+        self.prepare_to_play(n_channels)
         j = 0
 
         for i in tqdm(range(n_packets), desc=self.__str__()):
@@ -34,6 +37,9 @@ class ECCAlgorithm(Worker):
             ecc_track[start_idx:end_idx] = buffer_ecc
 
         return ecc_track[0:track_length]
+
+    def prepare_to_play(self, n_channels):
+        pass
 
     def tick(self, buffer: np.ndarray, is_valid: bool) -> np.ndarray:
         '''
@@ -106,6 +112,33 @@ class LastPacketEcc(ECCAlgorithm):
     def __str__(self) -> str:
         return __class__.__name__
 
+class LowCostEcc(ECCAlgorithm):
+    
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
+        self.lcc = LowCostConcealment(settings.max_frequency,
+                                      settings.f_min,
+                                      settings.beta,
+                                      settings.n_m,
+                                      settings.fade_in_length,
+                                      settings.fade_out_length,
+                                      settings.extraction_length)
+        self.samplerate = settings.fs
+        self.packet_size = settings.packet_size
+
+    def prepare_to_play(self, n_channels):
+        self.lcc.prepare_to_play(self.samplerate, self.packet_size, n_channels)
+
+    def tick(self, buffer: np.ndarray, is_valid: bool):
+        '''
+        
+        '''
+        return self.lcc.process(buffer, is_valid)
+
+    def __str__(self) -> str:
+        return __class__.__name__
+
+
 class ExternalEcc(ECCAlgorithm):
 
     def __init__(self, settings: Settings) -> None:
@@ -125,7 +158,6 @@ class ExternalEcc(ECCAlgorithm):
         '''
         buffer = np.transpose(buffer)
         ecc_buffer = np.zeros(np.shape(buffer), np.float32)
-        #print(buffer.ndim)
         self.bec.process(buffer, ecc_buffer, is_valid)
         ecc_buffer = np.transpose(ecc_buffer)
         return ecc_buffer

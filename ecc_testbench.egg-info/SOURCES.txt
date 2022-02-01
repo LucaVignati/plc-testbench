@@ -13,6 +13,7 @@ ecctestbench/ecc_algorithm.py
 ecctestbench/ecc_testbench.py
 ecctestbench/file_wrapper.py
 ecctestbench/loss_simulator.py
+ecctestbench/low_cost_concealment.py
 ecctestbench/node.py
 ecctestbench/output_analyser.py
 ecctestbench/path_manager.py

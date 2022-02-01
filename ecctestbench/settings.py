@@ -19,6 +19,13 @@ class Settings(object):
                        mid_cross_fade_time: float = 0.01,
                        side_filter_length: int = 2048,
                        side_cross_fade_time: float = 0.01,
+                       max_frequency: float = 4800,
+                       f_min: int = 80,
+                       beta: float = 1,
+                       n_m: int = 2,
+                       fade_in_length: int = 10,
+                       fade_out_length: float = 0.5,
+                       extraction_length: int = 2,
                        peaq_mode: str = "basic",
                        dpi: int = 300,
                        linewidth: float = 0.2,
@@ -60,12 +67,21 @@ class Settings(object):
         self.h = h
         self.k = k
 
-        # Ecc Algorithm
+        ## Ecc Algorithm
+        # EccExternal
         self.ecc_mode = ecc_mode
         self.mid_filter_length = mid_filter_length
         self.mid_cross_fade_time = mid_cross_fade_time
         self.side_filter_length = side_filter_length
         self.side_cross_fade_time = side_cross_fade_time
+        # LowCostECC
+        self.max_frequency = max_frequency
+        self.f_min = f_min
+        self.beta = beta
+        self.n_m = n_m
+        self.fade_in_length = fade_in_length
+        self.fade_out_length = fade_out_length
+        self.extraction_length = extraction_length
 
         # PEAQ
         self.peaq_mode = peaq_mode
