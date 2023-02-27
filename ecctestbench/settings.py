@@ -1,5 +1,4 @@
 import numpy.random as npr
-from ecc_external import EccMode
 
 class Settings(object):
 
@@ -14,11 +13,6 @@ class Settings(object):
                        r: float = 0.05,
                        h: float = 0.5,
                        k: float = 0.99999900,
-                       ecc_mode: EccMode = EccMode.STEREO,
-                       mid_filter_length: int = 256,
-                       mid_cross_fade_time: float = 0.025,
-                       side_filter_length: int = 32,
-                       side_cross_fade_time: float = 0.025,
                        max_frequency: float = 4800,
                        f_min: int = 80,
                        beta: float = 1,
@@ -76,12 +70,6 @@ class Settings(object):
         self.k = k
 
         ## Ecc Algorithm
-        # EccExternal
-        self.ecc_mode = ecc_mode
-        self.mid_filter_length = mid_filter_length
-        self.mid_cross_fade_time = mid_cross_fade_time
-        self.side_filter_length = side_filter_length
-        self.side_cross_fade_time = side_cross_fade_time
         # LowCostECC
         self.max_frequency = max_frequency
         self.f_min = f_min

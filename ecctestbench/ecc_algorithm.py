@@ -6,9 +6,6 @@ from tqdm.notebook import tqdm
 from ecctestbench.worker import Worker
 from .settings import Settings
 from .low_cost_concealment import LowCostConcealment
-from ecc_external import BurgErrorConcealer, BurgEccParameters
-import tensorflow as tf
-import collections
 
 class ECCAlgorithm(Worker):
 
