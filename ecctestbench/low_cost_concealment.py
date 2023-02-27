@@ -30,7 +30,7 @@ class LowCostConcealment:
         self._packet_size = packet_size
         self._n_channels = n_channels
         self._win_size = round((self._beta * self._samplerate) / self._f_min)
-        self._window = collections.deque(np.zeros((self._win_size, n_channels)), maxlen=self._win_size)
+        self._window = np.zeros((self._win_size, n_channels))
         self._lower_bound = self._samplerate / (2*self._max_frequency)
         order = 20
         cutoff_norm = 0.01
@@ -40,16 +40,15 @@ class LowCostConcealment:
 
     def process(self, buffer: np.ndarray, is_valid: bool):
         if not is_valid:
-            window = np.array(self._window)
-            pre_processed_win = self.pre_process(window)
+            pre_processed_win = self.pre_process(self._window)
             self._extrapolated_concealment_data = np.zeros((self._extraction_length * self._packet_size, self._n_channels))
             for n in range(self._n_channels):
                 zero_crossings = self.zero_crossing_detect(pre_processed_win[:, n])
                 if len(zero_crossings) < 2:
                     return np.zeros(np.shape(buffer))
-                concealment_data = self.extract(window[:, n], zero_crossings)
-                concealment_data = self.align(window[:,n], concealment_data)
-                self._extrapolated_concealment_data[:, n] = self.extrapolate_and_fade_in(window[:, n], concealment_data)
+                concealment_data = self.extract(self._window[:, n], zero_crossings)
+                concealment_data = self.align(self._window[:,n], concealment_data)
+                self._extrapolated_concealment_data[:, n] = self.extrapolate_and_fade_in(self._window[:, n], concealment_data)
             self._crossfade = True
             buffer_out = self._extrapolated_concealment_data[:self._packet_size]
         elif self._crossfade:
@@ -60,7 +59,9 @@ class LowCostConcealment:
         else:
             buffer_out = buffer
 
-        self._window.extend(buffer_out)
+        buffer_size = np.shape(buffer_out)[0]
+        self_window = np.roll(self._window, -buffer_size, axis=0)
+        self._window[-buffer_size:] = buffer_out
         return buffer_out
 
     def pre_process(self, buffer: np.ndarray) -> np.ndarray:

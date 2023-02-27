@@ -1,8 +1,10 @@
-# AlohaECC
+# ECCTestbench
 
 ## Basic Usage
 
 ```python
+
+    ---TODO---
     from alohaecc.ecc_testbench import ecc_testbench
     from alohaecc.ecc_algorithm import zeros_ecc, last_packet_ecc
 

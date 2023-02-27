@@ -141,3 +141,8 @@ class PEAQCalculator(OutputAnalyser):
 
     def __str__(self) -> str:
         return __class__.__name__
+
+# class MAECalculator(OutputAnalyser):
+
+#     def run(self, original_track_node: AudioFile, ecc_track_node: AudioFile):
+        

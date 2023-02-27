@@ -15,10 +15,10 @@ class Settings(object):
                        h: float = 0.5,
                        k: float = 0.99999900,
                        ecc_mode: EccMode = EccMode.STEREO,
-                       mid_filter_length: int = 2048,
-                       mid_cross_fade_time: float = 0.01,
-                       side_filter_length: int = 2048,
-                       side_cross_fade_time: float = 0.01,
+                       mid_filter_length: int = 256,
+                       mid_cross_fade_time: float = 0.025,
+                       side_filter_length: int = 32,
+                       side_cross_fade_time: float = 0.025,
                        max_frequency: float = 4800,
                        f_min: int = 80,
                        beta: float = 1,
@@ -26,6 +26,14 @@ class Settings(object):
                        fade_in_length: int = 10,
                        fade_out_length: float = 0.5,
                        extraction_length: int = 2,
+                       model_path: str = '',
+                       fs_dl: int = 16000,
+                       context_length: int = 8,
+                       hop_size: int = 160,
+                       window_length: int = 160*3,
+                       lower_edge_hertz: float = 40.0,
+                       upper_edge_hertz: float = 7600.0,
+                       num_mel_bins: int = 100,
                        peaq_mode: str = "basic",
                        dpi: int = 300,
                        linewidth: float = 0.2,
@@ -82,6 +90,16 @@ class Settings(object):
         self.fade_in_length = fade_in_length
         self.fade_out_length = fade_out_length
         self.extraction_length = extraction_length
+        # DeepLearningECC
+        self.model_path = model_path
+        self.fs_dl = fs_dl
+        self.context_length_s = context_length
+        self.context_length = context_length * self.fs_dl
+        self.hop_size = hop_size
+        self.window_length = window_length
+        self.lower_edge_hertz = lower_edge_hertz
+        self.upper_edge_hertz = upper_edge_hertz
+        self.num_mel_bins = num_mel_bins
 
         # PEAQ
         self.peaq_mode = peaq_mode
