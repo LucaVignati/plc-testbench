@@ -1,10 +1,10 @@
 import numpy as np
 import numpy.random as npr
-from tqdm.notebook import tqdm, trange
+from tqdm.notebook import tqdm
 from ecctestbench.worker import Worker
 from .settings import Settings
 
-class LossModel(object):
+class LossSimulator(Worker):
     '''
     Base class for all the loss models.
     '''
@@ -14,9 +14,30 @@ class LossModel(object):
             seed:   value to be used as a seed for the random number
                     generator.
         '''
-        self.seed = settings.seed
+        self.settings = settings
+        self.packet_size = settings.packet_size
 
-class BinomialLossModel(LossModel):
+    def run(self, num_samples) ->np.ndarray:
+        '''
+        This function computes and returns an array of indexes representing
+        the position of lost samples in the original audio track.
+        '''
+        lost_samples_idx = []
+        for idx in tqdm(range(num_samples), desc=self.__str__()):
+            if (idx % self.packet_size) == 0:
+                lost_packet = self.tick()
+            if lost_packet:
+                lost_samples_idx.append(idx)
+
+        return np.array(lost_samples_idx)
+
+    def tick(self) -> bool:
+        '''
+        Placeholder function to be implemented by the derived classes.
+        '''
+        pass
+
+class BinomialLossSimulator(LossSimulator):
     '''
     This class implements a binomial distribution to be used as a loss model
     in packet/sample loss simulators.
@@ -30,7 +51,7 @@ class BinomialLossModel(LossModel):
         '''
         super().__init__(settings)
         self.per = settings.per
-        npr.seed(self.seed)
+        npr.seed(self.settings.seed)
 
 
     def tick(self) -> bool:
@@ -43,9 +64,9 @@ class BinomialLossModel(LossModel):
         return b_trial_result
 
     def __str__(self) -> str:
-        return __class__.__name__ + '_s' + str(self.seed)
+        return __class__.__name__ + '_s' + str(self.settings.seed)
 
-class GilbertElliotLossModel(LossModel):
+class GilbertElliotLossSimulator(LossSimulator):
     '''
     This class implements the Gilbert-Elliott packet loss model.
 
@@ -65,7 +86,7 @@ class GilbertElliotLossModel(LossModel):
             k: probability of a good packet in a GOOD state
         '''
         super().__init__(settings)
-        npr.seed(self.seed)
+        npr.seed(self.settings.seed)
         p = settings.p
         r = settings.r
         h = settings.h
@@ -100,78 +121,4 @@ class GilbertElliotLossModel(LossModel):
         return False
 
     def __str__(self) -> str:
-        return __class__.__name__ + '_s' + str(self.seed)
-
-class LossSimulator(Worker):
-    '''
-    Base class for Loss Simulators that use a range of statistical methods
-    to generate an array of indexes representing the position in the original
-    array of lost samples/packets.
-    '''
-    def __init__(self, loss_model: LossModel, settings: Settings) -> None:
-        '''
-        Inputs:
-            loss_model: the loss model used to generate the lost packets.
-        Variables:
-            seed:       value to be used as a seed for the random number
-                        generator.
-        '''
-        super().__init__(settings)
-        self.loss_model = loss_model
-
-class PacketLossSimulator(LossSimulator):
-    '''
-    This class implements the Packet Loss Simulator, which uses the given
-    packet size and loss model to generate an array of indexes representing
-    the position of lost samples in the original audio track.
-    '''
-
-    def __init__(self, loss_model: LossModel, settings: Settings) -> None:
-        '''
-        Variables:
-            packet size:    the size of each packet.
-        '''
-        super().__init__(loss_model, settings)
-        self.packet_size = settings.packet_size
-    
-    def run(self, num_samples) ->np.ndarray:
-        '''
-        This function computes and returns an array of indexes representing
-        the position of lost samples in the original audio track.
-        '''
-        lost_samples_idx = []
-        for idx in tqdm(range(num_samples), desc=self.__str__()):
-            if (idx % self.packet_size) == 0:
-                lost_packet = self.loss_model.tick()
-            if lost_packet:
-                lost_samples_idx.append(idx)
-
-        return np.array(lost_samples_idx)
-
-    def __str__(self) -> str:
-        return str(self.loss_model) + '_' + __class__.__name__
-
-class SampleLossSimulator(LossSimulator):
-    '''
-    This class implements the Sample Loss Simulator, which uses the 
-    given loss model to generate an array of indexes representing
-    the position of lost samples in the original audio track.
-    '''
-
-    def __init__(self, loss_model: LossModel, settings: Settings) -> None:
-        super().__init__(loss_model, settings)
-
-    def run(self, num_samples) -> np.ndarray:
-        '''
-        This function computes and returns an array of indexes representing
-        the position of lost samples in the original audio track.
-        '''
-        lost_samples_idx = []
-        for idx in tqdm(range(num_samples), desc=self.__str__()):
-            if self.loss_model.tick():
-                lost_samples_idx.append(idx)
-
-        return np.array(lost_samples_idx)
-
-    def __str__(self) -> str:
-        return str(self.loss_model) + '_' + __class__.__name__
+        return __class__.__name__ + '_s' + str(self.settings.seed)
