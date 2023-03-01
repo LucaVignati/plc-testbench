@@ -1,9 +1,9 @@
 import numpy as np
 import subprocess
 from tqdm.notebook import tqdm, trange
-from ecctestbench.worker import Worker
+from plctestbench.worker import Worker
 from .file_wrapper import MSEData, PEAQData, AudioFile
-from .node import OriginalTrackNode, ECCTrackNode
+from .node import OriginalTrackNode, ReconstructedTrackNode
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -17,14 +17,14 @@ class OutputAnalyser(Worker):
 
 class MSECalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, ecc_track_node: AudioFile):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
         '''
         Calculation of Mean Square Error between the reference and signal
         under test.
 
             Input:
                 ref_signal: original N-length signal array.
-                ecc_signal: N-length test signal array.
+                reconstructed_signal: N-length test signal array.
 
             Output:
                 mse: Mean Square Error calculated between the two signals.
@@ -33,10 +33,10 @@ class MSECalculator(OutputAnalyser):
         N = self.settings.N
         hop = self.settings.hop
         original_track = original_track_node.get_data()
-        ecc_track = ecc_track_node.get_data()
+        reconstructed_track = reconstructed_track_node.get_data()
 
         x_r = normalise(original_track, amp_scale)
-        x_e = normalise(ecc_track, amp_scale)
+        x_e = normalise(reconstructed_track, amp_scale)
 
         num_samples = len(x_r)
 
@@ -58,14 +58,14 @@ class MSECalculator(OutputAnalyser):
 
 class SpectralEnergyCalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, ecc_track_node: AudioFile):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
         '''
         Calculate a difference magnitude signal from the DFT energies of the
         reference and signal under test.
 
             Input:
                 ref_signal: original N-length signal array.
-                ecc_signal: N-length test signal array.
+                reconstructed_signal: N-length test signal array.
 
             Output:
                 se: Difference Magnitude signal array calulated from the
@@ -75,12 +75,12 @@ class SpectralEnergyCalculator(OutputAnalyser):
         N = self.settings.N
         hop = self.settings.hop
         original_track = original_track_node.get_data()
-        ecc_track = ecc_track_node.get_data()
+        reconstructed_track = reconstructed_track_node.get_data()
 
         w = np.hanning(N+1)[:-1]
 
         x_r = normalise(original_track, amp_scale)
-        x_e = normalise(ecc_track, amp_scale)
+        x_e = normalise(reconstructed_track, amp_scale)
 
         num_samples = len(x_r)
 
@@ -100,7 +100,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
 class PEAQCalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, ecc_track_node: AudioFile) -> None:
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> None:
 
         peaq_mode = self.settings.peaq_mode
         if peaq_mode == 'basic':
@@ -114,15 +114,15 @@ class PEAQCalculator(OutputAnalyser):
         path = original_track_node.get_path()
         original_track_norm_file.set_path(path[:-4] + "_norm" + path[-4:])
         original_track_norm_file.set_data(normalise(original_track_node.get_data()))
-        ecc_track_norm_file = AudioFile.from_audio_file(ecc_track_node)
-        path = ecc_track_node.get_path()
-        ecc_track_norm_file.set_path(path[:-4] + "_norm" + path[-4:])
-        ecc_track_norm_file.set_data(normalise(ecc_track_node.get_data()))
+        reconstructed_track_norm_file = AudioFile.from_audio_file(reconstructed_track_node)
+        path = reconstructed_track_node.get_path()
+        reconstructed_track_norm_file.set_path(path[:-4] + "_norm" + path[-4:])
+        reconstructed_track_norm_file.set_data(normalise(reconstructed_track_node.get_data()))
         completed_process = subprocess.run(["peaq", mode_flag, "--gst-plugin-path", "/usr/lib/gstreamer-1.0/",
-                                           original_track_norm_file.get_path(), ecc_track_norm_file.get_path()], capture_output=True, text=True)
+                                           original_track_norm_file.get_path(), reconstructed_track_norm_file.get_path()], capture_output=True, text=True)
         
         original_track_norm_file.delete()
-        ecc_track_norm_file.delete()
+        reconstructed_track_norm_file.delete()
         print("Completed.")
         
         peaq_output = completed_process.stdout
@@ -144,5 +144,5 @@ class PEAQCalculator(OutputAnalyser):
 
 # class MAECalculator(OutputAnalyser):
 
-#     def run(self, original_track_node: AudioFile, ecc_track_node: AudioFile):
+#     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
         

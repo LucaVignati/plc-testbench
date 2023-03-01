@@ -1,4 +1,4 @@
-# ECCTestbench
+# PLCTestbench
 
 ## Basic Usage
 

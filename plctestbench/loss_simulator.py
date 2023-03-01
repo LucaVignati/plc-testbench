@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.random as npr
 from tqdm.notebook import tqdm
-from ecctestbench.worker import Worker
+from plctestbench.worker import Worker
 from .settings import Settings
 
 class LossSimulator(Worker):

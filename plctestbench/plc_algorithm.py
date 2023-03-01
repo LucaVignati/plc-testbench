@@ -3,11 +3,11 @@ import librosa
 from math import ceil
 import numpy as np
 from tqdm.notebook import tqdm
-from ecctestbench.worker import Worker
+from plctestbench.worker import Worker
 from .settings import Settings
 from .low_cost_concealment import LowCostConcealment
 
-class ECCAlgorithm(Worker):
+class PLCAlgorithm(Worker):
 
     def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
         '''
@@ -24,7 +24,7 @@ class ECCAlgorithm(Worker):
         for _ in range(n_channels - 1):
             npad.append((0, 0))
         original_track = np.pad(original_track, tuple(npad), 'constant')
-        ecc_track = np.zeros(np.shape(original_track), np.float32)
+        reconstructed_track = np.zeros(np.shape(original_track), np.float32)
         self.prepare_to_play(n_channels)
         j = 0
 
@@ -34,17 +34,20 @@ class ECCAlgorithm(Worker):
             end_idx = (i+1)*packet_size
             buffer = original_track[start_idx:end_idx]
             is_valid = not i == lost_packets_idx[j]
-            buffer_ecc = self.tick(buffer, is_valid)
-            ecc_track[start_idx:end_idx] = buffer_ecc
+            reconstructed_buffer = self.tick(buffer, is_valid)
+            reconstructed_track[start_idx:end_idx] = reconstructed_buffer
 
-        return ecc_track[0:track_length]
+        return reconstructed_track[0:track_length]
 
     def prepare_to_play(self, n_channels):
+        '''
+        Placeholder function to be implemented by the derived classes.
+        '''
         pass
 
     def tick(self, buffer: np.ndarray, is_valid: bool) -> np.ndarray:
         '''
-        
+        Placeholder function to be implemented by the derived classes.
         '''
         pass
 
@@ -52,13 +55,13 @@ class ECCAlgorithm(Worker):
         return __class__.__name__
 
 
-class ZerosEcc(ECCAlgorithm):
+class ZerosPLC(PLCAlgorithm):
 
     def tick(self, buffer: np.ndarray, is_valid: bool):
         '''
-        Run the ECC algorithm on the input_wave signal and
+        Run the PLC algorithm on the input_wave signal and
         generate an output signal of the same length using the
-        ECC algorithm.
+        PLC algorithm.
 
             Input:
                 input_wave       : length-N numpy array
@@ -69,17 +72,17 @@ class ZerosEcc(ECCAlgorithm):
                 output_wave: length-N error corrected numpy array
         '''
         if is_valid:
-            ecc_buffer = buffer
+            reconstructed_buffer = buffer
         else:
-            ecc_buffer = np.zeros(np.shape(buffer))
+            reconstructed_buffer = np.zeros(np.shape(buffer))
 
-        return ecc_buffer
+        return reconstructed_buffer
 
     def __str__(self) -> str:
         return __class__.__name__
 
 
-class LastPacketEcc(ECCAlgorithm):
+class LastPacketPLC(PLCAlgorithm):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
@@ -87,9 +90,9 @@ class LastPacketEcc(ECCAlgorithm):
 
     def tick(self, buffer: np.ndarray, is_valid: bool):
         '''
-        Run the ECC algorithm on the input_wave signal and
+        Run the PLC algorithm on the input_wave signal and
         generate an output signal of the same length using the
-        ECC algorithm.
+        PLC algorithm.
 
             Input:
                 input_wave       : length-N numpy array
@@ -100,20 +103,20 @@ class LastPacketEcc(ECCAlgorithm):
                 output_wave: length-N error corrected numpy array
         '''
         if is_valid:
-            ecc_buffer = buffer
+            reconstructed_buffer = buffer
         else:
             if self.previous_packet is None:
                 self.previous_packet = np.zeros(np.shape(buffer))
-            ecc_buffer = self.previous_packet
+            reconstructed_buffer = self.previous_packet
         
         self.previous_packet = buffer
             
-        return ecc_buffer
+        return reconstructed_buffer
 
     def __str__(self) -> str:
         return __class__.__name__
 
-class LowCostEcc(ECCAlgorithm):
+class LowCostPLC(PLCAlgorithm):
     
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
@@ -140,7 +143,7 @@ class LowCostEcc(ECCAlgorithm):
         return __class__.__name__
 
 
-class ExternalEcc(ECCAlgorithm):
+class ExternalPLC(PLCAlgorithm):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
@@ -158,16 +161,16 @@ class ExternalEcc(ECCAlgorithm):
         
         '''
         buffer = np.transpose(buffer)
-        ecc_buffer = np.zeros(np.shape(buffer), np.float32)
-        self.bec.process(buffer, ecc_buffer, is_valid)
-        ecc_buffer = np.transpose(ecc_buffer)
-        return ecc_buffer
+        reconstructed_buffer = np.zeros(np.shape(buffer), np.float32)
+        self.bec.process(buffer, reconstructed_buffer, is_valid)
+        reconstructed_buffer = np.transpose(reconstructed_buffer)
+        return reconstructed_buffer
 
     def __str__(self) -> str:
         return __class__.__name__
 
 
-class DeepLearningEcc(ECCAlgorithm):
+class DeepLearningPLC(PLCAlgorithm):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
@@ -191,20 +194,20 @@ class DeepLearningEcc(ECCAlgorithm):
         
         '''
         if is_valid:
-            ecc_buffer = buffer
+            reconstructed_buffer = buffer
         else:
-            ecc_buffer = self.predict_ecc_buffer(buffer)
+            reconstructed_buffer = self.predict_reconstructed_buffer(buffer)
 
         self.context = np.roll(self.context, -self.packet_size, axis=1)
-        self.context[-self.packet_size:, :] = ecc_buffer
-        return ecc_buffer
+        self.context[-self.packet_size:, :] = reconstructed_buffer
+        return reconstructed_buffer
 
     def compute_spectrogram(self, context, fs):
         return librosa.feature.melspectrogram(y=np.pad(context, (0, self.window_length-self.hop_size)), sr=fs, n_fft=self.window_length, hop_length=self.hop_size, win_length=self.window_length,
     center=False, n_mels=self.num_mel_bins, fmin=self.lower_edge_hertz, fmax=self.upper_edge_hertz)
 
-    def predict_ecc_buffer(self, buffer):
-        ecc_buffer = np.zeros(np.shape(buffer.T))
+    def predict_reconstructed_buffer(self, buffer):
+        reconstructed_buffer = np.zeros(np.shape(buffer.T))
         context = librosa.resample(self.context.T, orig_sr=self.sample_rate, target_sr=self.fs_dl).T
         for channel_index in range(np.shape(buffer)[1]):
             spectrogram_2s = self.compute_spectrogram(context[-round(self.context_size/4):, channel_index], self.fs_dl)
@@ -212,13 +215,13 @@ class DeepLearningEcc(ECCAlgorithm):
             #spectrogram_8s = self.compute_spectrogram(librosa.resample(context[:, channel_index], orig_sr=self.fs_dl, target_sr=self.fs_dl/4), self.fs_dl/4)
             spectrograms = np.expand_dims(spectrogram_2s, axis=0)
             last_packet = np.expand_dims(context[-self.packet_size:, channel_index], axis=0)
-            ecc_buffer[channel_index, :] = self.model((spectrograms, last_packet))
-        return ecc_buffer.T
+            reconstructed_buffer[channel_index, :] = self.model((spectrograms, last_packet))
+        return reconstructed_buffer.T
 
     def __str__(self) -> str:
         return __class__.__name__
 
-# class LMSRegressionECC(ECCAlgorithm):
+# class LMSRegressionPLC(PLCAlgorithm):
 
 #     def run(self, input_wave, lost_packet_mask):
 #         '''

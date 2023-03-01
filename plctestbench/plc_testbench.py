@@ -1,19 +1,20 @@
-from ecctestbench.path_manager import PathManager
+from plctestbench.path_manager import PathManager
 from anytree import LevelOrderIter
 from tqdm.notebook import tqdm
 
-from ecctestbench.settings import Settings
+from plctestbench.settings import Settings
 from .data_manager import DataManager
 from .plot_manager import PlotManager
 
 
-class ECCTestbench(object):
+class PLCTestbench(object):
     '''
-    The testbench class for the alohaecc algorithm.
+    This class is the main class of the testbench. It is responsible for
+    initialising the testing components and running the testbench.
     '''
 
     def __init__(self, packet_loss_simulators: list,
-                 ecc_algorithms: list,
+                 plc_algorithms: list,
                  output_analysers: list,
                  settings: Settings,
                  data_manager: DataManager,
@@ -22,7 +23,7 @@ class ECCTestbench(object):
         Initialise the parameters and testing components.
 
             Input:
-                ecc_algorithm: The chosen method of error concealment of the
+                plc_algorithm: The chosen method of error concealment of the
                 input signal after packet loss is applied
                 buffer_size: Default buffer size. Can be overriden if
                 necessary.
@@ -30,12 +31,12 @@ class ECCTestbench(object):
                 chans: Number of Channels
         '''
         self.packet_drop_simulators = list()
-        self.ecc_algorithms = list()
+        self.plc_algorithms = list()
         self.output_analysers = list()
         for packet_loss_simulator in packet_loss_simulators:
             self.packet_drop_simulators.append(packet_loss_simulator(settings))
-        for ecc_algorithm in ecc_algorithms:
-            self.ecc_algorithms.append(ecc_algorithm(settings))
+        for plc_algorithm in plc_algorithms:
+            self.plc_algorithms.append(plc_algorithm(settings))
         for output_analyser in output_analysers:
             self.output_analysers.append(output_analyser(settings))
         self.settings = settings
@@ -43,7 +44,7 @@ class ECCTestbench(object):
         self.path_manager = path_manager
 
         self.data_manager.set_workers(self.packet_drop_simulators,
-                                      self.ecc_algorithms,
+                                      self.plc_algorithms,
                                       self.output_analysers)
 
         for trackpath in self.path_manager.get_original_tracks():
@@ -58,7 +59,7 @@ class ECCTestbench(object):
             for node in LevelOrderIter(data_tree):
                 node.run()
 
-    def plot(self, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, ecc_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
+    def plot(self, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, reconstructed_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
         '''
         Plot all the results
         '''
@@ -74,11 +75,11 @@ class ECCTestbench(object):
             for lost_samples_mask_node in lost_samples_mask_nodes:
                 plot_manager.plot_lost_samples_mask(lost_samples_mask_node, to_file)
 
-        if ecc_tracks:
+        if reconstructed_tracks:
             plot_manager = PlotManager(self.settings)
-            ecc_track_nodes = self.data_manager.get_nodes_by_depth(2)
-            for ecc_track_node in ecc_track_nodes:
-                plot_manager.plot_audio_track(ecc_track_node, to_file)
+            reconstructed_track_nodes = self.data_manager.get_nodes_by_depth(2)
+            for reconstructed_track_node in reconstructed_track_nodes:
+                plot_manager.plot_audio_track(reconstructed_track_node, to_file)
 
         if output_analyses:
             plot_manager = PlotManager(self.settings)

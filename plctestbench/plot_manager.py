@@ -4,8 +4,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ecctestbench.settings import Settings
-from .node import ECCTrackNode, Node, OriginalTrackNode, LostSamplesMaskNode, OutputAnalysisNode
+from plctestbench.settings import Settings
+from .node import ReconstructedTrackNode, Node, OriginalTrackNode, LostSamplesMaskNode, OutputAnalysisNode
 from .output_analyser import MSECalculator, SpectralEnergyCalculator, PEAQCalculator
 
 class PlotManager(object):
@@ -40,8 +40,8 @@ class PlotManager(object):
         fig, ax = plt.subplots(n_channels, 1, sharex=True, figsize=self.figsize, dpi=self.dpi)
         if issubclass(node.__class__, OriginalTrackNode):
             fig.suptitle("Original Track")
-        elif issubclass(node.__class__, ECCTrackNode):
-            fig.suptitle("ECC Track")
+        elif issubclass(node.__class__, ReconstructedTrackNode):
+            fig.suptitle("Reconstructed Track")
 
         for n in range(n_channels):
             if subsampled_audio_data.ndim > 1:
@@ -134,7 +134,7 @@ class PlotManager(object):
 
     def plot_peaq_summary(self, nodes: Tuple[OutputAnalysisNode, ...], to_file=False) -> None:
         '''
-        Plot a graph of the results of PEAQ measurement of all tracks and all ECC algorithms
+        Plot a graph of the results of PEAQ measurement of all tracks and all PLC algorithms
         '''
         track_names = []
         data_series_collection = {}
@@ -150,14 +150,14 @@ class PlotManager(object):
             for node in nodes:
                 if issubclass(node.worker.__class__, PEAQCalculator) and node.get_lost_samples_mask_node().get_worker().__str__() == loss_model:
                     data = node.get_file().get_data().get_odg()
-                    ecc_name = node.get_ecc_track_node().get_worker().__str__()
+                    plc_name = node.get_reconstructed_track_node().get_worker().__str__()
                     track_name = node.root.get_track_name()
                     if track_name not in track_names:
                         track_names.append(track_name)
                         track_names = sorted(track_names, key=str.lower)
-                    if ecc_name not in data_series.keys(): data_series[ecc_name] = []
+                    if plc_name not in data_series.keys(): data_series[plc_name] = []
                     index = track_names.index(track_name)
-                    data_series[ecc_name].insert(index, data)
+                    data_series[plc_name].insert(index, data)
             fig = plt.figure(figsize=self.figsize, dpi=self.dpi)
             name = "PEAQ Summary - " + loss_model
             fig.suptitle(name)
@@ -167,8 +167,8 @@ class PlotManager(object):
             ax.set_xlim(1, len(track_names))
             ax.set_ylim(-4, 0)
             ax.set_xticks(np.arange(0, len(track_names)), track_names)
-            for ecc_name in data_series.keys():
-                ax.plot(np.arange(len(track_names)), data_series[ecc_name], label=ecc_name)
+            for plc_name in data_series.keys():
+                ax.plot(np.arange(len(track_names)), data_series[plc_name], label=plc_name)
             plt.legend(loc="upper left")
             if to_file:
                 fig.savefig(fig_path + "/" + name, bbox_inches='tight')

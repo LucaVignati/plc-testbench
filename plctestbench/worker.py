@@ -1,4 +1,4 @@
-from ecctestbench.settings import Settings
+from plctestbench.settings import Settings
 
 class Worker(object):
     def __init__(self, settings: Settings) -> None:

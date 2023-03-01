@@ -3,16 +3,16 @@ from pybind11.setup_helpers import Pybind11Extension, build_ext
 from pathlib import Path
 
 ext_modules = [
-    Pybind11Extension("ecc_external",
+    Pybind11Extension("plc_external",
                       ["../ecc_python_bindings/ecc_python_bindings/python_bindings.cpp"])
 ]
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-exec(open("ecctestbench/__version__.py").read())
+exec(open("plctestbench/__version__.py").read())
 
-setuptools.setup(name='ecc-testbench',
+setuptools.setup(name='plc-testbench',
                  version=__version__,
                  author='Luca Vignati',
                  author_email='luca.vignati@vignati.net',

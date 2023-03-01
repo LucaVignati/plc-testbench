@@ -1,10 +1,10 @@
 import os
 from os import path
 import glob as gb
-from ecctestbench.node import Node
+from plctestbench.node import Node
 
 folder_suffixes = ['lost_samples_masks',
-                   'ecc_tracks',
+                   'reconstructed_tracks',
                    'output_analyses']
 
 def compute_absolute_folder_path(node: Node) -> str:

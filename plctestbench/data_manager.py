@@ -1,7 +1,7 @@
 import typing
 import anytree.search as search
-from ecctestbench.path_manager import PathManager
-from .node import ECCTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
+from plctestbench.path_manager import PathManager
+from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .file_wrapper import AudioFile, DataFile
 
 def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, idx: int):
@@ -43,12 +43,12 @@ class DataManager(object):
         self.node_classes = [
             OriginalTrackNode,
             LostSamplesMaskNode,
-            ECCTrackNode,
+            ReconstructedTrackNode,
             OutputAnalysisNode
         ]
 
     def set_workers(self, packet_loss_simulators: list(),
-                          ecc_algorithms: list(),
+                          plc_algorithms: list(),
                           output_analysers: list()) -> None:
         '''
         This function stores into the DataManager class the instances of the workers
@@ -59,15 +59,15 @@ class DataManager(object):
                 packet_loss_simulators: this list must contain one or more instances
                                         of a subclass of the PacketLossSimulator
                                         class
-                ecc_algorithms:         this list must contain one or more instances
-                                        of a subclass of the ECCAlgorithm
+                plc_algorithms:         this list must contain one or more instances
+                                        of a subclass of the PLCAlgorithm
                                         class
                 output_analysers:       this list must contain one or more instances
                                         of a subclass of the OutputAnalyser
                                         class
         '''
         self.worker_classes.append(packet_loss_simulators)
-        self.worker_classes.append(ecc_algorithms)
+        self.worker_classes.append(plc_algorithms)
         self.worker_classes.append(output_analysers)
 
     def get_data_trees(self) -> list:

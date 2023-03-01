@@ -69,8 +69,8 @@ class Settings(object):
         self.h = h
         self.k = k
 
-        ## Ecc Algorithm
-        # LowCostECC
+        ## PLC Algorithm
+        # LowCostPLC
         self.max_frequency = max_frequency
         self.f_min = f_min
         self.beta = beta
@@ -78,7 +78,7 @@ class Settings(object):
         self.fade_in_length = fade_in_length
         self.fade_out_length = fade_out_length
         self.extraction_length = extraction_length
-        # DeepLearningECC
+        # DeepLearningPLC
         self.model_path = model_path
         self.fs_dl = fs_dl
         self.context_length_s = context_length
