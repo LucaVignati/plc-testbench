@@ -15,10 +15,10 @@ class PlotManager(object):
         Base class for plotting results
 
         '''
-        self.dpi = settings.dpi
-        self.linewidth = settings.linewidth
-        self.figsize = settings.figsize
-        self.packet_size = settings.packet_size
+        self.dpi = settings.get("dpi")
+        self.linewidth = settings.get("linewidth")
+        self.figsize = settings.get("figsize")
+        self.packet_size = settings.get("packet_size")
         mpl.rcParams['agg.path.chunksize'] = 10000
 
     def plot_audio_track(self, node: Node, to_file=False) -> None:

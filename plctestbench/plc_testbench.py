@@ -2,7 +2,7 @@ from plctestbench.path_manager import PathManager
 from anytree import LevelOrderIter
 from tqdm.notebook import tqdm
 
-from plctestbench.settings import Settings
+from plctestbench.settings import GlobalSettings
 from .data_manager import DataManager
 from .plot_manager import PlotManager
 
@@ -16,7 +16,7 @@ class PLCTestbench(object):
     def __init__(self, packet_loss_simulators: list,
                  plc_algorithms: list,
                  output_analysers: list,
-                 settings: Settings,
+                 global_settings_list: list,
                  data_manager: DataManager,
                  path_manager: PathManager):
         '''
@@ -30,25 +30,16 @@ class PLCTestbench(object):
                 fs: Sample Rate. Argument can be overriden if necessary.
                 chans: Number of Channels
         '''
-        self.packet_drop_simulators = list()
-        self.plc_algorithms = list()
-        self.output_analysers = list()
-        for packet_loss_simulator in packet_loss_simulators:
-            self.packet_drop_simulators.append(packet_loss_simulator(settings))
-        for plc_algorithm in plc_algorithms:
-            self.plc_algorithms.append(plc_algorithm(settings))
-        for output_analyser in output_analysers:
-            self.output_analysers.append(output_analyser(settings))
-        self.settings = settings
+        self.global_settings_list = global_settings_list
         self.data_manager = data_manager
         self.path_manager = path_manager
 
-        self.data_manager.set_workers(self.packet_drop_simulators,
-                                      self.plc_algorithms,
-                                      self.output_analysers)
+        self.data_manager.set_workers(packet_loss_simulators,
+                                      plc_algorithms,
+                                      output_analysers)
 
         for trackpath in self.path_manager.get_original_tracks():
-            self.data_manager.initialize_tree(trackpath)
+            self.data_manager.initialize_tree(trackpath, global_settings_list)
 
     def run(self) -> None:
         '''

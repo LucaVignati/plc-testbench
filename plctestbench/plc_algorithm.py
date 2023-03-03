@@ -13,7 +13,7 @@ class PLCAlgorithm(Worker):
         '''
         
         '''
-        packet_size = self.settings.packet_size
+        packet_size = self.settings.get("packet_size")
         is_valid = True
         lost_packets_idx = lost_samples_idx[::packet_size]/packet_size
         track_length = len(original_track)
@@ -120,15 +120,15 @@ class LowCostPLC(PLCAlgorithm):
     
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        self.lcc = LowCostConcealment(settings.max_frequency,
-                                      settings.f_min,
-                                      settings.beta,
-                                      settings.n_m,
-                                      settings.fade_in_length,
-                                      settings.fade_out_length,
-                                      settings.extraction_length)
-        self.samplerate = settings.fs
-        self.packet_size = settings.packet_size
+        self.lcc = LowCostConcealment(settings.get("max_frequency"),
+                                      settings.get("f_min"),
+                                      settings.get("beta"),
+                                      settings.get("n_m"),
+                                      settings.get("fade_in_length"),
+                                      settings.get("fade_out_length"),
+                                      settings.get("extraction_length"))
+        self.samplerate = settings.get("fs")
+        self.packet_size = settings.get("packet_size")
 
     def prepare_to_play(self, n_channels):
         self.lcc.prepare_to_play(self.samplerate, self.packet_size, n_channels)
@@ -148,13 +148,13 @@ class ExternalPLC(PLCAlgorithm):
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         parameters = BurgEccParameters()
-        parameters.mid_filter_length = self.settings.mid_filter_length
-        parameters.mid_cross_fade_time = self.settings.mid_cross_fade_time
-        parameters.side_filter_length = self.settings.side_filter_length
-        parameters.side_cross_fade_time = self.settings.side_cross_fade_time
+        parameters.mid_filter_length = self.settings.get("mid_filter_length")
+        parameters.mid_cross_fade_time = self.settings.get("mid_cross_fade_time")
+        parameters.side_filter_length = self.settings.get("side_filter_length")
+        parameters.side_cross_fade_time = self.settings.get("side_cross_fade_time")
         self.bec = BurgErrorConcealer(parameters)
-        self.bec.set_mode(self.settings.ecc_mode)
-        self.bec.prepare_to_play(self.settings.fs, self.settings.packet_size)
+        self.bec.set_mode(self.settings.get("ecc_mode"))
+        self.bec.prepare_to_play(self.settings.get("fs"), self.settings.get("packet_size"))
 
     def tick(self, buffer: np.ndarray, is_valid: bool):
         '''
@@ -174,17 +174,17 @@ class DeepLearningPLC(PLCAlgorithm):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        self.model = tf.keras.models.load_model(settings.model_path, compile=False)
-        self.fs_dl = settings.fs_dl
-        self.context_size_s = settings.context_length_s
-        self.context_size = settings.context_length
-        self.hop_size = settings.hop_size
-        self.window_length = settings.window_length
-        self.lower_edge_hertz = settings.lower_edge_hertz
-        self.upper_edge_hertz = settings.upper_edge_hertz
-        self.num_mel_bins = settings.num_mel_bins
-        self.sample_rate = settings.fs
-        self.packet_size = settings.packet_size
+        self.model = tf.keras.models.load_model(settings.get("model_path"), compile=False)
+        self.fs_dl = settings.get("fs_dl")
+        self.context_size_s = settings.get("context_length_s")
+        self.context_size = settings.get("context_length")
+        self.hop_size = settings.get("hop_size")
+        self.window_length = settings.get("window_length")
+        self.lower_edge_hertz = settings.get("lower_edge_hertz")
+        self.upper_edge_hertz = settings.get("upper_edge_hertz")
+        self.num_mel_bins = settings.get("num_mel_bins")
+        self.sample_rate = settings.get("fs")
+        self.packet_size = settings.get("packet_size")
 
     def prepare_to_play(self, n_channels):
         self.context = np.zeros((self.context_size_s*self.sample_rate, n_channels))

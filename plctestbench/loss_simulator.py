@@ -2,9 +2,9 @@ import numpy as np
 import numpy.random as npr
 from tqdm.notebook import tqdm
 from plctestbench.worker import Worker
-from .settings import Settings
+from .settings import Settings, BinomialPLSSettings, GilbertElliotPLSSettings
 
-class LossSimulator(Worker):
+class PacketLossSimulator(Worker):
     '''
     Base class for all the loss models.
     '''
@@ -15,7 +15,7 @@ class LossSimulator(Worker):
                     generator.
         '''
         self.settings = settings
-        self.packet_size = settings.packet_size
+        self.packet_size = settings.get("packet_size")
 
     def run(self, num_samples) ->np.ndarray:
         '''
@@ -36,22 +36,21 @@ class LossSimulator(Worker):
         Placeholder function to be implemented by the derived classes.
         '''
         pass
-
-class BinomialLossSimulator(LossSimulator):
+class BinomialPLS(PacketLossSimulator):
     '''
     This class implements a binomial distribution to be used as a loss model
     in packet/sample loss simulators.
     '''
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: BinomialPLSSettings) -> None:
         '''
         Variables:
             per:    the Packet Error Ratio is the ratio between the lost packets
                     and the total number of packets.
         '''
         super().__init__(settings)
-        self.per = settings.per
-        npr.seed(self.settings.seed)
+        self.per = settings.get("per")
+        npr.seed(self.settings.get("seed"))
 
 
     def tick(self) -> bool:
@@ -64,9 +63,9 @@ class BinomialLossSimulator(LossSimulator):
         return b_trial_result
 
     def __str__(self) -> str:
-        return __class__.__name__ + '_s' + str(self.settings.seed)
+        return __class__.__name__ + '_s' + str(self.settings.get("seed"))
 
-class GilbertElliotLossSimulator(LossSimulator):
+class GilbertElliotPLS(PacketLossSimulator):
     '''
     This class implements the Gilbert-Elliott packet loss model.
 
@@ -77,7 +76,7 @@ class GilbertElliotLossSimulator(LossSimulator):
 
     (MIT licensed)
     '''
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: GilbertElliotPLSSettings) -> None:
         '''
         Variables:
             p: probability to transition from GOOD to BAD
@@ -86,11 +85,11 @@ class GilbertElliotLossSimulator(LossSimulator):
             k: probability of a good packet in a GOOD state
         '''
         super().__init__(settings)
-        npr.seed(self.settings.seed)
-        p = settings.p
-        r = settings.r
-        h = settings.h
-        k = settings.k
+        npr.seed(self.settings.get("seed"))
+        p = settings.get("p")
+        r = settings.get("r")
+        h = settings.get("h")
+        k = settings.get("k")
 
         b = 1.0 - h
         g = 1.0 - k
@@ -121,4 +120,4 @@ class GilbertElliotLossSimulator(LossSimulator):
         return False
 
     def __str__(self) -> str:
-        return __class__.__name__ + '_s' + str(self.settings.seed)
+        return __class__.__name__ + '_s' + str(self.settings.get("seed"))

@@ -7,9 +7,12 @@ class BaseNode(object):
     pass
 
 class Node(BaseNode, NodeMixin):
-    def __init__(self, file: FileWrapper=None, worker=None, absolute_path: str=None, parent=None) -> None:
+    def __init__(self, file: FileWrapper=None, worker=None, settings=None, absolute_path: str=None, parent=None) -> None:
         self.file = file
-        self.worker = worker
+        if parent!=None:
+            settings.inherit_from(parent.settings)
+        self.settings = settings
+        self.worker = worker(settings) if worker!=None else None
         self.parent = parent
         self.folder_name = None
         self.absolute_path = absolute_path
@@ -51,8 +54,8 @@ class Node(BaseNode, NodeMixin):
                "absolute path: " + str(self.absolute_path)
 
 class OriginalTrackNode(Node):
-    def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
-        super().__init__(file=file, worker=worker, absolute_path=absolute_path, parent=parent)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
+        super().__init__(file, worker, settings, absolute_path, parent)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
@@ -65,8 +68,8 @@ class OriginalTrackNode(Node):
         pass
     
 class LostSamplesMaskNode(Node):
-    def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
-        super().__init__(file=file, worker=worker, absolute_path=absolute_path, parent=parent)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
+        super().__init__(file, worker, settings, absolute_path, parent)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
@@ -81,8 +84,8 @@ class LostSamplesMaskNode(Node):
         self.file = DataFile(lost_samples_idx, self.absolute_path + '.npy')
 
 class ReconstructedTrackNode(Node):
-    def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
-        super().__init__(file=file, worker=worker, absolute_path=absolute_path, parent=parent)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
+        super().__init__(file, worker, settings, absolute_path, parent)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
@@ -103,8 +106,8 @@ class ReconstructedTrackNode(Node):
         self.file.set_data(reconstructed_track)
 
 class OutputAnalysisNode(Node):
-    def __init__(self, file=None, worker=None, absolute_path=None, parent=None) -> None:
-        super().__init__(file=file, worker=worker, absolute_path=absolute_path, parent=parent)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
+        super().__init__(file, worker, settings, absolute_path, parent)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()

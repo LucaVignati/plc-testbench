@@ -29,9 +29,9 @@ class MSECalculator(OutputAnalyser):
             Output:
                 mse: Mean Square Error calculated between the two signals.
         '''
-        amp_scale = self.settings.amp_scale
-        N = self.settings.N
-        hop = self.settings.hop
+        amp_scale = self.settings.get("amp_scale")
+        N = self.settings.get("N")
+        hop = self.settings.get("hop")
         original_track = original_track_node.get_data()
         reconstructed_track = reconstructed_track_node.get_data()
 
@@ -71,9 +71,9 @@ class SpectralEnergyCalculator(OutputAnalyser):
                 se: Difference Magnitude signal array calulated from the
                 Short-Time spectral differences between the reference and test.
         '''
-        amp_scale = self.settings.amp_scale
-        N = self.settings.N
-        hop = self.settings.hop
+        amp_scale = self.settings.get("amp_scale")
+        N = self.settings.get("N")
+        hop = self.settings.get("hop")
         original_track = original_track_node.get_data()
         reconstructed_track = reconstructed_track_node.get_data()
 
@@ -102,7 +102,7 @@ class PEAQCalculator(OutputAnalyser):
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> None:
 
-        peaq_mode = self.settings.peaq_mode
+        peaq_mode = self.settings.get("peaq_mode")
         if peaq_mode == 'basic':
             mode_flag = '--basic'
         elif peaq_mode == 'advanced':

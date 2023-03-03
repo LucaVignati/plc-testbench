@@ -21,8 +21,8 @@ def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, 
         return
     worker_class = worker_classes[idx]
     node_class = node_classes[idx + 1]
-    for worker in worker_class:
-        child = node_class(worker=worker, parent=parent)
+    for worker, settings in worker_class:
+        child = node_class(worker=worker, settings=settings, parent=parent)
         PathManager.set_node_paths(child)
         recursive_tree_init(child, worker_classes, node_classes, idx + 1)
 
@@ -77,7 +77,7 @@ class DataManager(object):
         '''
         return self.root_nodes
 
-    def initialize_tree(self, track_path: str) -> None:
+    def initialize_tree(self, track_path: str, global_settings_list: list) -> None:
         '''
         This function instanciates each node of the tree where the workers and their results
         will be stored. This function works in a recursive fashion.
@@ -87,10 +87,11 @@ class DataManager(object):
                             track.
         '''
         track = AudioFile.from_path(track_path)
-        root_node = OriginalTrackNode(file=track)
-        PathManager.set_root_node_path(root_node)
-        self.root_nodes.append(root_node)
-        recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
+        for global_settings in global_settings_list:
+            root_node = OriginalTrackNode(file=track, settings=global_settings)
+            PathManager.set_root_node_path(root_node)
+            self.root_nodes.append(root_node)
+            recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
 
     def get_nodes_by_depth(self, depth: int) -> typing.Tuple:
         '''
