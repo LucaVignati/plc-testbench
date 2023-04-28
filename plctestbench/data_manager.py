@@ -3,6 +3,7 @@ import anytree.search as search
 from plctestbench.path_manager import PathManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .file_wrapper import AudioFile, DataFile
+from .worker import OriginalTrackWorker
 
 def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, idx: int):
     '''
@@ -88,7 +89,7 @@ class DataManager(object):
         '''
         track = AudioFile.from_path(track_path)
         for global_settings in global_settings_list:
-            root_node = OriginalTrackNode(file=track, settings=global_settings)
+            root_node = OriginalTrackNode(file=track, worker=OriginalTrackWorker, settings=global_settings)
             PathManager.set_root_node_path(root_node)
             self.root_nodes.append(root_node)
             recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)

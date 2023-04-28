@@ -17,7 +17,7 @@ class OutputAnalyser(Worker):
 
 class MSECalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, uuid: str):
         '''
         Calculation of Mean Square Error between the reference and signal
         under test.
@@ -29,6 +29,8 @@ class MSECalculator(OutputAnalyser):
             Output:
                 mse: Mean Square Error calculated between the two signals.
         '''
+        self.uuid = uuid
+        
         amp_scale = self.settings.get("amp_scale")
         N = self.settings.get("N")
         hop = self.settings.get("hop")
@@ -48,7 +50,7 @@ class MSECalculator(OutputAnalyser):
                         range(0, num_samples-N, hop)])
         x_ew = np.array([np.multiply(w, x_e[i:i+N]) for i in
                         range(0, num_samples-N, hop)])
-        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in tqdm(range(len(x_rw)), desc=self.__str__())]
+        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in self.settings.__progress_monitor__(self)(range(len(x_rw)), desc=self.__str__(), mininterval=0.1, maxinterval=0.1)]
 
         return MSEData(mse)
 
@@ -58,7 +60,7 @@ class MSECalculator(OutputAnalyser):
 
 class SpectralEnergyCalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, uuid: str):
         '''
         Calculate a difference magnitude signal from the DFT energies of the
         reference and signal under test.
@@ -97,11 +99,11 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
     def __str__(self) -> str:
         return __class__.__name__
-
+''' PEAQ (Perceptual Evaluation of Audio Quality) '''
 class PEAQCalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> None:
-
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, uuid: str) -> None:
+        '''
         peaq_mode = self.settings.get("peaq_mode")
         if peaq_mode == 'basic':
             mode_flag = '--basic'
@@ -138,6 +140,8 @@ class PEAQCalculator(OutputAnalyser):
         else:
             print("The peaq program exited with the following errors:")
             print(completed_process.stdout)
+        '''
+        pass
 
     def __str__(self) -> str:
         return __class__.__name__

@@ -2,3 +2,6 @@ numpy
 soundfile
 anytree
 pybind11
+tqdm
+matplotlib
+tensorflow

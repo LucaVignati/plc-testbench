@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+from tqdm.auto import tqdm as std_tqdm
+
+@dataclass
 class Settings(object):
 
     def __init__(self) -> None:
@@ -12,6 +16,8 @@ class Settings(object):
         '''
         for key, value in parent_settings.get_all().items():
             self.settings[key] = value
+        
+        self.__progress_monitor__ = parent_settings.__progress_monitor__
 
     def get(self, key):
         '''
@@ -38,7 +44,8 @@ class GlobalSettings(Settings):
                        chans: int = 1,
                        packet_size: int = 32,
                        N: int = 1024,
-                       amp_scale: float = 1.0,):
+                       amp_scale: float = 1.0,
+                       progress_monitor = lambda plc_testbench : std_tqdm):
         '''
         This class containes the global settings.
 
@@ -58,6 +65,8 @@ class GlobalSettings(Settings):
         self.settings["N"] = N
         self.settings["hop"] = N//2
         self.settings["amp_scale"] = amp_scale
+        
+        self.__progress_monitor__ = progress_monitor
 
 class BinomialPLSSettings(Settings):
 
@@ -98,7 +107,7 @@ class GilbertElliotPLSSettings(Settings):
         self.settings["h"] = h
         self.settings["k"] = k
 
-class ZeroPLCSettings(Settings):
+class ZerosPLCSettings(Settings):
 
     def __init__(self):
         '''
@@ -202,7 +211,8 @@ class PlotsSettings(Settings):
 
     def __init__(self, dpi: int = 300,
                        linewidth: float = 0.2,
-                       figsize: int = (12, 6)):
+                       figsize: int = (12, 6),
+                       agg_path_chunksize: int = 10000):
         '''
         This class containes the settings for the Plots classes.
 
@@ -213,3 +223,4 @@ class PlotsSettings(Settings):
         self.settings["dpi"] = dpi
         self.settings["linewidth"] = linewidth
         self.settings["figsize"] = figsize
+        self.settings["agg.path.chunksize"] = agg_path_chunksize

@@ -1,5 +1,5 @@
 from ast import operator
-from curses import window
+#from curses import window
 from email.mime import audio
 from math import ceil, floor
 import numpy as np

@@ -4,13 +4,13 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-from plctestbench.settings import Settings
+from plctestbench.settings import PlotsSettings
 from .node import ReconstructedTrackNode, Node, OriginalTrackNode, LostSamplesMaskNode, OutputAnalysisNode
 from .output_analyser import MSECalculator, SpectralEnergyCalculator, PEAQCalculator
 
 class PlotManager(object):
 
-    def __init__(self, settings: Settings, rows:int = None, cols:int = None) -> None:
+    def __init__(self, settings: PlotsSettings, rows:int = None, cols:int = None) -> None:
         '''
         Base class for plotting results
 

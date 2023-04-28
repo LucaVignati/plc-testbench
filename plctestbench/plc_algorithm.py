@@ -9,7 +9,7 @@ from .low_cost_concealment import LowCostConcealment
 
 class PLCAlgorithm(Worker):
 
-    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
+    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray, uuid: str):
         '''
         
         '''
@@ -28,7 +28,8 @@ class PLCAlgorithm(Worker):
         self.prepare_to_play(n_channels)
         j = 0
 
-        for i in tqdm(range(n_packets), desc=self.__str__()):
+        self.uuid = uuid
+        for i in self.settings.__progress_monitor__(self)(range(n_packets), desc=self.__str__(), mininterval=0.1, maxinterval=0.1):
             if i > lost_packets_idx[j] and j < len(lost_packets_idx) - 1: j += 1
             start_idx = i*packet_size
             end_idx = (i+1)*packet_size

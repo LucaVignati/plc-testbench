@@ -113,12 +113,12 @@ class DataFile(FileWrapper):
             self.save()
 
     def save(self) -> None:
-        file = open(self.path, 'wb')
-        pickle.dump(self.data, file)
+        with open(self.path, 'wb') as file:
+            pickle.dump(self.data, file)
 
     def load(self) -> None:
-        file = open(self.path, 'rb')
-        self.data = pickle.load(file)
+        with open(self.path, 'rb') as file:
+            self.data = pickle.load(file)
 
 class OutputAnalysis():
     pass
@@ -129,6 +129,18 @@ class MSEData(OutputAnalysis):
 
     def get_mse(self) -> ndarray:
         return self._mse
+    
+    def __len__(self):
+        return len(self._mse)
+    
+    def __iter__(self):
+        return self._mse.__iter__()
+    
+    def __next__(self):
+        return self._mse.__next__()
+    
+    def __getitem__(self, key):
+        return self._mse.__getitem__(key)
 
 class PEAQData(OutputAnalysis):
     def __init__(self, peaq_odg: float, peaq_di: float) -> None:

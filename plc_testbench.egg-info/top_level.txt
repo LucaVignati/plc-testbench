@@ -1,3 +1,2 @@
-ecc_external
-ecctestbench
+plctestbench
 test

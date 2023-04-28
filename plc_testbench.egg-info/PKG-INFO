@@ -1,34 +1,34 @@
 Metadata-Version: 2.1
-Name: ecc-testbench
-Version: 0.0.1
-Summary: A prototypical Error Concealment                               bench test for Aloha
+Name: plc-testbench
+Version: 0.4.0
+Summary: Framework comparison and benchmarking                               of error concealment algorithms
 Home-page: https://bitbucket.org/mindswteam/ecc-testbench
-Author: Christopher Walker
-Author-email: chris@elk.audio
+Author: Luca Vignati
+Author-email: luca.vignati@vignati.net
 License: UNKNOWN
+Description: # PLCTestbench
+        
+        ## Basic Usage
+        
+        ```python
+        
+            ---TODO---
+            from alohaecc.ecc_testbench import ecc_testbench
+            from alohaecc.ecc_algorithm import zeros_ecc, last_packet_ecc
+        
+            ecc_algorithm = last_packet_ecc
+            testbench = ecc_testbench(ecc_algorithm)
+        
+            wave_file = '/folder/input_file.wav'
+            mean_square_error = testbench.run(wave_file)
+        
+        ```
+        ## Unit Testing
+        
+        ```bash
+            python -m unittest test.test_ecc_testbench.test_ecc_testbench -v
+        ```
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
-
-# AlohaECC
-
-## Basic Usage
-
-```python
-    from alohaecc.ecc_testbench import ecc_testbench
-    from alohaecc.ecc_algorithm import zeros_ecc, last_packet_ecc
-
-    ecc_algorithm = last_packet_ecc
-    testbench = ecc_testbench(ecc_algorithm)
-
-    wave_file = '/folder/input_file.wav'
-    mean_square_error = testbench.run(wave_file)
-
-```
-## Unit Testing
-
-```bash
-    python -m unittest test.test_ecc_testbench.test_ecc_testbench -v
-```
-

@@ -2,10 +2,11 @@ from plctestbench.path_manager import PathManager
 from anytree import LevelOrderIter
 from tqdm.notebook import tqdm
 
-from plctestbench.settings import GlobalSettings
+from plctestbench.settings import GlobalSettings, PlotsSettings
 from .data_manager import DataManager
 from .plot_manager import PlotManager
 
+import uuid as Uuid
 
 class PLCTestbench(object):
     '''
@@ -18,7 +19,8 @@ class PLCTestbench(object):
                  output_analysers: list,
                  global_settings_list: list,
                  data_manager: DataManager,
-                 path_manager: PathManager):
+                 path_manager: PathManager,
+                 uuid: str = None):
         '''
         Initialise the parameters and testing components.
 
@@ -37,6 +39,8 @@ class PLCTestbench(object):
         self.data_manager.set_workers(packet_loss_simulators,
                                       plc_algorithms,
                                       output_analysers)
+        
+        self.uuid = uuid if uuid != None else str(Uuid.uuid4())
 
         for trackpath in self.path_manager.get_original_tracks():
             self.data_manager.initialize_tree(trackpath, global_settings_list)
@@ -46,7 +50,8 @@ class PLCTestbench(object):
         Run the testbench.
         '''
         data_trees = self.data_manager.get_data_trees()
-        for data_tree in tqdm(data_trees, desc="Audio Tracks"):
+        progress = self.global_settings_list[0].__progress_monitor__(self)(data_trees, desc="Audio Tracks", mininterval=0.1, maxinterval=0.1)
+        for data_tree in progress:
             for node in LevelOrderIter(data_tree):
                 node.run()
 
@@ -54,32 +59,34 @@ class PLCTestbench(object):
         '''
         Plot all the results
         '''
+        plot_settings = PlotsSettings()
+        plot_settings.inherit_from(self.global_settings_list[0])
         if original_tracks:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             original_track_nodes = self.data_manager.get_nodes_by_depth(0)
             for original_audio_node in original_track_nodes:
                 plot_manager.plot_audio_track(original_audio_node, to_file)
         
         if lost_samples_masks:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             lost_samples_mask_nodes = self.data_manager.get_nodes_by_depth(1)
             for lost_samples_mask_node in lost_samples_mask_nodes:
                 plot_manager.plot_lost_samples_mask(lost_samples_mask_node, to_file)
 
         if reconstructed_tracks:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             reconstructed_track_nodes = self.data_manager.get_nodes_by_depth(2)
             for reconstructed_track_node in reconstructed_track_nodes:
                 plot_manager.plot_audio_track(reconstructed_track_node, to_file)
 
         if output_analyses:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             output_analysis_nodes = self.data_manager.get_nodes_by_depth(3)
             for output_analysis_node in output_analysis_nodes:
                 plot_manager.plot_output_analysis(output_analysis_node, to_file)
 
         if group:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             leaf_nodes = self.data_manager.get_leaf_nodes()
             for leaf_node in leaf_nodes:
                 ancestors = leaf_node.ancestors
@@ -89,7 +96,7 @@ class PLCTestbench(object):
                 plot_manager.plot_output_analysis(leaf_node, to_file)
 
         if peaq_summary:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             output_analysis_nodes = self.data_manager.get_nodes_by_depth(3)
             plot_manager.plot_peaq_summary(output_analysis_nodes, to_file)
 

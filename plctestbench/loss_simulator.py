@@ -17,13 +17,14 @@ class PacketLossSimulator(Worker):
         self.settings = settings
         self.packet_size = settings.get("packet_size")
 
-    def run(self, num_samples) ->np.ndarray:
+    def run(self, num_samples, uuid: str) ->np.ndarray:
         '''
         This function computes and returns an array of indexes representing
         the position of lost samples in the original audio track.
         '''
+        self.uuid = uuid
         lost_samples_idx = []
-        for idx in tqdm(range(num_samples), desc=self.__str__()):
+        for idx in self.settings.__progress_monitor__(self)(range(num_samples), desc=self.__str__(), mininterval=0.1, maxinterval=0.1):
             if (idx % self.packet_size) == 0:
                 lost_packet = self.tick()
             if lost_packet:

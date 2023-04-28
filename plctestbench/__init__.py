@@ -1,1 +1,1 @@
-name = "ecc-testbench"
+name = "plc-testbench"
