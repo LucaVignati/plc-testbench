@@ -155,7 +155,7 @@ class LowCostPLCSettings(Settings):
 
 class DeepLearningPLCSettings(Settings):
 
-    def __init__(self, model_path: str,
+    def __init__(self, model_path: str = "",
                        fs_dl: int = 16000,
                        context_length: float = 0.5,
                        hop_size: float = 0.25,
@@ -180,7 +180,7 @@ class DeepLearningPLCSettings(Settings):
         self.settings["model_path"] = model_path
         self.settings["fs_dl"] = fs_dl
         self.settings["context_length_s"] = context_length
-        self.settings["context_length"] = context_length * self.fs_dl
+        self.settings["context_length"] = context_length * self.settings["fs_dl"]
         self.settings["hop_size"] = hop_size
         self.settings["window_length"] = window_length
         self.settings["lower_edge_hertz"] = lower_edge_hertz
