@@ -90,7 +90,7 @@ class DataManager(object):
                             track.
         '''
         track = AudioFile.from_path(track_path)
-        root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings())
+        root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings(), database=self.database_manager.get_database())
         PathManager.set_root_node_path(root_node)
         self.root_nodes.append(root_node)
         recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)

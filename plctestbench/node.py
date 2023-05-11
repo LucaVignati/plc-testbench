@@ -1,18 +1,21 @@
 from anytree import NodeMixin
 import numpy as np
+
 from plctestbench.worker import Worker
 from plctestbench.file_wrapper import FileWrapper, AudioFile, DataFile
+from plctestbench.settings import Settings
 
 class BaseNode(object):
     pass
 
 class Node(BaseNode, NodeMixin):
-    def __init__(self, file: FileWrapper=None, worker=None, settings=None, absolute_path: str=None, parent=None) -> None:
+    def __init__(self, file: FileWrapper=None, worker: Worker=None, settings: Settings=None, absolute_path: str=None, parent=None, database=None) -> None:
         self.file = file
         if parent!=None:
             settings.inherit_from(parent.settings)
         self.settings = settings
         self.worker = worker(settings) if worker!=None else None
+        self.database = database
         self.parent = parent
         self.folder_name = None
         self.absolute_path = absolute_path
@@ -40,12 +43,30 @@ class Node(BaseNode, NodeMixin):
 
     def get_original_track(self) -> AudioFile:
         return self.root.get_file()
+    
+    def _get_database(self):
+        self.root.database[type(self).__name__]
+
+    def node_is_new(self) -> bool:
+        self._get_database.find_one({"_id": hash(self.settings)}) == None
+
+    def add_to_database(self):
+        entry = self.settings.get_all()
+        entry["filename"] = self.file.get_path()
+        entry["_id"] = hash(self.settings)
+        entry["parent"] = hash(self.parent.settings) if self.parent!=None else None
+        self._get_database.insert_one(entry)
 
     def get_lost_samples_mask(self) -> DataFile:
         return self.ancestors[1].get_file()
 
     def get_reconstructed_track(self) -> AudioFile:
         return self.ancestors[2].get_file()
+    
+    def run(self):
+        if self.node_is_new():
+            self._run()
+            self.add_to_database()
     
     def __str__(self) -> str:
         return "file: " + str(self.file) + '\n' +\
@@ -54,8 +75,8 @@ class Node(BaseNode, NodeMixin):
                "absolute path: " + str(self.absolute_path)
 
 class OriginalTrackNode(Node):
-    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
-        super().__init__(file, worker, settings, absolute_path, parent)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None) -> None:
+        super().__init__(file, worker, settings, absolute_path, parent, database)
         settings.set_fs(self.file.get_samplerate())
 
     def get_data(self) -> np.ndarray:
@@ -64,9 +85,8 @@ class OriginalTrackNode(Node):
     def get_track_name(self) -> str:
         return self.absolute_path.rpartition("/")[2].split(".")[0]
 
-    def run(self) -> None:
+    def _run(self) -> None:
         print(self.get_track_name())
-        pass
     
 class LostSamplesMaskNode(Node):
     def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
@@ -78,7 +98,7 @@ class LostSamplesMaskNode(Node):
     def get_original_track_node(self) -> OriginalTrackNode:
         return self.root
     
-    def run(self) -> None:
+    def _run(self) -> None:
         original_track_data = self.get_original_track().get_data()
         num_samples = len(original_track_data)
         lost_samples_idx = self.get_worker().run(num_samples)
@@ -97,7 +117,7 @@ class ReconstructedTrackNode(Node):
     def get_lost_samples_mask_node(self) -> LostSamplesMaskNode:
         return self.ancestors[1]
     
-    def run(self) -> None:
+    def _run(self) -> None:
         original_track = self.get_original_track()
         original_track_data = original_track.get_data()
         lost_samples_idx = self.get_lost_samples_mask().get_data()
@@ -122,7 +142,7 @@ class OutputAnalysisNode(Node):
     def get_reconstructed_track_node(self) -> ReconstructedTrackNode:
         return self.ancestors[2]
 
-    def run(self) -> None:
+    def _run(self) -> None:
         original_track = self.get_original_track()
         reconstructed_track = self.get_reconstructed_track()
         output_analysis = self.get_worker().run(original_track, reconstructed_track)

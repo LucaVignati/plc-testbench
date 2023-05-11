@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 class Settings(object):
 
     def __init__(self) -> None:
@@ -30,6 +33,16 @@ class Settings(object):
         This method is used to retrieve all the settings.
         '''
         return self.settings
+    
+    def __hash__(self):
+        '''
+        This method returns the hash of the settings. It is invariant with respect
+        to the order of the keys.
+        '''
+        dhash = hashlib.md5()
+        encoded = json.dumps(self.settings, sort_keys=True).encode()
+        dhash.update(encoded)
+        return int(dhash.hexdigest(), 16)
         
 
 class OriginalAudioSettings(Settings):
