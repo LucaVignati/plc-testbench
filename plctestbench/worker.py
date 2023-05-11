@@ -1,7 +1,7 @@
-from plctestbench.settings import GlobalSettings
+from plctestbench.settings import Settings
 
 class Worker(object):
-    def __init__(self, settings: GlobalSettings) -> None:
+    def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
     def run(self) -> None:

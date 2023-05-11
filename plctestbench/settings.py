@@ -32,36 +32,25 @@ class Settings(object):
         return self.settings
         
 
-class GlobalSettings(Settings):
+class OriginalAudioSettings(Settings):
 
-    def __init__(self, fs: int = 44100,
-                       chans: int = 1,
-                       packet_size: int = 32,
-                       N: int = 1024,
-                       amp_scale: float = 1.0,):
+    def __init__(self):
         '''
         This class containes the global settings.
 
             Input:
-                fs:             sampling frequency of the tracks.
-                chans:          number of channels of the tracks.
-                packet_size:    size of audio packets in samples.
-                N:              size of the windows used for computing
-                                the output measurements.
-                amp_scale:      scale factor for the amplitude of the
-                                tracks.
+                fs:             sampling frequency of the track.
         '''
         super().__init__()
+    
+    def set_fs(self, fs):
         self.settings["fs"] = fs
-        self.settings["chans"] = chans
-        self.settings["packet_size"] = packet_size
-        self.settings["N"] = N
-        self.settings["hop"] = N//2
-        self.settings["amp_scale"] = amp_scale
+        
 
 class BinomialPLSSettings(Settings):
 
     def __init__(self, seed: int = 1,
+                       packet_size: int = 32,
                        per: float = 0.0001):
         '''
         This class containes the settings for the BinomialPLS class.
@@ -72,11 +61,13 @@ class BinomialPLSSettings(Settings):
         '''
         super().__init__()
         self.settings["seed"] = seed
+        self.settings["packet_size"] = packet_size
         self.settings["per"] = per
 
 class GilbertElliotPLSSettings(Settings):
 
     def __init__(self, seed: int = 1,
+                       packet_size: int = 32,
                        p: float = 0.001,
                        r: float = 0.05,
                        h: float = 0.5,
@@ -93,6 +84,7 @@ class GilbertElliotPLSSettings(Settings):
         '''
         super().__init__()
         self.settings["seed"] = seed
+        self.settings["packet_size"] = packet_size
         self.settings["p"] = p
         self.settings["r"] = r
         self.settings["h"] = h
@@ -180,11 +172,22 @@ class DeepLearningPLCSettings(Settings):
 
 class MSECalculatorSettings(Settings):
 
-    def __init__(self):
+    def __init__(self,
+                 N: int = 1024,
+                 amp_scale: float = 1.0,):
         '''
         This class containes the settings for the MSECalculator class.
+
+        Input:
+                N:              size of the windows used for computing
+                                the output measurements.
+                amp_scale:      scale factor for the amplitude of the
+                                tracks.
         '''
         super().__init__()
+        self.settings["N"] = N
+        self.settings["hop"] = N//2
+        self.settings["amp_scale"] = amp_scale
 
 class PEAQCalculatorSettings(Settings):
 

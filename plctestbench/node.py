@@ -56,6 +56,7 @@ class Node(BaseNode, NodeMixin):
 class OriginalTrackNode(Node):
     def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
         super().__init__(file, worker, settings, absolute_path, parent)
+        settings.set_fs(self.file.get_samplerate())
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()

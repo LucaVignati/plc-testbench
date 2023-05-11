@@ -2,7 +2,6 @@ from plctestbench.path_manager import PathManager
 from anytree import LevelOrderIter
 from tqdm.notebook import tqdm
 
-from plctestbench.settings import GlobalSettings
 from .data_manager import DataManager
 from .plot_manager import PlotManager
 
@@ -16,7 +15,6 @@ class PLCTestbench(object):
     def __init__(self, packet_loss_simulators: list,
                  plc_algorithms: list,
                  output_analysers: list,
-                 global_settings_list: list,
                  data_manager: DataManager,
                  path_manager: PathManager):
         '''
@@ -30,7 +28,6 @@ class PLCTestbench(object):
                 fs: Sample Rate. Argument can be overriden if necessary.
                 chans: Number of Channels
         '''
-        self.global_settings_list = global_settings_list
         self.data_manager = data_manager
         self.path_manager = path_manager
 
@@ -39,7 +36,7 @@ class PLCTestbench(object):
                                       output_analysers)
 
         for trackpath in self.path_manager.get_original_tracks():
-            self.data_manager.initialize_tree(trackpath, global_settings_list)
+            self.data_manager.initialize_tree(trackpath)
 
     def run(self) -> None:
         '''

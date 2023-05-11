@@ -1,8 +1,10 @@
 import typing
 import anytree.search as search
 from plctestbench.path_manager import PathManager
+from .database_manager import DatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .file_wrapper import AudioFile, DataFile
+from .settings import OriginalAudioSettings
 
 def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, idx: int):
     '''
@@ -28,7 +30,7 @@ def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, 
 
 class DataManager(object):
 
-    def __init__(self, path_manager: PathManager) -> None:
+    def __init__(self, path_manager: PathManager, database_manager: DatabaseManager) -> None:
         '''
         This class manages the data flow in and out of the data tree.
 
@@ -38,6 +40,7 @@ class DataManager(object):
                                 folder paths.
         '''
         self.path_manager = path_manager
+        self.database_manager = database_manager
         self.root_nodes = list()
         self.worker_classes = list()
         self.node_classes = [
@@ -77,7 +80,7 @@ class DataManager(object):
         '''
         return self.root_nodes
 
-    def initialize_tree(self, track_path: str, global_settings_list: list) -> None:
+    def initialize_tree(self, track_path: str) -> None:
         '''
         This function instanciates each node of the tree where the workers and their results
         will be stored. This function works in a recursive fashion.
@@ -87,11 +90,10 @@ class DataManager(object):
                             track.
         '''
         track = AudioFile.from_path(track_path)
-        for global_settings in global_settings_list:
-            root_node = OriginalTrackNode(file=track, settings=global_settings)
-            PathManager.set_root_node_path(root_node)
-            self.root_nodes.append(root_node)
-            recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
+        root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings())
+        PathManager.set_root_node_path(root_node)
+        self.root_nodes.append(root_node)
+        recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
 
     def get_nodes_by_depth(self, depth: int) -> typing.Tuple:
         '''
