@@ -89,8 +89,9 @@ class DataManager(object):
                 track_path: a string representing the absolute path to an original audio
                             track.
         '''
-        track = AudioFile.from_path(track_path)
-        root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings(), database=self.database_manager.get_database())
+        track = AudioFile(path=track_path)
+        track.load()
+        root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings(track_path), database=self.database_manager.get_database())
         PathManager.set_root_node_path(root_node)
         self.root_nodes.append(root_node)
         recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)

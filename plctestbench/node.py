@@ -11,10 +11,10 @@ class BaseNode(object):
 class Node(BaseNode, NodeMixin):
     def __init__(self, file: FileWrapper=None, worker: Worker=None, settings: Settings=None, absolute_path: str=None, parent=None, database=None) -> None:
         self.file = file
+        self.settings = Settings(settings.get_all())
         if parent!=None:
-            settings.inherit_from(parent.settings)
-        self.settings = settings
-        self.worker = worker(settings) if worker!=None else None
+            self.settings.inherit_from(parent.settings)
+        self.worker = worker(self.settings) if worker!=None else None
         self.database = database
         self.parent = parent
         self.folder_name = None
@@ -44,29 +44,32 @@ class Node(BaseNode, NodeMixin):
     def get_original_track(self) -> AudioFile:
         return self.root.get_file()
     
-    def _get_database(self):
-        self.root.database[type(self).__name__]
-
-    def node_is_new(self) -> bool:
-        self._get_database.find_one({"_id": hash(self.settings)}) == None
-
-    def add_to_database(self):
-        entry = self.settings.get_all()
-        entry["filename"] = self.file.get_path()
-        entry["_id"] = hash(self.settings)
-        entry["parent"] = hash(self.parent.settings) if self.parent!=None else None
-        self._get_database.insert_one(entry)
-
     def get_lost_samples_mask(self) -> DataFile:
         return self.ancestors[1].get_file()
 
     def get_reconstructed_track(self) -> AudioFile:
         return self.ancestors[2].get_file()
+
+    def get_database(self):
+        return self.root.database[type(self).__name__]
+
+    def _load_from_database(self) -> dict:
+        return self.get_database().find_one({"_id": hash(self.settings)})
+
+    def _save_to_database(self):
+        entry = self.settings.get_all().copy()
+        entry["filename"] = self.file.get_path()
+        entry["_id"] = hash(self.settings)
+        entry["parent"] = hash(self.parent.settings) if self.parent!=None else None
+        self.get_database().insert_one(entry)
     
     def run(self):
-        if self.node_is_new():
+        current_node = self._load_from_database()
+        if current_node == None:
             self._run()
-            self.add_to_database()
+            self._save_to_database()
+        else:
+            self.file = FileWrapper.from_path(current_node["filename"])
     
     def __str__(self) -> str:
         return "file: " + str(self.file) + '\n' +\
@@ -77,7 +80,7 @@ class Node(BaseNode, NodeMixin):
 class OriginalTrackNode(Node):
     def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None) -> None:
         super().__init__(file, worker, settings, absolute_path, parent, database)
-        settings.set_fs(self.file.get_samplerate())
+        self.settings.add('fs', self.file.get_samplerate())
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()

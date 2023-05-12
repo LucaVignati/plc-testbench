@@ -11,6 +11,15 @@ class FileWrapper(object):
         self.path = path
         self.persist = persist
 
+    @classmethod
+    def from_path(cls, path: str) -> FileWrapper:
+        if path.split('.')[-1] == 'wav':
+            file = AudioFile(path=path)
+        else:
+            file = DataFile(path=path)
+        file.load()
+        return file
+
     def get_data(self) -> ndarray:
         return self.data
 
@@ -32,13 +41,13 @@ class FileWrapper(object):
         os.remove(self.path)
 
 class AudioFile(FileWrapper):
-    def __init__(self, data: ndarray,
-                       path: str,
-                       samplerate: float,
-                       channels: int,
-                       subtype: str,
-                       endian: str,
-                       format: str,
+    def __init__(self, data: ndarray=None,
+                       path: str=None,
+                       samplerate: float=None,
+                       channels: int=None,
+                       subtype: str=None,
+                       endian: str=None,
+                       format: str=None,
                        persist=True) -> None:
         super().__init__(data, path, persist)
 
@@ -57,18 +66,6 @@ class AudioFile(FileWrapper):
                            audio_file.subtype,
                            audio_file.endian,
                            audio_file.format)
-        return new_instance
-
-    @classmethod
-    def from_path(cls, path: str) -> AudioFile:
-        with sf.SoundFile(path, 'r') as file:
-            new_instance = cls(file.read(),
-                               path,
-                               file.samplerate,
-                               file.channels,
-                               file.subtype,
-                               file.endian,
-                               file.format)
         return new_instance
 
     def get_samplerate(self) -> float:
@@ -107,18 +104,18 @@ class AudioFile(FileWrapper):
         return self.data
 
 class DataFile(FileWrapper):
-    def __init__(self, data, path: str, persist=True) -> None:
+    def __init__(self, data=None, path: str=None, persist=True) -> None:
         super().__init__(data, path, persist)
         if self.persist:
             self.save()
 
     def save(self) -> None:
-        file = open(self.path, 'wb')
-        pickle.dump(self.data, file)
+        with open(self.path, 'wb') as file:
+            pickle.dump(self.data, file)
 
     def load(self) -> None:
-        file = open(self.path, 'rb')
-        self.data = pickle.load(file)
+        with open(self.path, 'rb') as file:
+            self.data = pickle.load(file)
 
 class OutputAnalysis():
     pass

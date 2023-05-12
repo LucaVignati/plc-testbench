@@ -3,8 +3,8 @@ import json
 
 class Settings(object):
 
-    def __init__(self) -> None:
-        self.settings = {}
+    def __init__(self, settings: dict=None) -> None:
+        self.settings = {} if settings==None else settings.copy()
 
     def inherit_from(self, parent_settings):
         '''
@@ -15,6 +15,19 @@ class Settings(object):
         '''
         for key, value in parent_settings.get_all().items():
             self.settings[key] = value
+    
+    def add(self, key, value):
+        '''
+        This method is used to add a setting.
+
+            Input:
+                key:    the key of the setting to be added.
+                value:  the value of the setting to be added.
+        '''
+        if key in self.settings:
+            raise KeyError("The key {} is already present in the settings.".format(key))
+        
+        self.settings[key] = value
 
     def get(self, key):
         '''
@@ -33,7 +46,7 @@ class Settings(object):
         This method is used to retrieve all the settings.
         '''
         return self.settings
-    
+
     def __hash__(self):
         '''
         This method returns the hash of the settings. It is invariant with respect
@@ -43,11 +56,19 @@ class Settings(object):
         encoded = json.dumps(self.settings, sort_keys=True).encode()
         dhash.update(encoded)
         return int(dhash.hexdigest(), 16)
-        
+
+    def __str__(self):
+        '''
+        This method returns a string representation of the settings.
+        '''
+        string = ""
+        for key, value in self.settings.items():
+            string += "{}: {}\n".format(key, value)
+        return string
 
 class OriginalAudioSettings(Settings):
 
-    def __init__(self):
+    def __init__(self, path):
         '''
         This class containes the global settings.
 
@@ -55,6 +76,7 @@ class OriginalAudioSettings(Settings):
                 fs:             sampling frequency of the track.
         '''
         super().__init__()
+        self.settings["path"] = path
     
     def set_fs(self, fs):
         self.settings["fs"] = fs
@@ -118,6 +140,7 @@ class LastPacketPLCSettings(Settings):
         This class containes the settings for the LastPacketPLC class.
         '''
         super().__init__()
+        self.placeholder = 'Needed to avoid empty class'
 
 class LowCostPLCSettings(Settings):
 
