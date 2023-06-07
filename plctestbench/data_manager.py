@@ -49,6 +49,10 @@ class DataManager(object):
             ReconstructedTrackNode,
             OutputAnalysisNode
         ]
+        if not self.database_manager.initialized:
+            for node_class, i in zip(self.node_classes, range(len(self.node_classes))):
+                if i < len(self.node_classes) - 1:
+                    self.database_manager.get_database()[node_class.__name__].insert_one({"child_collection": self.node_classes[i + 1].__name__})
 
     def set_workers(self, packet_loss_simulators: list(),
                           plc_algorithms: list(),

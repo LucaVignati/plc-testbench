@@ -1,4 +1,3 @@
-from matplotlib.pyplot import axis
 import librosa
 from math import ceil
 import numpy as np

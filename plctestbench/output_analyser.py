@@ -1,9 +1,8 @@
 import numpy as np
 import subprocess
-from tqdm.notebook import tqdm, trange
+from tqdm.notebook import tqdm
 from plctestbench.worker import Worker
 from .file_wrapper import MSEData, PEAQData, AudioFile
-from .node import OriginalTrackNode, ReconstructedTrackNode
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))

@@ -1,4 +1,4 @@
-from math import ceil, floor
+from math import floor
 from typing import Tuple
 import matplotlib as mpl
 import matplotlib.pyplot as plt

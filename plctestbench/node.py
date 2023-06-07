@@ -62,6 +62,9 @@ class Node(BaseNode, NodeMixin):
         entry["_id"] = hash(self.settings)
         entry["parent"] = hash(self.parent.settings) if self.parent!=None else None
         self.get_database().insert_one(entry)
+
+    def get_id(self) -> str:
+        return hash(self.settings)
     
     def run(self):
         current_node = self._load_from_database()
