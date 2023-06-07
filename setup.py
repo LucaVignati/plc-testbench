@@ -1,6 +1,5 @@
 import setuptools
 from pybind11.setup_helpers import Pybind11Extension, build_ext
-from pathlib import Path
 
 ext_modules = [
     Pybind11Extension("plc_external",
@@ -30,6 +29,7 @@ setuptools.setup(name='plc-testbench',
                     'soundfile',
                     'anytree',
                     'pybind11',
+                    'pymongo'
                     'tqdm',
                     'matplotlib',
                     'tensorflow',
