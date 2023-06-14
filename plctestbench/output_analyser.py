@@ -109,14 +109,14 @@ class PEAQCalculator(OutputAnalyser):
         else:
             mode_flag = ''
         print("GSTREAMER PEAQ running...", end=" ")
-        original_track_norm_file = AudioFile.from_audio_file(original_track_node)
         path = original_track_node.get_path()
-        original_track_norm_file.set_path(path[:-4] + "_norm" + path[-4:])
-        original_track_norm_file.set_data(normalise(original_track_node.get_data()))
-        reconstructed_track_norm_file = AudioFile.from_audio_file(reconstructed_track_node)
+        new_path = path[:-4] + "_norm" + path[-4:]
+        new_data = normalise(original_track_node.get_data())
+        original_track_norm_file = AudioFile.from_audio_file(original_track_node, new_data=new_data, new_path=new_path)
         path = reconstructed_track_node.get_path()
-        reconstructed_track_norm_file.set_path(path[:-4] + "_norm" + path[-4:])
-        reconstructed_track_norm_file.set_data(normalise(reconstructed_track_node.get_data()))
+        new_path = path[:-4] + "_norm" + path[-4:]
+        new_data = normalise(reconstructed_track_node.get_data())
+        reconstructed_track_norm_file = AudioFile.from_audio_file(reconstructed_track_node, new_data=new_data, new_path=new_path)
         completed_process = subprocess.run(["peaq", mode_flag, "--gst-plugin-path", "/usr/lib/gstreamer-1.0/",
                                            original_track_norm_file.get_path(), reconstructed_track_norm_file.get_path()], capture_output=True, text=True)
         

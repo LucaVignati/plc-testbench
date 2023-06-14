@@ -1,5 +1,4 @@
 import hashlib
-import json
 
 class Settings(object):
 
@@ -52,23 +51,22 @@ class Settings(object):
         This method returns the hash of the settings. It is invariant with respect
         to the order of the keys.
         '''
-        dhash = hashlib.md5()
-        encoded = json.dumps(self.settings, sort_keys=True).encode()
-        dhash.update(encoded)
-        return int(dhash.hexdigest(), 16)
+        return int.from_bytes(hashlib.md5(str(self).encode('utf-8')).digest()[:8], 'little')
 
     def __str__(self):
         '''
         This method returns a string representation of the settings.
         '''
         string = ""
-        for key, value in self.settings.items():
-            string += "{}: {}\n".format(key, value)
+        keys = list(self.settings.keys())
+        keys.sort()
+        for key in keys:
+            string += "{}: {}\n".format(key, self.settings[key])
         return string
 
 class OriginalAudioSettings(Settings):
 
-    def __init__(self, path):
+    def __init__(self, file_hash):
         '''
         This class containes the global settings.
 
@@ -76,7 +74,7 @@ class OriginalAudioSettings(Settings):
                 fs:             sampling frequency of the track.
         '''
         super().__init__()
-        self.settings["path"] = path
+        self.settings["file_hash"] = file_hash
     
     def set_fs(self, fs):
         self.settings["fs"] = fs

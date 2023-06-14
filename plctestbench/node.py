@@ -49,30 +49,41 @@ class Node(BaseNode, NodeMixin):
 
     def get_reconstructed_track(self) -> AudioFile:
         return self.ancestors[2].get_file()
-
+    
     def get_database(self):
-        return self.root.database[type(self).__name__]
+        return self.root.database
 
     def _load_from_database(self) -> dict:
-        return self.get_database().find_one({"_id": hash(self.settings)})
+        return self.get_database().find_node(hash(self.settings), type(self).__name__)
 
     def _save_to_database(self):
         entry = self.settings.get_all().copy()
         entry["filename"] = self.file.get_path()
         entry["_id"] = hash(self.settings)
+        entry["file_hash"] = hash(self.file)
         entry["parent"] = hash(self.parent.settings) if self.parent!=None else None
-        self.get_database().insert_one(entry)
+        self.get_database().add_node(entry, type(self).__name__)
 
     def get_id(self) -> str:
         return hash(self.settings)
     
     def run(self):
+
+        # Load from database if possible, otherwise run the worker
         current_node = self._load_from_database()
         if current_node == None:
             self._run()
             self._save_to_database()
         else:
             self.file = FileWrapper.from_path(current_node["filename"])
+
+            # Manage consistency between database and filesystem
+            if hash(self.file) != current_node["file_hash"]:
+                if self.parent == None:
+                    raise Exception("The following audio file has changed: " + self.file.get_path())
+                else:
+                    self.get_database().delete_node(hash(self.settings))
+                    self.run()
     
     def __str__(self) -> str:
         return "file: " + str(self.file) + '\n' +\
@@ -128,9 +139,7 @@ class ReconstructedTrackNode(Node):
         original_track_data = original_track.get_data()
         lost_samples_idx = self.get_lost_samples_mask().get_data()
         reconstructed_track = self.get_worker().run(original_track_data, lost_samples_idx)
-        self.file = AudioFile.from_audio_file(original_track)
-        self.file.set_path(self.absolute_path + '.wav')
-        self.file.set_data(reconstructed_track)
+        self.file = AudioFile.from_audio_file(original_track, reconstructed_track, self.absolute_path + '.wav')
 
 class OutputAnalysisNode(Node):
     def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:

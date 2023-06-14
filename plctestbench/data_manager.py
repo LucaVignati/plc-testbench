@@ -52,7 +52,7 @@ class DataManager(object):
         if not self.database_manager.initialized:
             for node_class, i in zip(self.node_classes, range(len(self.node_classes))):
                 if i < len(self.node_classes) - 1:
-                    self.database_manager.get_database()[node_class.__name__].insert_one({"child_collection": self.node_classes[i + 1].__name__})
+                    self.database_manager.add_node({"child_collection": self.node_classes[i + 1].__name__}, node_class.__name__)
 
     def set_workers(self, packet_loss_simulators: list(),
                           plc_algorithms: list(),
@@ -94,8 +94,7 @@ class DataManager(object):
                             track.
         '''
         track = AudioFile(path=track_path)
-        track.load()
-        root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings(track_path), database=self.database_manager.get_database())
+        root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings(hash(track)), database=self.database_manager)
         PathManager.set_root_node_path(root_node)
         self.root_nodes.append(root_node)
         recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
