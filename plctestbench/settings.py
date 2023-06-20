@@ -123,7 +123,7 @@ class GilbertElliotPLSSettings(Settings):
         self.settings["h"] = h
         self.settings["k"] = k
 
-class ZeroPLCSettings(Settings):
+class ZerosPLCSettings(Settings):
 
     def __init__(self):
         '''
@@ -197,7 +197,7 @@ class DeepLearningPLCSettings(Settings):
         self.settings["model_path"] = model_path
         self.settings["fs_dl"] = fs_dl
         self.settings["context_length_s"] = context_length
-        self.settings["context_length"] = context_length * self.fs_dl
+        self.settings["context_length"] = context_length * self.settings["fs_dl"]
         self.settings["hop_size"] = hop_size
         self.settings["window_length"] = window_length
         self.settings["lower_edge_hertz"] = lower_edge_hertz

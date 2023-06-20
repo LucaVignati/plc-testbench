@@ -1,10 +1,14 @@
 import typing
 import anytree.search as search
+from anytree import LevelOrderIter
 from plctestbench.path_manager import PathManager
 from .database_manager import DatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .file_wrapper import AudioFile, DataFile
-from .settings import OriginalAudioSettings
+from .settings import Settings, OriginalAudioSettings
+from .utils import *
+import hashlib
+from importlib import import_module
 
 def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, idx: int):
     '''
@@ -98,6 +102,39 @@ class DataManager(object):
         PathManager.set_root_node_path(root_node)
         self.root_nodes.append(root_node)
         recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
+
+    def save_run_to_database(self):
+        '''
+        This function is used to save the run as a document in the database.
+        '''
+        run = {}
+        run_id = ''
+        run['workers'] = []
+        for worker_class in self.worker_classes:
+            workers = []
+            for worker, settings in worker_class:
+                workers.append({"name": worker.__name__, "settings": settings.get_all()})
+                run_id += str(hash(settings))
+            run['workers'].append(workers)
+
+        run['nodes'] = []
+        for root_node in self.root_nodes:
+            run['nodes'].extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
+        
+        run['_id'] = int.from_bytes(hashlib.md5(str(run_id).encode('utf-8')).digest()[:8], 'little')
+        self.database_manager.save_run(run)
+
+    def load_workers_from_database(self, run_id: int):
+        '''
+        This function is used to load the workers from the database.
+        '''
+        run = self.database_manager.get_run(run_id)
+        self.worker_classes = []
+        for worker_type in run['workers']:
+            workers = []
+            for worker in worker_type:
+                workers.append((get_class(worker['name']), Settings(worker['settings'])))
+            self.worker_classes.append(workers)
 
     def get_nodes_by_depth(self, depth: int) -> typing.Tuple:
         '''

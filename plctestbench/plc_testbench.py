@@ -16,7 +16,8 @@ class PLCTestbench(object):
                  plc_algorithms: list,
                  output_analysers: list,
                  data_manager: DataManager,
-                 path_manager: PathManager):
+                 path_manager: PathManager,
+                 run_id: int = None):
         '''
         Initialise the parameters and testing components.
 
@@ -31,12 +32,17 @@ class PLCTestbench(object):
         self.data_manager = data_manager
         self.path_manager = path_manager
 
-        self.data_manager.set_workers(packet_loss_simulators,
+        if run_id:
+            self.data_manager.load_workers_from_database(run_id)
+        else:
+            self.data_manager.set_workers(packet_loss_simulators,
                                       plc_algorithms,
                                       output_analysers)
 
         for trackpath in self.path_manager.get_original_tracks():
             self.data_manager.initialize_tree(trackpath)
+    
+        self.data_manager.save_run_to_database()
 
     def run(self) -> None:
         '''

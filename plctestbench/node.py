@@ -50,11 +50,11 @@ class Node(BaseNode, NodeMixin):
     def get_reconstructed_track(self) -> AudioFile:
         return self.ancestors[2].get_file()
     
-    def get_database(self):
+    def _get_database(self):
         return self.root.database
 
     def _load_from_database(self) -> dict:
-        return self.get_database().find_node(hash(self.settings), type(self).__name__)
+        return self._get_database().find_node(hash(self.settings), type(self).__name__)
 
     def _save_to_database(self):
         entry = self.settings.get_all().copy()
@@ -62,7 +62,7 @@ class Node(BaseNode, NodeMixin):
         entry["_id"] = hash(self.settings)
         entry["file_hash"] = hash(self.file)
         entry["parent"] = hash(self.parent.settings) if self.parent!=None else None
-        self.get_database().add_node(entry, type(self).__name__)
+        self._get_database().add_node(entry, type(self).__name__)
 
     def get_id(self) -> str:
         return hash(self.settings)
@@ -82,7 +82,7 @@ class Node(BaseNode, NodeMixin):
                 if self.parent == None:
                     raise Exception("The following audio file has changed: " + self.file.get_path())
                 else:
-                    self.get_database().delete_node(hash(self.settings))
+                    self._get_database().delete_node(hash(self.settings))
                     self.run()
     
     def __str__(self) -> str:

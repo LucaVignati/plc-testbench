@@ -1,3 +1,4 @@
+import pymongo
 from pymongo import MongoClient
 from plctestbench.node import Node
 from pathlib import Path
@@ -5,8 +6,14 @@ from pathlib import Path
 class DatabaseManager(object):
 
     def __init__(self, ip: str='localhost', port: str='27017') -> None:
-        CONNECTION_STRING = "mongodb://" + ip + ":" + port
-        self.client = MongoClient(CONNECTION_STRING)
+        self.user = 'myUserAdmin'
+        self.password = 'admin'
+        self.client = MongoClient(
+            host=ip,
+            port=int(port),
+            username=self.user,
+            password=self.password,
+        )
         self.initialized = self.check_if_already_initialized()
 
     def get_database(self):
@@ -41,6 +48,23 @@ class DatabaseManager(object):
                 self.delete_node(child["_id"])
         Path(database[collection_name].find_one({"_id": node_id})['filename']).unlink()
         database[collection_name].delete_one({"_id": node_id})
+
+    def save_run(self, run):
+        '''
+        This function is used to save a run to the database.
+        '''
+        database = self.get_database()
+        try:
+            database["runs"].insert_one(run)
+        except pymongo.errors.DuplicateKeyError:
+            print("Run already exists in the database.")
+
+    def get_run(self, run_id):
+        '''
+        This function is used to retrieve a run from the database.
+        '''
+        database = self.get_database()
+        return database["runs"].find_one({"_id": run_id})
 
     def get_child_collection(self, collection_name):
         '''
