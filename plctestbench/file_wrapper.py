@@ -4,8 +4,8 @@ import os
 import soundfile as sf
 import numpy as np
 import pickle
-import hashlib
 from pathlib import Path
+from plctestbench.utils import compute_hash
 
 DEFAULT_DTYPE = 'float32'
 
@@ -13,7 +13,7 @@ def calculate_hash(*args) -> int:
     data = ''
     for arg in args:
         data = data + str(arg)
-    return int.from_bytes(hashlib.md5(data.encode('utf-8')).digest()[:8], 'little')
+    return compute_hash(data)
 
 class FileWrapper(object):
     def __init__(self, data=None, path: str=None, persist=True) -> None:

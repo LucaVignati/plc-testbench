@@ -7,8 +7,6 @@ from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTra
 from .file_wrapper import AudioFile, DataFile
 from .settings import Settings, OriginalAudioSettings
 from .utils import *
-import hashlib
-from importlib import import_module
 
 def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, idx: int):
     '''
@@ -121,7 +119,7 @@ class DataManager(object):
         for root_node in self.root_nodes:
             run['nodes'].extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
         
-        run['_id'] = int.from_bytes(hashlib.md5(str(run_id).encode('utf-8')).digest()[:8], 'little')
+        run['_id'] = compute_hash(run_id)
         self.database_manager.save_run(run)
 
     def load_workers_from_database(self, run_id: int):

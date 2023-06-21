@@ -1,4 +1,4 @@
-import hashlib
+from plctestbench.utils import compute_hash
 
 class Settings(object):
 
@@ -51,7 +51,7 @@ class Settings(object):
         This method returns the hash of the settings. It is invariant with respect
         to the order of the keys.
         '''
-        return int.from_bytes(hashlib.md5(str(self).encode('utf-8')).digest()[:8], 'little')
+        return compute_hash(self)
 
     def __str__(self):
         '''

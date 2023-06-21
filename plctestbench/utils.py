@@ -1,6 +1,5 @@
 import sys
-
-# TODO: move all hashing functions to this file
+import hashlib
 
 def get_class(class_name):
     '''
@@ -10,3 +9,9 @@ def get_class(class_name):
         if module.startswith('plctestbench'):
             if hasattr(sys.modules[module], class_name):
                 return getattr(sys.modules[module], class_name)
+            
+def compute_hash(obj):
+    '''
+    This function returns the hash of the given object.
+    '''
+    return int.from_bytes(hashlib.md5(str(obj).encode('utf-8')).digest()[:8], 'little')

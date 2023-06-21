@@ -14,7 +14,7 @@ class DatabaseManager(object):
             username=self.user,
             password=self.password,
         )
-        self.initialized = self.check_if_already_initialized()
+        self._check_if_already_initialized()
 
     def get_database(self):
         return self.client["plc_database"]
@@ -83,13 +83,13 @@ class DatabaseManager(object):
                 return collection
         return None
 
-    def check_if_already_initialized(self):
+    def _check_if_already_initialized(self) -> None:
         '''
         This function is used to check if the database has already been
         initialized.
         '''
-        initialized = False
+        self.initialized = False
         for collection in self.get_database().list_collection_names():
             if self.get_database()[collection].find_one({}, {"child_collection": 1}) != None:
-                initialized |= True
-        return initialized
+                self.initialized |= True
+        self.initialized
