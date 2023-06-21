@@ -81,9 +81,9 @@ class DatabaseManager(object):
         '''
         self.email = escape_email(user["email"])
         database = self.client["global"]
-        try:
+        if database["users"].find_one({"email": user["email"]}) == None:
             database["users"].insert_one(user)
-        except pymongo.errors.DuplicateKeyError:
+        else:
             print("User already exists in the database.")
 
     def delete_user(self, email):
