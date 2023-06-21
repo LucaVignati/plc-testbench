@@ -32,7 +32,7 @@ def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, 
 
 class DataManager(object):
 
-    def __init__(self, path_manager: PathManager, database_manager: DatabaseManager) -> None:
+    def __init__(self, path_manager: PathManager, database_manager: DatabaseManager, user: dict) -> None:
         '''
         This class manages the data flow in and out of the data tree.
 
@@ -43,6 +43,9 @@ class DataManager(object):
         '''
         self.path_manager = path_manager
         self.database_manager = database_manager
+        self.user = user
+        if self.user != None:
+            self.database_manager.save_user(self.user)
         self.root_nodes = list()
         self.worker_classes = list()
         self.node_classes = [
@@ -118,7 +121,7 @@ class DataManager(object):
         run['nodes'] = []
         for root_node in self.root_nodes:
             run['nodes'].extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
-        
+
         run['_id'] = compute_hash(run_id)
         self.database_manager.save_run(run)
 

@@ -2,12 +2,14 @@ import pymongo
 from pymongo import MongoClient
 from plctestbench.node import Node
 from pathlib import Path
+from plctestbench.utils import escape_email
   
 class DatabaseManager(object):
 
-    def __init__(self, ip: str='localhost', port: str='27017') -> None:
-        self.user = 'myUserAdmin'
-        self.password = 'admin'
+    def __init__(self, ip: str='localhost', port: str='27017', user: str = 'myUserAdmin', password: str = 'admin') -> None:
+        self.user = user
+        self.password = password
+        self.email = 'default'
         self.client = MongoClient(
             host=ip,
             port=int(port),
@@ -17,7 +19,7 @@ class DatabaseManager(object):
         self._check_if_already_initialized()
 
     def get_database(self):
-        return self.client["plc_database"]
+        return self.client[self.email]
     
     def add_node(self, entry, collection_name):
         '''
@@ -65,6 +67,32 @@ class DatabaseManager(object):
         '''
         database = self.get_database()
         return database["runs"].find_one({"_id": run_id})
+    
+    def delete_run(self, run_id):
+        '''
+        This function is used to delete a run from the database.
+        '''
+        database = self.get_database()
+        database["runs"].delete_one({"_id": run_id})
+    
+    def save_user(self, user):
+        '''
+        This function is used to save a user to the database.
+        '''
+        self.email = escape_email(user["email"])
+        database = self.client["global"]
+        try:
+            database["users"].insert_one(user)
+        except pymongo.errors.DuplicateKeyError:
+            print("User already exists in the database.")
+
+    def delete_user(self, email):
+        '''
+        This function is used to delete a user from the database.
+        '''
+        self.client.drop_database(escape_email(email))
+        database = self.client["global"]
+        database["users"].delete_one({'email': email})
 
     def get_child_collection(self, collection_name):
         '''
