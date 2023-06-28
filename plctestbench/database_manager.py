@@ -6,17 +6,18 @@ from plctestbench.utils import escape_email
   
 class DatabaseManager(object):
 
-    def __init__(self, ip: str='localhost', port: str='27017', user: str = 'myUserAdmin', password: str = 'admin') -> None:
-        self.user = user
+    def __init__(self, ip: str, port: int, username: str, password: str, user: dict) -> None:
+        self.username = username
         self.password = password
-        self.email = 'default'
+        self.email = escape_email(user['email'])
         self.client = MongoClient(
             host=ip,
-            port=int(port),
-            username=self.user,
+            port=port,
+            username=self.username,
             password=self.password,
         )
         self._check_if_already_initialized()
+        self.save_user(user)
 
     def get_database(self):
         return self.client[self.email]
@@ -79,7 +80,6 @@ class DatabaseManager(object):
         '''
         This function is used to save a user to the database.
         '''
-        self.email = escape_email(user["email"])
         database = self.client["global"]
         if database["users"].find_one({"email": user["email"]}) == None:
             database["users"].insert_one(user)

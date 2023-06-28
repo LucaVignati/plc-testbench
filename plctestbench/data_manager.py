@@ -32,7 +32,7 @@ def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, 
 
 class DataManager(object):
 
-    def __init__(self, path_manager: PathManager, database_manager: DatabaseManager, user: dict) -> None:
+    def __init__(self, testbench_settings: dict, user: dict) -> None:
         '''
         This class manages the data flow in and out of the data tree.
 
@@ -41,13 +41,17 @@ class DataManager(object):
                                 and used to set and retrieved file and
                                 folder paths.
         '''
-        self.path_manager = path_manager
-        self.database_manager = database_manager
-        self.user = user
-        if self.user != None:
-            self.database_manager.save_user(self.user)
-        self.root_nodes = list()
-        self.worker_classes = list()
+        self.user = user if user is not None else {'email': 'default', 'first_name': 'Mario', 'last_name': 'Rossi', 'locale': 'it_IT', 'image_link': ''}
+        root_folder = testbench_settings['root_folder'] if 'root_folder' in testbench_settings.keys() else '../original_tracks'
+        db_ip = testbench_settings['db_ip'] if 'db_ip' in testbench_settings.keys() else 'localhost'
+        db_port = int(testbench_settings['db_port']) if 'db_port' in testbench_settings.keys() else 27017
+        db_username = testbench_settings['db_username'] if 'db_username' in testbench_settings.keys() else 'admin'
+        db_password = testbench_settings['db_password'] if 'db_password' in testbench_settings.keys() else 'admin'
+        
+        self.path_manager = PathManager(root_folder)
+        self.database_manager = DatabaseManager(ip=db_ip, port=db_port, username=db_username, password=db_password, user=self.user)
+        self.root_nodes = []
+        self.worker_classes = []
         self.node_classes = [
             OriginalTrackNode,
             LostSamplesMaskNode,
@@ -55,9 +59,8 @@ class DataManager(object):
             OutputAnalysisNode
         ]
         if not self.database_manager.initialized:
-            for node_class, i in zip(self.node_classes, range(len(self.node_classes))):
-                if i < len(self.node_classes) - 1:
-                    self.database_manager.add_node({"child_collection": self.node_classes[i + 1].__name__}, node_class.__name__)
+            for node_class, i in zip(self.node_classes, range(len(self.node_classes) - 1)):
+                self.database_manager.add_node({"child_collection": self.node_classes[i + 1].__name__}, node_class.__name__)
 
     def set_workers(self, packet_loss_simulators: list(),
                           plc_algorithms: list(),
@@ -89,7 +92,7 @@ class DataManager(object):
         '''
         return self.root_nodes
 
-    def initialize_tree(self, track_path: str) -> None:
+    def initialize_tree(self) -> None:
         '''
         This function instanciates each node of the tree where the workers and their results
         will be stored. This function works in a recursive fashion.
@@ -98,13 +101,15 @@ class DataManager(object):
                 track_path: a string representing the absolute path to an original audio
                             track.
         '''
-        track = AudioFile(path=track_path)
-        root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings(hash(track)), database=self.database_manager)
-        PathManager.set_root_node_path(root_node)
-        self.root_nodes.append(root_node)
-        recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
+        for track_path in self.path_manager.get_original_tracks():
+            track = AudioFile(path=track_path)
+            root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings(hash(track)), database=self.database_manager)
+            PathManager.set_root_node_path(root_node)
+            self.root_nodes.append(root_node)
+            recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
+        self._save_run_to_database()
 
-    def save_run_to_database(self):
+    def _save_run_to_database(self):
         '''
         This function is used to save the run as a document in the database.
         '''

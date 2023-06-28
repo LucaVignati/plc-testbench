@@ -15,8 +15,8 @@ class PLCTestbench(object):
     def __init__(self, packet_loss_simulators: list,
                  plc_algorithms: list,
                  output_analysers: list,
-                 data_manager: DataManager,
-                 path_manager: PathManager,
+                 testbench_settings: dict,
+                 user: dict,
                  run_id: int = None):
         '''
         Initialise the parameters and testing components.
@@ -29,8 +29,7 @@ class PLCTestbench(object):
                 fs: Sample Rate. Argument can be overriden if necessary.
                 chans: Number of Channels
         '''
-        self.data_manager = data_manager
-        self.path_manager = path_manager
+        self.data_manager = DataManager(testbench_settings, user)
 
         if run_id:
             self.data_manager.load_workers_from_database(run_id)
@@ -39,10 +38,7 @@ class PLCTestbench(object):
                                       plc_algorithms,
                                       output_analysers)
 
-        for trackpath in self.path_manager.get_original_tracks():
-            self.data_manager.initialize_tree(trackpath)
-    
-        self.data_manager.save_run_to_database()
+        self.data_manager.initialize_tree()
 
     def run(self) -> None:
         '''

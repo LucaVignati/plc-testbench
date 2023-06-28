@@ -57,7 +57,7 @@ class Settings(object):
         '''
         This method returns a string representation of the settings.
         '''
-        string = ""
+        string = "{}: {}\n".format("name", self.__class__.__name__ )
         keys = list(self.settings.keys())
         keys.sort()
         for key in keys:
@@ -138,7 +138,6 @@ class LastPacketPLCSettings(Settings):
         This class containes the settings for the LastPacketPLC class.
         '''
         super().__init__()
-        self.placeholder = 'Needed to avoid empty class'
 
 class LowCostPLCSettings(Settings):
 
@@ -225,7 +224,7 @@ class MSECalculatorSettings(Settings):
 
 class PEAQCalculatorSettings(Settings):
 
-    def __init__(self, peaq_mode: str = 'nb'):
+    def __init__(self, peaq_mode: str = 'basic'):
         '''
         This class containes the settings for the PEAQCalculator class.
 

@@ -59,9 +59,9 @@ class Node(BaseNode, NodeMixin):
     def _save_to_database(self):
         entry = self.settings.get_all().copy()
         entry["filename"] = self.file.get_path()
-        entry["_id"] = hash(self.settings)
+        entry["_id"] = self.get_id()
         entry["file_hash"] = hash(self.file)
-        entry["parent"] = hash(self.parent.settings) if self.parent!=None else None
+        entry["parent"] = self.parent.get_id() if self.parent!=None else None
         self._get_database().add_node(entry, type(self).__name__)
 
     def get_id(self) -> str:
@@ -82,7 +82,7 @@ class Node(BaseNode, NodeMixin):
                 if self.parent == None:
                     raise Exception("The following audio file has changed: " + self.file.get_path())
                 else:
-                    self._get_database().delete_node(hash(self.settings))
+                    self._get_database().delete_node(self.get_id())
                     self.run()
     
     def __str__(self) -> str:

@@ -14,7 +14,7 @@ def compute_hash(obj):
     '''
     This function returns the hash of the given object.
     '''
-    return int.from_bytes(hashlib.md5(str(obj).encode('utf-8')).digest()[:8], 'little')
+    return int.from_bytes(hashlib.md5(str(obj).encode('utf-8')).digest()[:7], 'little')
 
 def escape_email(email):
     '''
