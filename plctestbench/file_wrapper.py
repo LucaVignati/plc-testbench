@@ -161,7 +161,7 @@ class OutputAnalysis():
 
 class MSEData(OutputAnalysis):
     def __init__(self, mse: ndarray) -> None:
-        self._mse = np.array(mse)
+        self._mse = np.ascontiguousarray(np.array(mse).astype(DEFAULT_DTYPE))
 
     def get_mse(self) -> ndarray:
         return self._mse
@@ -181,4 +181,4 @@ class PEAQData(OutputAnalysis):
         return self._peaq_di
     
     def __hash__(self) -> int:
-        return calculate_hash((self._peaq_odg, self._peaq_di))
+        return calculate_hash(self._peaq_odg, self._peaq_di)

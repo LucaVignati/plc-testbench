@@ -139,7 +139,9 @@ class DataManager(object):
         for worker_type in run['workers']:
             workers = []
             for worker in worker_type:
-                workers.append((get_class(worker['name']), Settings(worker['settings'])))
+                settings = Settings(worker['settings'])
+                settings.__class__ = get_class(worker['name'] + 'Settings')
+                workers.append((get_class(worker['name']), settings))
             self.worker_classes.append(workers)
 
     def get_nodes_by_depth(self, depth: int) -> typing.Tuple:
