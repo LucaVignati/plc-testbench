@@ -1,5 +1,6 @@
 from anytree import NodeMixin
 import numpy as np
+from copy import copy
 
 from plctestbench.worker import Worker
 from plctestbench.file_wrapper import FileWrapper, AudioFile, DataFile
@@ -11,7 +12,7 @@ class BaseNode(object):
 class Node(BaseNode, NodeMixin):
     def __init__(self, file: FileWrapper=None, worker: Worker=None, settings: Settings=None, absolute_path: str=None, parent=None, database=None) -> None:
         self.file = file
-        self.settings = Settings(settings.get_all())
+        self.settings = copy(settings)
         if parent!=None:
             self.settings.inherit_from(parent.settings)
         self.worker = worker(self.settings) if worker!=None else None

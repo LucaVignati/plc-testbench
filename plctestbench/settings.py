@@ -64,6 +64,14 @@ class Settings(object):
             string += "{}: {}\n".format(key, self.settings[key])
         return string
 
+    def __copy__(self):
+        '''
+        This method returns a copy of the settings.
+        '''
+        settings_copy = Settings(self.settings.copy())
+        settings_copy.__class__ = self.__class__
+        return settings_copy
+
 class OriginalAudioSettings(Settings):
 
     def __init__(self, file_hash):
