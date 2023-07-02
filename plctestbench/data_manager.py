@@ -120,12 +120,14 @@ class DataManager(object):
             workers = []
             for worker, settings in worker_class:
                 workers.append({"name": worker.__name__, "settings": settings.get_all()})
-                run_id += str(hash(settings))
             run['workers'].append(workers)
 
         run['nodes'] = []
         for root_node in self.root_nodes:
             run['nodes'].extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
+
+        for node in run['nodes']:            
+            run_id += str(node['_id'])
 
         run['_id'] = compute_hash(run_id)
         self.database_manager.save_run(run)
