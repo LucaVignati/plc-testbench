@@ -14,6 +14,9 @@ class Settings(object):
         '''
         for key, value in parent_settings.get_all().items():
             self.settings[key] = value
+        
+        # Save parent hash to use in __hash__ method
+        self.parent = hash(parent_settings)
     
     def add(self, key, value):
         '''
@@ -51,7 +54,8 @@ class Settings(object):
         This method returns the hash of the settings. It is invariant with respect
         to the order of the keys.
         '''
-        return compute_hash(self)
+        string = str(self) + str(self.parent) if hasattr(self, "parent") else str(self)
+        return compute_hash(string)
 
     def __str__(self):
         '''
