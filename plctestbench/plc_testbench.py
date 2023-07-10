@@ -12,7 +12,8 @@ class PLCTestbench(object):
     initialising the testing components and running the testbench.
     '''
 
-    def __init__(self, packet_loss_simulators: list,
+    def __init__(self, original_audio_tracks: list,
+                 packet_loss_simulators: list,
                  plc_algorithms: list,
                  output_analysers: list,
                  testbench_settings: dict,
@@ -34,9 +35,10 @@ class PLCTestbench(object):
         if run_id:
             self.data_manager.load_workers_from_database(run_id)
         else:
-            self.data_manager.set_workers(packet_loss_simulators,
-                                      plc_algorithms,
-                                      output_analysers)
+            self.data_manager.set_workers(original_audio_tracks,
+                                          packet_loss_simulators,
+                                          plc_algorithms,
+                                          output_analysers)
 
         self.data_manager.initialize_tree()
 
@@ -45,9 +47,17 @@ class PLCTestbench(object):
         Run the testbench.
         '''
         data_trees = self.data_manager.get_data_trees()
-        for data_tree in tqdm(data_trees, desc="Audio Tracks"):
-            for node in LevelOrderIter(data_tree):
-                node.run()
+        self.data_manager.set_run_status('RUNNING')
+        try:
+            for data_tree in tqdm(data_trees, desc="Audio Tracks"):
+                for node in LevelOrderIter(data_tree):
+                    node.run()
+        except KeyboardInterrupt:
+            print("Simulation interrupted by user.")
+            return
+        finally:
+            self.data_manager.set_run_status('FAILED')
+        self.data_manager.set_run_status('COMPLETED')
 
     def plot(self, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, reconstructed_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
         '''

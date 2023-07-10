@@ -49,7 +49,7 @@ class DatabaseManager(object):
         if child_collection!=None:
             for child in list(database[child_collection].find({"parent": node_id})):
                 self.delete_node(child["_id"])
-        Path(database[collection_name].find_one({"_id": node_id})['filename']).unlink()
+        Path(database[collection_name].find_one({"_id": node_id})['filepath']).unlink()
         database[collection_name].delete_one({"_id": node_id})
 
     def save_run(self, run):
@@ -68,6 +68,13 @@ class DatabaseManager(object):
         '''
         database = self.get_database()
         return database["runs"].find_one({"_id": run_id})
+    
+    def set_run_status(self, run_id, status):
+        '''
+        This function is used to set the status of a run in the database.
+        '''
+        database = self.get_database()
+        database["runs"].update_one({"_id": run_id}, {"$set": {"status": status}})
     
     def delete_run(self, run_id):
         '''

@@ -1,34 +1,13 @@
 import typing
 import anytree.search as search
 from anytree import LevelOrderIter
+import datetime
 from plctestbench.path_manager import PathManager
 from .database_manager import DatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .file_wrapper import AudioFile, DataFile
 from .settings import Settings, OriginalAudioSettings
 from .utils import *
-
-def recursive_tree_init(parent: Node, worker_classes: list, node_classes: list, idx: int):
-    '''
-    This function recursively instanciates all the nodes in the tree.
-
-        Inputs:
-            parent:         the newly created node will be attached to the
-                            tree as a child of this node.
-            worker_classes: this list contains the workers and associated
-                            callbacks for each level of the tree.
-            idx:            this index is used to move forward and stop the
-                            recursion and access the appropriate element of
-                            the worker_classes list.
-    '''
-    if idx == len(worker_classes):
-        return
-    worker_class = worker_classes[idx]
-    node_class = node_classes[idx + 1]
-    for worker, settings in worker_class:
-        child = node_class(worker=worker, settings=settings, parent=parent)
-        PathManager.set_node_paths(child)
-        recursive_tree_init(child, worker_classes, node_classes, idx + 1)
 
 class DataManager(object):
 
@@ -62,9 +41,10 @@ class DataManager(object):
             for node_class, i in zip(self.node_classes, range(len(self.node_classes) - 1)):
                 self.database_manager.add_node({"child_collection": self.node_classes[i + 1].__name__}, node_class.__name__)
 
-    def set_workers(self, packet_loss_simulators: list(),
-                          plc_algorithms: list(),
-                          output_analysers: list()) -> None:
+    def set_workers(self, original_audio_tracks: list,
+                          packet_loss_simulators: list,
+                          plc_algorithms: list,
+                          output_analysers: list) -> None:
         '''
         This function stores into the DataManager class the instances of the workers
         to be used during the simulations, associated with the callback that manages
@@ -81,6 +61,7 @@ class DataManager(object):
                                         of a subclass of the OutputAnalyser
                                         class
         '''
+        self.worker_classes.append(original_audio_tracks)
         self.worker_classes.append(packet_loss_simulators)
         self.worker_classes.append(plc_algorithms)
         self.worker_classes.append(output_analysers)
@@ -91,46 +72,66 @@ class DataManager(object):
         that have been instantiated.
         '''
         return self.root_nodes
-
-    def initialize_tree(self) -> None:
+    
+    def initialize_tree(self):
         '''
-        This function instanciates each node of the tree where the workers and their results
-        will be stored. This function works in a recursive fashion.
+        This function is used to initialize the data tree.
+        '''
+        self._recursive_tree_init()
+        self._save_run_to_database()
+
+    def _recursive_tree_init(self, parent: Node = None, idx: int = 0):
+        '''
+        This function recursively instanciates all the nodes in the tree.
 
             Inputs:
-                track_path: a string representing the absolute path to an original audio
-                            track.
+                parent:         the newly created node will be attached to the
+                                tree as a child of this node.
+                worker_classes: this list contains the workers and associated
+                                callbacks for each level of the tree.
+                idx:            this index is used to move forward and stop the
+                                recursion and access the appropriate element of
+                                the worker_classes list.
         '''
-        for track_path in self.path_manager.get_original_tracks():
-            track = AudioFile(path=track_path)
-            root_node = OriginalTrackNode(file=track, settings=OriginalAudioSettings(hash(track)), database=self.database_manager)
-            PathManager.set_root_node_path(root_node)
-            self.root_nodes.append(root_node)
-            recursive_tree_init(root_node, self.worker_classes, self.node_classes, 0)
-        self._save_run_to_database()
+        database = None
+        if idx == len(self.worker_classes):
+            return
+        worker_class = self.worker_classes[idx]
+        node_class = self.node_classes[idx]
+        for worker, settings in worker_class:
+            folder_name, absolute_path = self.path_manager.get_node_paths(worker, settings, parent)
+            if parent == None:
+                database = self.database_manager
+            child = node_class(worker=worker, settings=settings, parent=parent, database=database, folder_name=folder_name, absolute_path=absolute_path)
+            if parent == None:
+                self.root_nodes.append(child)
+            self._recursive_tree_init(child, idx + 1)
 
     def _save_run_to_database(self):
         '''
         This function is used to save the run as a document in the database.
         '''
-        run = {}
+        self.run = {}
         run_id = ''
-        run['workers'] = []
+        self.run['workers'] = []
         for worker_class in self.worker_classes:
             workers = []
             for worker, settings in worker_class:
                 workers.append({"name": worker.__name__, "settings": settings.get_all()})
-            run['workers'].append(workers)
+            self.run['workers'].append(workers)
 
-        run['nodes'] = []
+        self.run['nodes'] = []
         for root_node in self.root_nodes:
-            run['nodes'].extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
+            self.run['nodes'].extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
 
-        for node in run['nodes']:            
+        for node in self.run['nodes']:            
             run_id += str(node['_id'])
 
-        run['_id'] = compute_hash(run_id)
-        self.database_manager.save_run(run)
+        self.run['_id'] = str(compute_hash(run_id))
+        self.run['creator'] = self.user['email']
+        self.run['created_on'] = datetime.datetime.now()
+        self.run['status'] = 'CREATED'
+        self.database_manager.save_run(self.run)
 
     def load_workers_from_database(self, run_id: int):
         '''
@@ -145,6 +146,12 @@ class DataManager(object):
                 settings.__class__ = get_class(worker['name'] + 'Settings')
                 workers.append((get_class(worker['name']), settings))
             self.worker_classes.append(workers)
+
+    def set_run_status(self, state: str):
+        '''
+        This function is used to set the state of the run in the database.
+        '''
+        self.database_manager.set_run_status(self.run['_id'], state)
 
     def get_nodes_by_depth(self, depth: int) -> typing.Tuple:
         '''

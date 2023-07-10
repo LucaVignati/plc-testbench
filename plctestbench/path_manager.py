@@ -7,7 +7,7 @@ folder_suffixes = ['lost_samples_masks',
                    'reconstructed_tracks',
                    'output_analyses']
 
-def compute_absolute_folder_path(node: Node) -> str:
+def compute_absolute_folder_path(parent: Node) -> str:
     '''
     This private function computes the absolute path of the given
     node climbing down the ancestors list.
@@ -16,8 +16,9 @@ def compute_absolute_folder_path(node: Node) -> str:
             node:   the node instance to compute the absolute path for
     '''
     folder_path = ""
-    for ancestor in node.ancestors:
+    for ancestor in parent.ancestors:
         folder_path = path.join(folder_path, ancestor.get_folder_name())
+    folder_path = path.join(folder_path, parent.get_folder_name())
     return folder_path
 
 class PathManager(object):
@@ -42,7 +43,7 @@ class PathManager(object):
     def get_original_tracks(self) -> list:
         return self.original_tracks_paths
 
-    def set_root_node_path(node: Node) -> None:
+    def _set_root_node_path(self, settings) -> tuple:
         '''
         This function computes the absolute path of the root node, creates
         its directory and stores it in the node.
@@ -50,14 +51,14 @@ class PathManager(object):
             Inputs:
                 node:   the node instance to compute the absolute path for
         '''
-        track_path = node.get_file().get_path()
+        track_path = self.root_folder + '/' + settings.get('filename')
         folder_name = track_path.split('.wav')[0] + '-' + folder_suffixes[0]
-        node.set_folder_name(folder_name)
-        node.set_path(track_path.split('.wav')[0])
+        absolute_path = track_path.split('.wav')[0]
         if not path.exists(folder_name):
             os.mkdir(folder_name)
+        return folder_name, absolute_path
 
-    def set_node_paths(node: Node) -> None:
+    def get_node_paths(self, worker, settings, parent: Node) -> tuple:
         '''
         This function computes the relative path of the node, creates its
         directory and stores it in the node.
@@ -65,16 +66,20 @@ class PathManager(object):
         Inputs:
             node:   the node instance to compute the relative path for
         '''
-        index = node.depth
-        node_path = compute_absolute_folder_path(node)
-        worker_name = str(node.get_worker())
-        node.set_path(path.join(node_path, worker_name))
+        if parent == None:
+            return self._set_root_node_path(settings)
+        
+        folder_name = None
+        index = parent.depth + 1
+        node_path = compute_absolute_folder_path(parent)
+        worker_name = worker.__name__
+        absolute_path = path.join(node_path, worker_name)
         if index < len(folder_suffixes):
             folder_name = worker_name + '-' + folder_suffixes[index]
-            node.set_folder_name(folder_name)
             folder_path = path.join(node_path, folder_name)
             if not path.exists(folder_path):
                 os.mkdir(folder_path)
+        return folder_name, absolute_path
 
     def change_file_extension(filepath: str, new_extension: str) -> str:
         '''

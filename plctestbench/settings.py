@@ -16,7 +16,7 @@ class Settings(object):
             self.settings[key] = value
         
         # Save parent hash to use in __hash__ method
-        self.parent = hash(parent_settings)
+        self.parent = str(hash(parent_settings))
     
     def add(self, key, value):
         '''
@@ -78,7 +78,7 @@ class Settings(object):
 
 class OriginalAudioSettings(Settings):
 
-    def __init__(self, file_hash):
+    def __init__(self, filename: str):
         '''
         This class containes the global settings.
 
@@ -86,7 +86,7 @@ class OriginalAudioSettings(Settings):
                 fs:             sampling frequency of the track.
         '''
         super().__init__()
-        self.settings["file_hash"] = file_hash
+        self.settings["filename"] = filename
     
     def set_fs(self, fs):
         self.settings["fs"] = fs

@@ -10,7 +10,7 @@ class BaseNode(object):
     pass
 
 class Node(BaseNode, NodeMixin):
-    def __init__(self, file: FileWrapper=None, worker: Worker=None, settings: Settings=None, absolute_path: str=None, parent=None, database=None) -> None:
+    def __init__(self, file: FileWrapper=None, worker: Worker=None, settings: Settings=None, absolute_path: str=None, parent=None, database=None, folder_name=None) -> None:
         self.file = file
         self.settings = copy(settings)
         if parent!=None:
@@ -18,7 +18,7 @@ class Node(BaseNode, NodeMixin):
         self.worker = worker(self.settings) if worker!=None else None
         self.database = database
         self.parent = parent
-        self.folder_name = None
+        self.folder_name = folder_name
         self.absolute_path = absolute_path
 
     def set_folder_name(self, folder_name) -> None:
@@ -55,18 +55,18 @@ class Node(BaseNode, NodeMixin):
         return self.root.database
 
     def _load_from_database(self) -> dict:
-        return self._get_database().find_node(hash(self.settings), type(self).__name__)
+        return self._get_database().find_node(str(hash(self.settings)), type(self).__name__)
 
     def _save_to_database(self):
         entry = self.settings.get_all().copy()
-        entry["filename"] = self.file.get_path()
+        entry["filepath"] = self.file.get_path()
         entry["_id"] = self.get_id()
-        entry["file_hash"] = hash(self.file)
+        entry["file_hash"] = str(hash(self.file))
         entry["parent"] = self.parent.get_id() if self.parent!=None else None
         self._get_database().add_node(entry, type(self).__name__)
 
     def get_id(self) -> str:
-        return hash(self.settings)
+        return str(hash(self.settings))
     
     def run(self):
 
@@ -76,10 +76,10 @@ class Node(BaseNode, NodeMixin):
             self._run()
             self._save_to_database()
         else:
-            self.file = FileWrapper.from_path(current_node["filename"])
+            self.file = FileWrapper.from_path(current_node["filepath"])
 
             # Manage consistency between database and filesystem
-            if hash(self.file) != current_node["file_hash"]:
+            if str(hash(self.file)) != current_node["file_hash"]:
                 if self.parent == None:
                     raise Exception("The following audio file has changed: " + self.file.get_path())
                 else:
@@ -93,8 +93,9 @@ class Node(BaseNode, NodeMixin):
                "absolute path: " + str(self.absolute_path)
 
 class OriginalTrackNode(Node):
-    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None) -> None:
-        super().__init__(file, worker, settings, absolute_path, parent, database)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None, folder_name=None) -> None:
+        super().__init__(file=file, worker=worker, settings=settings, absolute_path=absolute_path, parent=parent, database=database, folder_name=folder_name)
+        self.file = AudioFile(path=self.absolute_path + '.wav')
         self.settings.add('fs', self.file.get_samplerate())
 
     def get_data(self) -> np.ndarray:
@@ -107,8 +108,8 @@ class OriginalTrackNode(Node):
         print(self.get_track_name())
     
 class LostSamplesMaskNode(Node):
-    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
-        super().__init__(file, worker, settings, absolute_path, parent)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None, folder_name=None) -> None:
+        super().__init__(file=file, worker=worker, settings=settings, absolute_path=absolute_path, parent=parent, database=database, folder_name=folder_name)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
@@ -123,8 +124,8 @@ class LostSamplesMaskNode(Node):
         self.file = DataFile(lost_samples_idx, self.absolute_path + '.npy')
 
 class ReconstructedTrackNode(Node):
-    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
-        super().__init__(file, worker, settings, absolute_path, parent)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None, folder_name=None) -> None:
+        super().__init__(file=file, worker=worker, settings=settings, absolute_path=absolute_path, parent=parent, database=database, folder_name=folder_name)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
@@ -143,8 +144,8 @@ class ReconstructedTrackNode(Node):
         self.file = AudioFile.from_audio_file(original_track, reconstructed_track, self.absolute_path + '.wav')
 
 class OutputAnalysisNode(Node):
-    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None) -> None:
-        super().__init__(file, worker, settings, absolute_path, parent)
+    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None, folder_name=None) -> None:
+        super().__init__(file=file, worker=worker, settings=settings, absolute_path=absolute_path, parent=parent, database=database, folder_name=folder_name)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data()
