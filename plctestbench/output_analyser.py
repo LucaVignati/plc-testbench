@@ -125,7 +125,7 @@ class PEAQCalculator(OutputAnalyser):
         
         peaq_output = completed_process.stdout
 
-        for idx in self.progress_monitor(self)(range(1, 100), desc=self.__str__()):
+        for idx in self.progress_monitor(self)(range(1, 10), desc=self.__str__()):
             sleep(0.1)
 
         peaq_odg_text = "Objective Difference Grade: "
