@@ -55,7 +55,7 @@ class Node(BaseNode, NodeMixin):
         return self.root.database
 
     def _load_from_database(self) -> dict:
-        return self._get_database().find_node(str(hash(self.settings)), type(self).__name__)
+        return self._get_database().find_node(self.get_id(), type(self).__name__)
 
     def _save_to_database(self):
         entry = self.settings.get_all().copy()
@@ -66,9 +66,13 @@ class Node(BaseNode, NodeMixin):
         self._get_database().add_node(entry, type(self).__name__)
 
     def get_id(self) -> str:
-        return str(hash(self.settings))
+        hash_properties = Settings.__copy__(self.settings)
+        hash_properties.add("parent", self.parent.get_id() if self.parent!=None else "")
+        return str(hash(hash_properties))
     
     def run(self):
+        if self.worker != None:
+            self.worker.set_uuid(self.get_id())
 
         # Load from database if possible, otherwise run the worker
         current_node = self._load_from_database()
@@ -103,9 +107,15 @@ class OriginalTrackNode(Node):
 
     def get_track_name(self) -> str:
         return self.absolute_path.rpartition("/")[2].split(".")[0]
+    
+    def load(self) -> None:
+        self.file = AudioFile.from_path(self.absolute_path + '.wav')
+        self.file.persist = False
+        self.file.load()
 
     def _run(self) -> None:
         print(self.get_track_name())
+        self.get_worker().run()
     
 class LostSamplesMaskNode(Node):
     def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None, folder_name=None) -> None:
@@ -116,6 +126,10 @@ class LostSamplesMaskNode(Node):
 
     def get_original_track_node(self) -> OriginalTrackNode:
         return self.root
+    
+    def load(self) -> None:
+        self.file = DataFile(path=self.absolute_path + '.npy', persist=False)
+        #self.file.load()
     
     def _run(self) -> None:
         original_track_data = self.get_original_track().get_data()
@@ -135,6 +149,11 @@ class ReconstructedTrackNode(Node):
     
     def get_lost_samples_mask_node(self) -> LostSamplesMaskNode:
         return self.ancestors[1]
+    
+    def load(self) -> None:
+        self.file = AudioFile.from_path(self.absolute_path + '.wav')
+        self.file.persist = False
+        self.file.load()
     
     def _run(self) -> None:
         original_track = self.get_original_track()
@@ -158,6 +177,10 @@ class OutputAnalysisNode(Node):
 
     def get_reconstructed_track_node(self) -> ReconstructedTrackNode:
         return self.ancestors[2]
+    
+    def load(self) -> None:
+        self.file = DataFile(path=self.absolute_path + '.pickle', persist=False)
+        #self.file.load()
 
     def _run(self) -> None:
         original_track = self.get_original_track()

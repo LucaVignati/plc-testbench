@@ -183,7 +183,7 @@ class LowCostPLCSettings(Settings):
 
 class DeepLearningPLCSettings(Settings):
 
-    def __init__(self, model_path: str,
+    def __init__(self, model_path: str = "",
                        fs_dl: int = 16000,
                        context_length: float = 0.5,
                        hop_size: float = 0.25,

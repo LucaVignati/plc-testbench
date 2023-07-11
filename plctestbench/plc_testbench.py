@@ -40,16 +40,17 @@ class PLCTestbench(object):
                                           plc_algorithms,
                                           output_analysers)
 
-        self.data_manager.initialize_tree()
+        self.run_id = self.data_manager.initialize_tree()
 
     def run(self) -> None:
         '''
         Run the testbench.
         '''
+        progress_monitor = self.data_manager.progress_monitor
         data_trees = self.data_manager.get_data_trees()
         self.data_manager.set_run_status('RUNNING')
         try:
-            for data_tree in tqdm(data_trees, desc="Audio Tracks"):
+            for data_tree in progress_monitor(self)(data_trees, desc="Audio Tracks"):
                 for node in LevelOrderIter(data_tree):
                     node.run()
         except KeyboardInterrupt:

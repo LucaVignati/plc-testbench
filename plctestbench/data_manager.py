@@ -1,13 +1,18 @@
 import typing
+import os
 import anytree.search as search
 from anytree import LevelOrderIter
 import datetime
-from plctestbench.path_manager import PathManager
+from tqdm.auto import tqdm as std_tqdm
+
+from .path_manager import PathManager
 from .database_manager import DatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
+from .worker import OriginalAudio
 from .file_wrapper import AudioFile, DataFile
 from .settings import Settings, OriginalAudioSettings
 from .utils import *
+
 
 class DataManager(object):
 
@@ -37,6 +42,7 @@ class DataManager(object):
             ReconstructedTrackNode,
             OutputAnalysisNode
         ]
+        self.progress_monitor = testbench_settings["progress_monitor"] if 'progress_monitor' in testbench_settings.keys() else lambda caller: std_tqdm
         if not self.database_manager.initialized:
             for node_class, i in zip(self.node_classes, range(len(self.node_classes) - 1)):
                 self.database_manager.add_node({"child_collection": self.node_classes[i + 1].__name__}, node_class.__name__)
@@ -73,12 +79,12 @@ class DataManager(object):
         '''
         return self.root_nodes
     
-    def initialize_tree(self):
+    def initialize_tree(self) -> str:
         '''
         This function is used to initialize the data tree.
         '''
         self._recursive_tree_init()
-        self._save_run_to_database()
+        return self._save_run_to_database()
 
     def _recursive_tree_init(self, parent: Node = None, idx: int = 0):
         '''
@@ -103,6 +109,7 @@ class DataManager(object):
             if parent == None:
                 database = self.database_manager
             child = node_class(worker=worker, settings=settings, parent=parent, database=database, folder_name=folder_name, absolute_path=absolute_path)
+            child.worker.set_progress_monitor(self.progress_monitor)
             if parent == None:
                 self.root_nodes.append(child)
             self._recursive_tree_init(child, idx + 1)
@@ -131,7 +138,10 @@ class DataManager(object):
         self.run['creator'] = self.user['email']
         self.run['created_on'] = datetime.datetime.now()
         self.run['status'] = 'CREATED'
+        self.run['selected_input_files'] = list(map(lambda node: os.path.basename(node.file.path), self.root_nodes))
+        
         self.database_manager.save_run(self.run)
+        return self.run['_id']
 
     def load_workers_from_database(self, run_id: int):
         '''

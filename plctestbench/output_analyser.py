@@ -1,7 +1,9 @@
 import numpy as np
 import subprocess
+from time import sleep
+
 from tqdm.notebook import tqdm
-from plctestbench.worker import Worker
+from .worker import Worker
 from .file_wrapper import MSEData, PEAQData, AudioFile
 
 def normalise(x, amp_scale=1.0):
@@ -16,7 +18,7 @@ class OutputAnalyser(Worker):
 
 class MSECalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> MSEData:
         '''
         Calculation of Mean Square Error between the reference and signal
         under test.
@@ -47,7 +49,7 @@ class MSECalculator(OutputAnalyser):
                         range(0, num_samples-N, hop)])
         x_ew = np.array([np.multiply(w, x_e[i:i+N]) for i in
                         range(0, num_samples-N, hop)])
-        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in tqdm(range(len(x_rw)), desc=self.__str__())]
+        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in self.progress_monitor(self)(range(len(x_rw)), desc=self.__str__())]
 
         return MSEData(mse)
 
@@ -83,12 +85,10 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
         num_samples = len(x_r)
 
-        x_rk = np.array([np.fft.fft(w*x_r[i:i+N]) for i in
-                        range(0, num_samples-N, hop)])
-        x_ek = np.array([np.fft.fft(w*x_e[i:i+N]) for i in
-                        range(0, num_samples-N, hop)])
-        x_2rk = np.abs(x_rk)**2
-        x_2ek = np.abs(x_ek)**2
+        x_rk, x_ek = [(np.fft.fft(w*x_r[i:i+N]), np.fft.fft(w*x_e[i:i+N])) for i in
+                        self.progress_monitor(self)(range(0, num_samples-N, hop), desc=self.__str__())]
+        x_2rk = np.abs(np.array(x_rk))**2
+        x_2ek = np.abs(np.array(x_ek))**2
 
         se = np.array(x_2rk - 2*np.sqrt(x_2rk * x_2ek) + x_2ek)
 
@@ -99,8 +99,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
 class PEAQCalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> None:
-
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> PEAQData:
         peaq_mode = self.settings.get("peaq_mode")
         if peaq_mode == 'basic':
             mode_flag = '--basic'
@@ -125,6 +124,10 @@ class PEAQCalculator(OutputAnalyser):
         print("Completed.")
         
         peaq_output = completed_process.stdout
+
+        for idx in self.progress_monitor(self)(range(1, 100), desc=self.__str__()):
+            sleep(0.1)
+
         peaq_odg_text = "Objective Difference Grade: "
         peaq_di_text = "Distortion Index: "
         if (peaq_odg_text in peaq_output and peaq_di_text in peaq_output):

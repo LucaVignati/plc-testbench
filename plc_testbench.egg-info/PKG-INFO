@@ -1,21 +1,21 @@
 Metadata-Version: 2.1
-Name: ecc-testbench
-Version: 0.0.1
-Summary: A prototypical Error Concealment                               bench test for Aloha
+Name: plc-testbench
+Version: 0.6.2
+Summary: Framework comparison and benchmarking                               of error concealment algorithms
 Home-page: https://bitbucket.org/mindswteam/ecc-testbench
-Author: Christopher Walker
-Author-email: chris@elk.audio
-License: UNKNOWN
-Platform: UNKNOWN
+Author: Luca Vignati
+Author-email: luca.vignati@vignati.net
 Classifier: Programming Language :: Python :: 3
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 
-# AlohaECC
+# PLCTestbench
 
 ## Basic Usage
 
 ```python
+
+    ---TODO---
     from alohaecc.ecc_testbench import ecc_testbench
     from alohaecc.ecc_algorithm import zeros_ecc, last_packet_ecc
 
@@ -31,4 +31,3 @@ Description-Content-Type: text/markdown
 ```bash
     python -m unittest test.test_ecc_testbench.test_ecc_testbench -v
 ```
-

@@ -3,8 +3,15 @@ from pymongo import MongoClient
 from plctestbench.node import Node
 from pathlib import Path
 from plctestbench.utils import escape_email
+
+class Singleton (type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
   
-class DatabaseManager(object):
+class DatabaseManager(metaclass=Singleton):
 
     def __init__(self, ip: str, port: int, username: str, password: str, user: dict) -> None:
         self.username = username

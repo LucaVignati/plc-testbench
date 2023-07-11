@@ -23,7 +23,7 @@ class PacketLossSimulator(Worker):
         the position of lost samples in the original audio track.
         '''
         lost_samples_idx = []
-        for idx in tqdm(range(num_samples), desc=self.__str__()):
+        for idx in self.progress_monitor(self)(range(num_samples), desc=self.__str__()):
             if (idx % self.packet_size) == 0:
                 lost_packet = self.tick()
             if lost_packet:
