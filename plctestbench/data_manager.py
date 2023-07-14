@@ -31,9 +31,10 @@ class DataManager(object):
         db_port = int(testbench_settings['db_port']) if 'db_port' in testbench_settings.keys() else 27017
         db_username = testbench_settings['db_username'] if 'db_username' in testbench_settings.keys() else 'admin'
         db_password = testbench_settings['db_password'] if 'db_password' in testbench_settings.keys() else 'admin'
+        db_conn_string = testbench_settings['db_conn_string'] if 'db_conn_string' in testbench_settings.keys() else None
         
         self.path_manager = PathManager(root_folder)
-        self.database_manager = DatabaseManager(ip=db_ip, port=db_port, username=db_username, password=db_password, user=self.user)
+        self.database_manager = DatabaseManager(ip=db_ip, port=db_port, username=db_username, password=db_password, user=self.user, conn_string=db_conn_string)
         self.root_nodes = []
         self.worker_classes = []
         self.node_classes = [

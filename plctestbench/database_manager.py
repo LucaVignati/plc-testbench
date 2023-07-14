@@ -13,16 +13,19 @@ class Singleton (type):
   
 class DatabaseManager(metaclass=Singleton):
 
-    def __init__(self, ip: str, port: int, username: str, password: str, user: dict) -> None:
+    def __init__(self, ip: str, port: int, username: str, password: str, user: dict, conn_string: str = None) -> None:
         self.username = username
         self.password = password
         self.email = escape_email(user['email'])
-        self.client = MongoClient(
-            host=ip,
-            port=port,
-            username=self.username,
-            password=self.password,
-        )
+        if conn_string:
+            self.client = MongoClient(conn_string)
+        else:
+            self.client = MongoClient(
+                host=ip,
+                port=port,
+                username=self.username,
+                password=self.password,
+            )
         self._check_if_already_initialized()
         self.save_user(user)
 
