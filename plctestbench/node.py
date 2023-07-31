@@ -66,9 +66,7 @@ class Node(BaseNode, NodeMixin):
         self._get_database().add_node(entry, type(self).__name__)
 
     def get_id(self) -> str:
-        hash_properties = Settings.__copy__(self.settings)
-        hash_properties.add("parent", self.parent.get_id() if self.parent!=None else "")
-        return str(hash(hash_properties))
+        return str(hash(self.settings))
     
     def run(self):
         if self.worker != None:
