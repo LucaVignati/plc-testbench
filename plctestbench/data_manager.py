@@ -11,7 +11,7 @@ from .utils import *
 
 class DataManager(object):
 
-    def __init__(self, testbench_settings: dict, user: dict) -> None:
+    def __init__(self, testbench_settings: dict, user: dict = None) -> None:
         '''
         This class manages the data flow in and out of the data tree.
 

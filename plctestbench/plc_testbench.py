@@ -17,7 +17,7 @@ class PLCTestbench(object):
                  plc_algorithms: list,
                  output_analysers: list,
                  testbench_settings: dict,
-                 user: dict,
+                 user: dict = None,
                  run_id: int = None):
         '''
         Initialise the parameters and testing components.
@@ -59,36 +59,36 @@ class PLCTestbench(object):
             self.data_manager.set_run_status('FAILED')
         self.data_manager.set_run_status('COMPLETED')
 
-    def plot(self, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, reconstructed_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
+    def plot(self, plot_settings={}, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, reconstructed_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
         '''
         Plot all the results
         '''
         if original_tracks:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             original_track_nodes = self.data_manager.get_nodes_by_depth(0)
             for original_audio_node in original_track_nodes:
                 plot_manager.plot_audio_track(original_audio_node, to_file)
         
         if lost_samples_masks:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             lost_samples_mask_nodes = self.data_manager.get_nodes_by_depth(1)
             for lost_samples_mask_node in lost_samples_mask_nodes:
                 plot_manager.plot_lost_samples_mask(lost_samples_mask_node, to_file)
 
         if reconstructed_tracks:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             reconstructed_track_nodes = self.data_manager.get_nodes_by_depth(2)
             for reconstructed_track_node in reconstructed_track_nodes:
                 plot_manager.plot_audio_track(reconstructed_track_node, to_file)
 
         if output_analyses:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             output_analysis_nodes = self.data_manager.get_nodes_by_depth(3)
             for output_analysis_node in output_analysis_nodes:
                 plot_manager.plot_output_analysis(output_analysis_node, to_file)
 
         if group:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             leaf_nodes = self.data_manager.get_leaf_nodes()
             for leaf_node in leaf_nodes:
                 ancestors = leaf_node.ancestors
@@ -98,7 +98,7 @@ class PLCTestbench(object):
                 plot_manager.plot_output_analysis(leaf_node, to_file)
 
         if peaq_summary:
-            plot_manager = PlotManager(self.settings)
+            plot_manager = PlotManager(plot_settings)
             output_analysis_nodes = self.data_manager.get_nodes_by_depth(3)
             plot_manager.plot_peaq_summary(output_analysis_nodes, to_file)
 

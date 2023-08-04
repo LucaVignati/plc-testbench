@@ -10,15 +10,14 @@ from .output_analyser import MSECalculator, SpectralEnergyCalculator, PEAQCalcul
 
 class PlotManager(object):
 
-    def __init__(self, settings: Settings, rows:int = None, cols:int = None) -> None:
+    def __init__(self, settings: dict, rows:int = None, cols:int = None) -> None:
         '''
         Base class for plotting results
 
         '''
-        self.dpi = settings.get("dpi")
-        self.linewidth = settings.get("linewidth")
-        self.figsize = settings.get("figsize")
-        self.packet_size = settings.get("packet_size")
+        self.dpi = settings["dpi"] if "dpi" in settings else 300
+        self.linewidth = settings["linewidth"] if "linewidth" in settings else 0.2
+        self.figsize = settings["figsize"] if "figsize" in settings else (12, 6)
         mpl.rcParams['agg.path.chunksize'] = 10000
 
     def plot_audio_track(self, node: Node, to_file=False) -> None:
@@ -65,6 +64,7 @@ class PlotManager(object):
         '''
         Plot the lost samples mask data
         '''
+        self.packet_size = node.get_setting("packet_size")
         lost_packets_idx = node.get_file().get_data()[::self.packet_size]/self.packet_size
         original_track = node.get_original_track()
         samplerate = original_track.get_samplerate()

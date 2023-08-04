@@ -51,6 +51,9 @@ class Node(BaseNode, NodeMixin):
     def get_reconstructed_track(self) -> AudioFile:
         return self.ancestors[2].get_file()
     
+    def get_setting(self, setting_name: str):
+        return self.settings.get(setting_name)
+    
     def _get_database(self):
         return self.root.database
 
