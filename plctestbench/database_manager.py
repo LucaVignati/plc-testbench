@@ -49,7 +49,9 @@ class DatabaseManager(object):
         if child_collection!=None:
             for child in list(database[child_collection].find({"parent": node_id})):
                 self.delete_node(child["_id"])
-        Path(database[collection_name].find_one({"_id": node_id})['filepath']).unlink()
+        filepath = Path(database[collection_name].find_one({"_id": node_id})['filepath'])
+        if filepath.exists():
+            filepath.unlink()
         database[collection_name].delete_one({"_id": node_id})
 
     def save_run(self, run):
