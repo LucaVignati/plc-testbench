@@ -1,6 +1,7 @@
-import numpy as np
 import subprocess
+import numpy as np
 from tqdm.notebook import tqdm
+from plctestbench.settings import Settings
 from plctestbench.worker import Worker
 from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile
 
@@ -10,9 +11,8 @@ def normalise(x, amp_scale=1.0):
 
 class OutputAnalyser(Worker):
 
-    def __str__(self) -> str:
-        return __class__.__name__
-
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
 
 class SimpleCalculator(OutputAnalyser):
 
@@ -51,9 +51,6 @@ class SimpleCalculator(OutputAnalyser):
 
         return x_rw, x_ew
 
-    def __str__(self) -> str:
-        return __class__.__name__
-
 class MSECalculator(SimpleCalculator):
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
@@ -69,12 +66,9 @@ class MSECalculator(SimpleCalculator):
                 error: Mean Square Error calculated calculated between the two signals.
         '''
         x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
-        error = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in tqdm(range(len(x_rw)), desc=self.__str__())]
+        error = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in tqdm(range(len(x_rw)), desc=str(self))]
         return SimpleCalculatorData(error)
 
-    def __str__(self) -> str:
-        return __class__.__name__
-    
 class MAECalculator(SimpleCalculator):
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
@@ -90,11 +84,8 @@ class MAECalculator(SimpleCalculator):
                 error: Mean Absolute Error calculated calculated between the two signals.
         '''
         x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
-        error = [np.mean(np.abs((x_rw[n] - x_ew[n])), 0) for n in tqdm(range(len(x_rw)), desc=self.__str__())]
+        error = [np.mean(np.abs((x_rw[n] - x_ew[n])), 0) for n in tqdm(range(len(x_rw)), desc=str(self))]
         return SimpleCalculatorData(error)
-    
-    def __str__(self) -> str:   
-        return __class__.__name__
 
 class SpectralEnergyCalculator(OutputAnalyser):
 
@@ -135,9 +126,6 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
         return se
 
-    def __str__(self) -> str:
-        return __class__.__name__
-
 class PEAQCalculator(OutputAnalyser):
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> None:
@@ -159,12 +147,12 @@ class PEAQCalculator(OutputAnalyser):
         new_data = normalise(reconstructed_track_node.get_data())
         reconstructed_track_norm_file = AudioFile.from_audio_file(reconstructed_track_node, new_data=new_data, new_path=new_path)
         completed_process = subprocess.run(["peaq", mode_flag, "--gst-plugin-path", "/usr/lib/gstreamer-1.0/",
-                                           original_track_norm_file.get_path(), reconstructed_track_norm_file.get_path()], capture_output=True, text=True)
-        
+                                           original_track_norm_file.get_path(), reconstructed_track_norm_file.get_path()], capture_output=True, text=True, check=False)
+
         original_track_norm_file.delete()
         reconstructed_track_norm_file.delete()
         print("Completed.")
-        
+
         peaq_output = completed_process.stdout
         peaq_odg_text = "Objective Difference Grade: "
         peaq_di_text = "Distortion Index: "
@@ -175,14 +163,7 @@ class PEAQCalculator(OutputAnalyser):
             peaq_odg = float(peaq_odg)
             peaq_di = float(peaq_di)
             return PEAQData(peaq_odg, peaq_di)
-        else:
-            print("The peaq program exited with the following errors:")
-            print(completed_process.stdout)
 
-    def __str__(self) -> str:
-        return __class__.__name__
-
-# class MAECalculator(OutputAnalyser):
-
-#     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+        print("The peaq program exited with the following errors:")
+        print(completed_process.stdout)
         

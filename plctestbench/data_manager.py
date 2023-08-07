@@ -1,13 +1,11 @@
 import typing
-import anytree.search as search
-from anytree import LevelOrderIter
 import datetime
+from anytree import LevelOrderIter, search
 from plctestbench.path_manager import PathManager
 from .database_manager import DatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
-from .file_wrapper import AudioFile, DataFile
-from .settings import Settings, OriginalAudioSettings
-from .utils import *
+from .settings import Settings
+from .utils import get_class, compute_hash
 
 class DataManager(object):
 
@@ -100,10 +98,10 @@ class DataManager(object):
         node_class = self.node_classes[idx]
         for worker, settings in worker_class:
             folder_name, absolute_path = self.path_manager.get_node_paths(worker, settings, parent)
-            if parent == None:
+            if parent is None:
                 database = self.database_manager
             child = node_class(worker=worker, settings=settings, parent=parent, database=database, folder_name=folder_name, absolute_path=absolute_path)
-            if parent == None:
+            if parent is None:
                 self.root_nodes.append(child)
             self._recursive_tree_init(child, idx + 1)
 
@@ -124,7 +122,7 @@ class DataManager(object):
         for root_node in self.root_nodes:
             self.run['nodes'].extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
 
-        for node in self.run['nodes']:            
+        for node in self.run['nodes']:
             run_id += str(node['_id'])
 
         self.run['_id'] = str(compute_hash(run_id))
@@ -165,7 +163,7 @@ class DataManager(object):
         for tree in self.root_nodes:
             result = search.findall(tree, filter_=lambda node: node.depth==depth, maxlevel=4)
             same_depth_nodes += result
-        
+
         return same_depth_nodes
 
     def get_leaf_nodes(self) -> typing.Tuple:

@@ -123,11 +123,11 @@ def test_pre_process(lcc: LowCostConcealment, file: sf.SoundFile):
     filtered_audio_track = lcc.pre_process(audio_track)
     sf.write("original_tracks/Chonks_filtered_nl.wav", filtered_audio_track, file.samplerate, file.subtype, file.endian, file.format)
 
-def test_zero_crossing_detection(lcc: LowCostConcealment, file: sf.SoundFile, print: bool = False, plot: bool = False):
+def test_zero_crossing_detection(lcc: LowCostConcealment, file: sf.SoundFile, debug_print: bool = False, plot: bool = False):
     audio_track = file.read()
     filtered_audio_track = lcc.pre_process(audio_track)
     zero_crossings = lcc.zero_crossing_detect(filtered_audio_track[:, 0])
-    if print:
+    if debug_print:
         for i in range(1, len(zero_crossings)):
             print((zero_crossings[i] - zero_crossings[i - 1]))
         print(lcc._lower_bound)

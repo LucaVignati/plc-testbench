@@ -1,10 +1,10 @@
 from __future__ import annotations
-from numpy import ndarray
 import os
-import soundfile as sf
-import numpy as np
 import pickle
 from pathlib import Path
+from numpy import ndarray
+import soundfile as sf
+import numpy as np
 from plctestbench.utils import compute_hash
 
 DEFAULT_DTYPE = 'float32'
@@ -26,7 +26,7 @@ class FileWrapper(object):
 
         if self.data is not None:
             self.save()
-        
+
         self.load()
 
         self.hash = calculate_hash(self.data.tobytes()) if isinstance(self.data, ndarray) else hash(self.data)
@@ -35,7 +35,7 @@ class FileWrapper(object):
     def from_path(cls, path: str) -> FileWrapper:
         if not Path(path).exists():
             return None
-        
+
         if path.split('.')[-1] == 'wav':
             file = AudioFile(path=path)
         else:
@@ -56,7 +56,7 @@ class FileWrapper(object):
 
     def load(self) -> None:
         pass
-    
+
     def delete(self) -> None:
         os.remove(self.path)
 
@@ -70,14 +70,14 @@ class AudioFile(FileWrapper):
                        channels: int=None,
                        subtype: str=None,
                        endian: str=None,
-                       format: str=None,
+                       audio_format: str=None,
                        persist=True) -> None:
-        
+
         self.samplerate = samplerate
         self.channels = channels
         self.subtype = subtype
         self.endian = endian
-        self.format = format
+        self.audio_format = audio_format
         super().__init__(data, path, persist)
 
     @classmethod
@@ -88,21 +88,21 @@ class AudioFile(FileWrapper):
                              new_channels: int=None,
                              new_subtype: str=None,
                              new_endian: str=None,
-                             new_format: str=None) -> AudioFile:
+                             new_audio_format: str=None) -> AudioFile:
         data = audio_file.data if new_data is None else new_data
         path = audio_file.path if new_path is None else new_path
         samplerate = audio_file.samplerate if new_samplerate is None else new_samplerate
         channels = audio_file.channels if new_channels is None else new_channels
         subtype = audio_file.subtype if new_subtype is None else new_subtype
         endian = audio_file.endian if new_endian is None else new_endian
-        format = audio_file.format if new_format is None else new_format
+        audio_format = audio_file.audio_format if new_audio_format is None else new_audio_format
         new_instance = cls(data,
                            path,
                            samplerate,
                            channels,
                            subtype,
                            endian,
-                           format)
+                           audio_format)
         return new_instance
 
     def get_samplerate(self) -> float:
@@ -117,8 +117,8 @@ class AudioFile(FileWrapper):
     def get_endian(self) -> str:
         return self.endian
 
-    def get_format(self) -> str:
-        return self.format
+    def get_audio_format(self) -> str:
+        return self.audio_format
 
     def save(self) -> None:
         sf.write(self.path,
@@ -126,7 +126,7 @@ class AudioFile(FileWrapper):
                  self.samplerate,
                  self.subtype,
                  self.endian,
-                 self.format)
+                 self.audio_format)
 
     def load(self) -> ndarray:
         with sf.SoundFile(self.path, 'r') as file:
@@ -136,8 +136,8 @@ class AudioFile(FileWrapper):
             self.channels = file.channels
             self.subtype = file.subtype
             self.endian = file.endian
-            self.format = file.format
-        
+            self.audio_format = file.format
+
         return self.data
 
 class DataFile(FileWrapper):
@@ -179,6 +179,6 @@ class PEAQData(OutputAnalysis):
 
     def get_di(self) -> float:
         return self._peaq_di
-    
+
     def __hash__(self) -> int:
         return calculate_hash(self._peaq_odg, self._peaq_di)

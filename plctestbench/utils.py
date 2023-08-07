@@ -5,11 +5,12 @@ def get_class(class_name):
     '''
     This function returns the class with the given name.
     '''
-    for module in sys.modules:
-        if module.startswith('plctestbench'):
-            if hasattr(sys.modules[module], class_name):
-                return getattr(sys.modules[module], class_name)
-            
+    for module_name, module in sys.modules.items():
+        if module_name.startswith('plctestbench'):
+            if hasattr(module, class_name):
+                return getattr(module, class_name)
+    raise ValueError(f"The class {class_name} does not exist.")
+
 def compute_hash(obj):
     '''
     This function returns the hash of the given object.

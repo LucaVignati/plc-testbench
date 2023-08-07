@@ -3,7 +3,7 @@ from plctestbench.utils import compute_hash
 class Settings(object):
 
     def __init__(self, settings: dict=None) -> None:
-        self.settings = {} if settings==None else settings.copy()
+        self.settings = {} if settings is None else settings.copy()
 
     def inherit_from(self, parent_settings):
         '''
@@ -14,10 +14,10 @@ class Settings(object):
         '''
         for key, value in parent_settings.get_all().items():
             self.settings[key] = value
-        
+
         # Save parent hash to use in __hash__ method
         self.parent = str(hash(parent_settings))
-    
+
     def add(self, key, value):
         '''
         This method is used to add a setting.
@@ -27,8 +27,8 @@ class Settings(object):
                 value:  the value of the setting to be added.
         '''
         if key in self.settings:
-            raise KeyError("The key {} is already present in the settings.".format(key))
-        
+            raise KeyError(f"The key {key} is already present in the settings.")
+
         self.settings[key] = value
 
     def get(self, key):
@@ -39,10 +39,10 @@ class Settings(object):
                 key:    the key of the setting to be retrieved.
         '''
         if key not in self.settings:
-            raise KeyError("The key {} is not present in the settings.".format(key))
-        
+            raise KeyError(f"The key {key} is not present in the settings.")
+
         return self.settings[key]
-    
+
     def get_all(self):
         '''
         This method is used to retrieve all the settings.
@@ -61,11 +61,11 @@ class Settings(object):
         '''
         This method returns a string representation of the settings.
         '''
-        string = "{}: {}\n".format("name", self.__class__.__name__ )
+        string = f"{'name'}: {self.__class__.__name__}\n"
         keys = list(self.settings.keys())
         keys.sort()
         for key in keys:
-            string += "{}: {}\n".format(key, self.settings[key])
+            string += f"{key}: {self.settings[key]}\n"
         return string
 
     def __copy__(self):
@@ -87,10 +87,10 @@ class OriginalAudioSettings(Settings):
         '''
         super().__init__()
         self.settings["filename"] = filename
-    
+
     def set_fs(self, fs):
         self.settings["fs"] = fs
-        
+
 
 class BinomialPLSSettings(Settings):
 

@@ -1,9 +1,11 @@
 from plctestbench.settings import Settings
-from plctestbench.file_wrapper import AudioFile
 
 class Worker(object):
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+
+    def __str__(self) -> str:
+        return self.__class__.__name__
 
 class OriginalAudio(Worker):
     def __init__(self, settings: Settings) -> None:

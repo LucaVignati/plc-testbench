@@ -1,9 +1,9 @@
+from pathlib import Path
 import pymongo
 from pymongo import MongoClient
 from plctestbench.node import Node
-from pathlib import Path
 from plctestbench.utils import escape_email
-  
+
 class DatabaseManager(object):
 
     def __init__(self, ip: str, port: int, username: str, password: str, user: dict) -> None:
@@ -21,7 +21,7 @@ class DatabaseManager(object):
 
     def get_database(self):
         return self.client[self.email]
-    
+
     def add_node(self, entry, collection_name):
         '''
         This function is used to add a node to the database.
@@ -35,7 +35,7 @@ class DatabaseManager(object):
         '''
         database = self.get_database()
         return database[collection_name].find_one({"_id": node_id})
-    
+
     def delete_node(self, node_id):
         '''
         This function is used to propagate the deletion of a document to its
@@ -46,7 +46,7 @@ class DatabaseManager(object):
             node_id = node_id.get_id()
         database = self.get_database()
         child_collection = self.get_child_collection(collection_name)
-        if child_collection!=None:
+        if child_collection is not None:
             for child in list(database[child_collection].find({"parent": node_id})):
                 self.delete_node(child["_id"])
         filepath = Path(database[collection_name].find_one({"_id": node_id})['filepath'])
@@ -70,27 +70,27 @@ class DatabaseManager(object):
         '''
         database = self.get_database()
         return database["runs"].find_one({"_id": run_id})
-    
+
     def set_run_status(self, run_id, status):
         '''
         This function is used to set the status of a run in the database.
         '''
         database = self.get_database()
         database["runs"].update_one({"_id": run_id}, {"$set": {"status": status}})
-    
+
     def delete_run(self, run_id):
         '''
         This function is used to delete a run from the database.
         '''
         database = self.get_database()
         database["runs"].delete_one({"_id": run_id})
-    
+
     def save_user(self, user):
         '''
         This function is used to save a user to the database.
         '''
         database = self.client["global"]
-        if database["users"].find_one({"email": user["email"]}) == None:
+        if database["users"].find_one({"email": user["email"]}) is None:
             database["users"].insert_one(user)
         else:
             print("User already exists in the database.")
@@ -116,7 +116,7 @@ class DatabaseManager(object):
         This function is used to retrieve the collection of a node.
         '''
         for collection in self.get_database().list_collection_names():
-            if self.get_database()[collection].find_one({"_id": node_id}) != None:
+            if self.get_database()[collection].find_one({"_id": node_id}) is not None:
                 return collection
         return None
 
@@ -127,6 +127,5 @@ class DatabaseManager(object):
         '''
         self.initialized = False
         for collection in self.get_database().list_collection_names():
-            if self.get_database()[collection].find_one({}, {"child_collection": 1}) != None:
+            if self.get_database()[collection].find_one({}, {"child_collection": 1}) is not None:
                 self.initialized |= True
-        self.initialized

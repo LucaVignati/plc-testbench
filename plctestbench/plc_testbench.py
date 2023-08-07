@@ -1,4 +1,3 @@
-from plctestbench.path_manager import PathManager
 from anytree import LevelOrderIter
 from tqdm.notebook import tqdm
 
