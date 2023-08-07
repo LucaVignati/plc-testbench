@@ -234,6 +234,25 @@ class MSECalculatorSettings(Settings):
         self.settings["hop"] = N//2
         self.settings["amp_scale"] = amp_scale
 
+class MAECalculatorSettings(Settings):
+
+    def __init__(self,
+                 N: int = 1024,
+                 amp_scale: float = 1.0,):
+        '''
+        This class containes the settings for the MAECalculator class.
+
+        Input:
+                N:              size of the windows used for computing
+                                the output measurements.
+                amp_scale:      scale factor for the amplitude of the
+                                tracks.
+        '''
+        super().__init__()
+        self.settings["N"] = N
+        self.settings["hop"] = N//2
+        self.settings["amp_scale"] = amp_scale
+
 class PEAQCalculatorSettings(Settings):
 
     def __init__(self, peaq_mode: str = 'basic'):

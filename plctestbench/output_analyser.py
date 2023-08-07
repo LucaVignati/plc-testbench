@@ -2,7 +2,7 @@ import numpy as np
 import subprocess
 from tqdm.notebook import tqdm
 from plctestbench.worker import Worker
-from .file_wrapper import MSEData, PEAQData, AudioFile
+from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -14,7 +14,7 @@ class OutputAnalyser(Worker):
         return __class__.__name__
 
 
-class MSECalculator(OutputAnalyser):
+class SimpleCalculator(OutputAnalyser):
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
         '''
@@ -26,7 +26,8 @@ class MSECalculator(OutputAnalyser):
                 reconstructed_signal: N-length test signal array.
 
             Output:
-                mse: Mean Square Error calculated between the two signals.
+                x_rw: N-length array of windowed reference signal frames.
+                x_ew: N-length array of windowed test signal frames.
         '''
         amp_scale = self.settings.get("amp_scale")
         N = self.settings.get("N")
@@ -47,13 +48,53 @@ class MSECalculator(OutputAnalyser):
                         range(0, num_samples-N, hop)])
         x_ew = np.array([np.multiply(w, x_e[i:i+N]) for i in
                         range(0, num_samples-N, hop)])
-        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in tqdm(range(len(x_rw)), desc=self.__str__())]
 
-        return MSEData(mse)
+        return x_rw, x_ew
 
     def __str__(self) -> str:
         return __class__.__name__
 
+class MSECalculator(SimpleCalculator):
+
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+        '''
+        Calculation of Mean Square Error between the reference and signal
+        under test.
+
+            Input:
+                ref_signal: original N-length signal array.
+                reconstructed_signal: N-length test signal array.
+
+            Output:
+                error: Mean Square Error calculated calculated between the two signals.
+        '''
+        x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
+        error = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in tqdm(range(len(x_rw)), desc=self.__str__())]
+        return SimpleCalculatorData(error)
+
+    def __str__(self) -> str:
+        return __class__.__name__
+    
+class MAECalculator(SimpleCalculator):
+
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+        '''
+        Calculation of Mean Absolute Error between the reference and signal
+        under test.
+
+            Input:
+                ref_signal: original N-length signal array.
+                reconstructed_signal: N-length test signal array.
+
+            Output:
+                error: Mean Absolute Error calculated calculated between the two signals.
+        '''
+        x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
+        error = [np.mean(np.abs((x_rw[n] - x_ew[n])), 0) for n in tqdm(range(len(x_rw)), desc=self.__str__())]
+        return SimpleCalculatorData(error)
+    
+    def __str__(self) -> str:   
+        return __class__.__name__
 
 class SpectralEnergyCalculator(OutputAnalyser):
 

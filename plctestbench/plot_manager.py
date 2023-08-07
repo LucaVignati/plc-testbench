@@ -6,7 +6,7 @@ import numpy as np
 
 from plctestbench.settings import Settings
 from .node import ReconstructedTrackNode, Node, OriginalTrackNode, LostSamplesMaskNode, OutputAnalysisNode
-from .output_analyser import MSECalculator, SpectralEnergyCalculator, PEAQCalculator
+from .output_analyser import SimpleCalculator, MSECalculator, MAECalculator, SpectralEnergyCalculator, PEAQCalculator
 
 class PlotManager(object):
 
@@ -92,27 +92,33 @@ class PlotManager(object):
         original_track_length = (len(original_track.get_data()))/samplerate
         data = node.get_file().get_data()
         fig = plt.figure(figsize=self.figsize, dpi=self.dpi)
-        if issubclass(node.worker.__class__, MSECalculator):
-            name = "Mean Square Error"
+        if issubclass(node.worker.__class__, SimpleCalculator):
+            worker_class = node.worker.__class__
+            if worker_class == MSECalculator:
+                name = "Mean Square Error"
+            elif worker_class == MAECalculator:
+                name = "Mean Absolute Error"
+            else:
+                raise NotImplementedError("Plotting for " + worker_class.__name__ + " not implemented")
             fig.suptitle(name)
             ax = fig.add_axes([0, 0, 1, 1])
             ax.set_xlabel("Time [s]")
             ax.set_ylabel(name)
             ax.set_xlim(0, original_track_length)
-            mse = data.get_mse()
-            dots = len(mse)
+            error = data.get_error()
+            dots = len(error)
             if dots > 500000:
                 dots = 500000
-            subsampling_factor = floor(len(mse)/dots)
-            subsampled_mse = mse[::subsampling_factor]
+            subsampling_factor = floor(len(error)/dots)
+            subsampled_error = error[::subsampling_factor]
             end = original_track_length
-            pace = end/len(subsampled_mse)
+            pace = end/len(subsampled_error)
             x = np.arange(0, end, pace)
             for n in range(n_channels):
-                if mse.ndim > 1:
-                    channel_data = subsampled_mse[:, n]
+                if error.ndim > 1:
+                    channel_data = subsampled_error[:, n]
                 else:
-                    channel_data = subsampled_mse
+                    channel_data = subsampled_error
                 label = "Channel " + str(n + 1)
                 ax.plot(x, channel_data, label=label)
             plt.legend(loc="upper left")

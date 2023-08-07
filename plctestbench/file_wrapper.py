@@ -159,15 +159,15 @@ class DataFile(FileWrapper):
 class OutputAnalysis():
     pass
 
-class MSEData(OutputAnalysis):
-    def __init__(self, mse: ndarray) -> None:
-        self._mse = np.ascontiguousarray(np.array(mse).astype(DEFAULT_DTYPE))
+class SimpleCalculatorData(OutputAnalysis):
+    def __init__(self, error: ndarray) -> None:
+        self._error = np.ascontiguousarray(np.array(error).astype(DEFAULT_DTYPE))
 
-    def get_mse(self) -> ndarray:
-        return self._mse
+    def get_error(self) -> ndarray:
+        return self._error
 
     def __hash__(self) -> int:
-        return calculate_hash(self._mse.tobytes())
+        return calculate_hash(self._error.tobytes())
 
 class PEAQData(OutputAnalysis):
     def __init__(self, peaq_odg: float, peaq_di: float) -> None:
