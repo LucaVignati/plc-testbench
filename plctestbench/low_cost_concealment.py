@@ -55,7 +55,7 @@ class LowCostConcealment:
             buffer_out = buffer
 
         buffer_size = np.shape(buffer_out)[0]
-        self_window = np.roll(self._window, -buffer_size, axis=0)
+        self._window = np.roll(self._window, -buffer_size, axis=0)
         self._window[-buffer_size:] = buffer_out
         return buffer_out
 
