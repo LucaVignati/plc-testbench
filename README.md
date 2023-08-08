@@ -6,18 +6,19 @@ It features the implementation of some of the most common packet loss models, PL
 
 **Packet Loss Simulation**
 - **Binomial**: uniform distribution of packet losses, governed by the Packet Error Ratio (PER) parameter.
-- **Gilbert-Elliot**: bursty distribution of packet losses, governed by the four probabilities associated to its two states (For each state, the probability of packet loss and the probability of transitioning to the other state) [1].
+- **Gilbert-Elliot**: bursty distribution of packet losses, governed by the four probabilities associated to its two states (For each state, the probability of packet loss and the probability of transitioning to the other state) [[1](#1)].
 
 **PLC Algorithms**
 - **Zeros**: the lost samples are replaced by zeros.
 - **Last Packet**: the lost samples are replaced by the last received packet.
-- **Low-Cost**: implementation of the algorithm proposed in [2].
-- **Deep Learning**: implementation of the algorithm proposed in [3].
+- **Low-Cost**: implementation of the algorithm proposed in [[2](#2)].
+- **Burg**: Python bindings for the [C++ implementation of the Burg method](https://github.com/matteosacchetto/burg-implementation-experiments).
+- **Deep Learning**: implementation of the algorithm proposed in [[3](#3)].
 - **External**: Python bindings for C++ to simplify the integration of existing algorithms.
 
 **Metrics**
 - **Mean Square Error**: the mean square error between the original and reconstructed signal.
-- **PEAQ**: the Perceptual Evaluation of Audio Quality (PEAQ) metric, as defined in [4].
+- **PEAQ**: the Perceptual Evaluation of Audio Quality (PEAQ) metric, as defined in [[4](#4)].
 ## Basic Usage
 
 You will need a mongoDB database to store the results. You can install it locally or use a cloud service like [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
@@ -38,7 +39,7 @@ Then run the container setting the port to 27017 and the name to mongodb. Also s
 Clone this repository, install the requirements and the plctestbench package:
 
 ```bash
-    git clone
+    git clone https://github.com/LucaVignati/plc-testbench.git
     cd plctestbench
     pip install -r requirements.txt
     pip install .
@@ -77,7 +78,7 @@ plc_algorithms = [(ZerosPLC, ZerosPLCSettings()),
                   (DeepLearningPLC, DeepLearningPLCSettings()),
                   (ExternalPLC, ExternalPLCSettings())]
 ```
-❗ At the moment, the DeepLearningPLC and ExternalPLC algorithms do not work due to some issues with the libraries used. We are working on fixing this.
+❗At the moment, the DeepLearningPLC and ExternalPLC algorithms do not work due to some issues with the libraries used. We are working on fixing this.
 
 List the metrics you want to use as follows:
 ```python
@@ -112,10 +113,14 @@ Coming soon™
 
 ## References
     
-    [1] Elliott, Edwin O. "Estimates of error rates for codes on burst-noise channels." The Bell System Technical Journal 42.5 (1963): 1977-1997.
+<a id="1">[1]</a>
+Elliott, Edwin O. "Estimates of error rates for codes on burst-noise channels." The Bell System Technical Journal 42.5 (1963): 1977-1997.
 
-    [2] Fink, Marco, and Udo Zölzer. "Low-Delay Error Concealment with Low Computational Overhead for Audio over IP Applications." DAFx. 2014.
+<a id="2">[2]</a>
+Fink, Marco, and Udo Zölzer. "Low-Delay Error Concealment with Low Computational Overhead for Audio over IP Applications." DAFx. 2014.
     
-    [3] Verma, Prateek, et al. "A deep learning approach for low-latency packet loss concealment of audio signals in networked music performance applications." 2020 27th Conference of open innovations association (FRUCT). IEEE, 2020.
+<a id="3">[3]</a> 
+Verma, Prateek, et al. "A deep learning approach for low-latency packet loss concealment of audio signals in networked music performance applications." 2020 27th Conference of open innovations association (FRUCT). IEEE, 2020.
     
-    [4] Thiede, Thilo, et al. "PEAQ-The ITU standard for objective measurement of perceived audio quality." Journal of the Audio Engineering Society 48.1/2 (2000): 3-29.
+<a id="4">[4]</a> 
+Thiede, Thilo, et al. "PEAQ-The ITU standard for objective measurement of perceived audio quality." Journal of the Audio Engineering Society 48.1/2 (2000): 3-29.
