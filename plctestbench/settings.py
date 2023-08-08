@@ -181,6 +181,21 @@ class LowCostPLCSettings(Settings):
         self.settings["fade_out_length"] = fade_out_length
         self.settings["extraction_length"] = extraction_length
 
+class BurgPLCSettings(Settings):
+
+    def __init__(self, train_size: int = 512,
+                       order: int = 1):
+        '''
+        This class containes the settings for the BurgPLC class.
+
+            Input:
+                train_size:     size of the training set.
+                order:          order of the Burg algorithm.
+        '''
+        super().__init__()
+        self.settings["train_size"] = train_size
+        self.settings["order"] = order
+
 class DeepLearningPLCSettings(Settings):
 
     def __init__(self, model_path: str,

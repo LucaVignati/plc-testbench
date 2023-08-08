@@ -2,6 +2,7 @@ from math import ceil
 import librosa
 import numpy as np
 from tqdm.notebook import tqdm
+from burg_plc import BurgBasic
 from plctestbench.worker import Worker
 from .settings import Settings
 from .low_cost_concealment import LowCostConcealment
@@ -129,6 +130,39 @@ class LowCostPLC(PLCAlgorithm):
         
         '''
         return self.lcc.process(buffer, is_valid)
+
+class BurgPLC(PLCAlgorithm):
+
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
+        self.train_size = settings.get("train_size")
+        self.order = settings.get("order")
+        self.packet_size = settings.get("packet_size")
+        self.previous_valid = False
+        self.coefficients = np.zeros(self.order)
+        self.burg = BurgBasic(self.train_size)
+
+    def prepare_to_play(self, n_channels):
+        self.context = np.zeros((self.train_size, n_channels), np.float)
+
+    def tick(self, buffer: np.ndarray, is_valid: bool):
+        '''
+        
+        '''
+        reconstructed_buffer = buffer
+        if not is_valid:
+            n_channels = np.shape(buffer)[1]
+            for n_channel in range(n_channels):
+                context = self.context[:, n_channel]
+                if self.previous_valid:
+                    self.coefficients, _ = self.burg.fit(context, self.order)
+                reconstructed_buffer[:, n_channel] = self.burg.predict(context, self.coefficients, self.packet_size)
+
+        self.context = np.roll(self.context, -self.packet_size, axis=0)
+        self.context[-self.packet_size:] = reconstructed_buffer
+
+        self.previous_valid = is_valid
+        return reconstructed_buffer
 
 class ExternalPLC(PLCAlgorithm):
 
