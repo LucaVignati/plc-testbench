@@ -1,8 +1,8 @@
-'numpy'
-'soundfile'
-'anytree'
-'pybind11'
-'pymongo'
-'tqdm'
-'matplotlib'
-'tensorflow'
+numpy
+soundfile
+anytree
+pybind11
+pymongo
+tqdm
+matplotlib
+tensorflow

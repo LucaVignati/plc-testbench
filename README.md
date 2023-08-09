@@ -40,7 +40,7 @@ Clone this repository, install the requirements and the plctestbench package:
 
 ```bash
     git clone https://github.com/LucaVignati/plc-testbench.git
-    cd plctestbench
+    cd plc-testbench
     pip install -r requirements.txt
     pip install .
 ```
