@@ -9,7 +9,7 @@ ext_modules = [
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-exec(open("plctestbench/__version__.py").read())
+exec(open("plc-testbench/__version__.py").read())
 
 setuptools.setup(name='plc-testbench',
                  version=__version__,
@@ -29,7 +29,7 @@ setuptools.setup(name='plc-testbench',
                     'soundfile',
                     'anytree',
                     'pybind11',
-                    'pymongo'
+                    'pymongo',
                     'tqdm',
                     'matplotlib',
                     'tensorflow',
