@@ -167,16 +167,16 @@ class MSEData(OutputAnalysis):
 
     def get_mse(self) -> ndarray:
         return self._mse
-    
+
     def __len__(self):
         return len(self._mse)
-    
+
     def __iter__(self):
         return self._mse.__iter__()
-    
+
     def __next__(self):
         return self._mse.__next__()
-    
+
     def __getitem__(self, key):
         return self._mse.__getitem__(key)
 
@@ -193,6 +193,6 @@ class PEAQData(OutputAnalysis):
 
     def get_di(self) -> float:
         return self._peaq_di
-    
+
     def __hash__(self) -> int:
         return calculate_hash(self._peaq_odg, self._peaq_di)

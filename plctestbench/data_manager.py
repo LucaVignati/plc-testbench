@@ -85,7 +85,8 @@ class DataManager(object):
         This function is used to initialize the data tree.
         '''
         self._recursive_tree_init()
-        return self._save_run_to_database()
+        self._save_run_to_database()
+        return self.run['_id']
 
     def _recursive_tree_init(self, parent: Node = None, idx: int = 0):
         '''
@@ -142,7 +143,6 @@ class DataManager(object):
         self.run['selected_input_files'] = list(map(lambda node: os.path.basename(node.file.path), self.root_nodes))
         
         self.database_manager.save_run(self.run)
-        return self.run['_id']
 
     def load_workers_from_database(self, run_id: int):
         '''
