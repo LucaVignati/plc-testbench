@@ -69,8 +69,6 @@ class Node(BaseNode, NodeMixin):
         return str(hash(self.settings))
     
     def run(self):
-        if self.worker != None:
-            self.worker.set_uuid(self.get_id())
 
         # Load from database if possible, otherwise run the worker
         current_node = self._load_from_database()
