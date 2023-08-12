@@ -12,12 +12,12 @@ class PLCTestbench(object):
     initialising the testing components and running the testbench.
     '''
 
-    def __init__(self, original_audio_tracks: list,
-                 packet_loss_simulators: list,
-                 plc_algorithms: list,
-                 output_analysers: list,
-                 testbench_settings: dict,
-                 user: dict,
+    def __init__(self, original_audio_tracks: list = None,
+                 packet_loss_simulators: list = None,
+                 plc_algorithms: list = None,
+                 output_analysers: list = None,
+                 testbench_settings: dict = None,
+                 user: dict = None,
                  run_id: int = None):
         '''
         Initialise the parameters and testing components.
@@ -30,10 +30,18 @@ class PLCTestbench(object):
                 fs: Sample Rate. Argument can be overriden if necessary.
                 chans: Number of Channels
         '''
+        if testbench_settings is None:
+            raise ValueError("testbench_settings must be provided")
         self.data_manager = DataManager(testbench_settings, user)
 
         if run_id:
             self.data_manager.load_workers_from_database(run_id)
+        elif packet_loss_simulators is None \
+             or plc_algorithms is None \
+             or output_analysers is None:
+            raise ValueError("packet_loss_simulators, \
+                              plc_algorithms and output_analysers \
+                              must be provided if no run_id is provided")
         else:
             self.data_manager.set_workers(original_audio_tracks,
                                           packet_loss_simulators,

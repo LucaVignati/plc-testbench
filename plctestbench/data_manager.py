@@ -26,11 +26,11 @@ class DataManager(object):
                                 folder paths.
         '''
         self.user = user if user is not None else {'email': 'default', 'first_name': 'Mario', 'last_name': 'Rossi', 'locale': 'it_IT', 'image_link': ''}
-        root_folder = testbench_settings['root_folder'] if 'root_folder' in testbench_settings.keys() else '../original_tracks'
-        db_ip = testbench_settings['db_ip'] if 'db_ip' in testbench_settings.keys() else 'localhost'
+        root_folder = testbench_settings['root_folder'] if 'root_folder' in testbench_settings.keys() else None
+        db_ip = testbench_settings['db_ip'] if 'db_ip' in testbench_settings.keys() else None
         db_port = int(testbench_settings['db_port']) if 'db_port' in testbench_settings.keys() else 27017
-        db_username = testbench_settings['db_username'] if 'db_username' in testbench_settings.keys() else 'admin'
-        db_password = testbench_settings['db_password'] if 'db_password' in testbench_settings.keys() else 'admin'
+        db_username = testbench_settings['db_username'] if 'db_username' in testbench_settings.keys() else None
+        db_password = testbench_settings['db_password'] if 'db_password' in testbench_settings.keys() else None
         db_conn_string = testbench_settings['db_conn_string'] if 'db_conn_string' in testbench_settings.keys() else None
         
         self.path_manager = PathManager(root_folder)

@@ -103,11 +103,6 @@ class OriginalTrackNode(Node):
 
     def get_track_name(self) -> str:
         return self.absolute_path.rpartition("/")[2].split(".")[0]
-    
-    def load(self) -> None:
-        self.file = AudioFile.from_path(self.absolute_path + '.wav')
-        self.file.persist = False
-        self.file.load()
 
     def _run(self) -> None:
         print(self.get_track_name())
@@ -122,10 +117,6 @@ class LostSamplesMaskNode(Node):
 
     def get_original_track_node(self) -> OriginalTrackNode:
         return self.root
-    
-    def load(self) -> None:
-        self.file = DataFile(path=self.absolute_path + '.npy', persist=False)
-        #self.file.load()
     
     def _run(self) -> None:
         original_track_data = self.get_original_track().get_data()
@@ -145,11 +136,6 @@ class ReconstructedTrackNode(Node):
     
     def get_lost_samples_mask_node(self) -> LostSamplesMaskNode:
         return self.ancestors[1]
-    
-    def load(self) -> None:
-        self.file = AudioFile.from_path(self.absolute_path + '.wav')
-        self.file.persist = False
-        self.file.load()
     
     def _run(self) -> None:
         original_track = self.get_original_track()
@@ -173,10 +159,6 @@ class OutputAnalysisNode(Node):
 
     def get_reconstructed_track_node(self) -> ReconstructedTrackNode:
         return self.ancestors[2]
-    
-    def load(self) -> None:
-        self.file = DataFile(path=self.absolute_path + '.pickle', persist=False)
-        #self.file.load()
 
     def _run(self) -> None:
         original_track = self.get_original_track()
