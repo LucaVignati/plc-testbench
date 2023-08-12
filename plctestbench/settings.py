@@ -183,14 +183,14 @@ class LowCostPLCSettings(Settings):
 
 class DeepLearningPLCSettings(Settings):
 
-    def __init__(self, model_path: str = "",
+    def __init__(self, model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
                        fs_dl: int = 16000,
-                       context_length: float = 0.5,
-                       hop_size: float = 0.25,
-                       window_length: float = 0.5,
-                       lower_edge_hertz: float = 20.0,
-                       upper_edge_hertz: float = 4000.0,
-                       num_mel_bins: int = 64):
+                       context_length: int = 8,
+                       hop_size: int = 160,
+                       window_length: int = 160*3,
+                       lower_edge_hertz: float = 40.0,
+                       upper_edge_hertz: float = 7600.0,
+                       num_mel_bins: int = 100):
         '''
         This class containes the settings for the DeepLearningPLC class.
 

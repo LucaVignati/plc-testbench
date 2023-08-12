@@ -2,6 +2,7 @@ import librosa
 from math import ceil
 import numpy as np
 from tqdm.notebook import tqdm
+import tensorflow as tf
 from plctestbench.worker import Worker
 from .settings import Settings
 from .low_cost_concealment import LowCostConcealment
