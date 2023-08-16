@@ -1,10 +1,4 @@
 import setuptools
-from pybind11.setup_helpers import Pybind11Extension, build_ext
-
-ext_modules = [
-    Pybind11Extension("plc_external",
-                      ["../ecc_python_bindings/ecc_python_bindings/python_bindings.cpp"])
-]
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -28,13 +22,12 @@ setuptools.setup(name='plc-testbench',
                     'numpy',
                     'soundfile',
                     'anytree',
-                    'pybind11',
                     'pymongo'
                     'tqdm',
                     'matplotlib',
                     'tensorflow',
+                    'cpp-plc-template',
+                    'burg-plc',
                  ],
                  python_requires='>=3.7',
-                 ext_modules=ext_modules,
-                 cmdclass={"build_ext": build_ext}
                  )

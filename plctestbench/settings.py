@@ -196,6 +196,14 @@ class BurgPLCSettings(Settings):
         self.settings["train_size"] = train_size
         self.settings["order"] = order
 
+class ExternalPLCSettings(Settings):
+
+    def __init__(self):
+        '''
+        This class containes the settings for the ExternalPLC class.
+        '''
+        super().__init__()
+
 class DeepLearningPLCSettings(Settings):
 
     def __init__(self, model_path: str,

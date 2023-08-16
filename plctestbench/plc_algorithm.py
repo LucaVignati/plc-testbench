@@ -3,6 +3,7 @@ import librosa
 import numpy as np
 from tqdm.notebook import tqdm
 from burg_plc import BurgBasic
+from cpp_plc_template import BasePlcTemplate
 from plctestbench.worker import Worker
 from .settings import Settings
 from .low_cost_concealment import LowCostConcealment
@@ -168,14 +169,8 @@ class ExternalPLC(PLCAlgorithm):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        parameters = BurgEccParameters()
-        parameters.mid_filter_length = self.settings.get("mid_filter_length")
-        parameters.mid_cross_fade_time = self.settings.get("mid_cross_fade_time")
-        parameters.side_filter_length = self.settings.get("side_filter_length")
-        parameters.side_cross_fade_time = self.settings.get("side_cross_fade_time")
-        self.bec = BurgErrorConcealer(parameters)
-        self.bec.set_mode(self.settings.get("ecc_mode"))
-        self.bec.prepare_to_play(self.settings.get("fs"), self.settings.get("packet_size"))
+        self.bpt = BasePlcTemplate()
+        self.bpt.prepare_to_play(self.settings.get("fs"), self.settings.get("packet_size"))
 
     def tick(self, buffer: np.ndarray, is_valid: bool):
         '''
@@ -183,7 +178,7 @@ class ExternalPLC(PLCAlgorithm):
         '''
         buffer = np.transpose(buffer)
         reconstructed_buffer = np.zeros(np.shape(buffer), np.float32)
-        self.bec.process(buffer, reconstructed_buffer, is_valid)
+        self.bpt.process(buffer, reconstructed_buffer, is_valid)
         reconstructed_buffer = np.transpose(reconstructed_buffer)
         return reconstructed_buffer
 
