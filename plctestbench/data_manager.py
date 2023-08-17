@@ -137,8 +137,6 @@ class DataManager(object):
         self.run['creator'] = self.user['email']
         self.run['created_on'] = datetime.datetime.now()
         self.run['status'] = 'CREATED'
-        self.run['selected_input_files'] = list(map(lambda node: os.path.basename(node.file.path), self.root_nodes))
-        
         self.database_manager.save_run(self.run)
 
     def load_workers_from_database(self, run_id: int):
