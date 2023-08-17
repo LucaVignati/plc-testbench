@@ -157,9 +157,7 @@ class DataFile(FileWrapper):
 
 
 class OutputAnalysis():
-    @staticmethod
-    def to_json():
-        return lambda o : o.__dict__ if hasattr(o, '__dict__') else o
+    pass
 
 class MSEData(OutputAnalysis):
     def __init__(self, mse: ndarray) -> None:

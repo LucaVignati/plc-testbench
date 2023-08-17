@@ -3,7 +3,6 @@ import os
 import anytree.search as search
 from anytree import LevelOrderIter
 import datetime
-from tqdm.auto import tqdm as std_tqdm
 
 from .path_manager import PathManager
 from .database_manager import DatabaseManager
@@ -43,7 +42,6 @@ class DataManager(object):
             ReconstructedTrackNode,
             OutputAnalysisNode
         ]
-        self.progress_monitor = testbench_settings["progress_monitor"] if 'progress_monitor' in testbench_settings.keys() else lambda caller: std_tqdm
         if not self.database_manager.initialized:
             for node_class, i in zip(self.node_classes, range(len(self.node_classes) - 1)):
                 self.database_manager.add_node({"child_collection": self.node_classes[i + 1].__name__}, node_class.__name__)
@@ -111,7 +109,6 @@ class DataManager(object):
             if parent == None:
                 database = self.database_manager
             child = node_class(worker=worker, settings=settings, parent=parent, database=database, folder_name=folder_name, absolute_path=absolute_path)
-            child.worker.set_progress_monitor(self.progress_monitor)
             if parent == None:
                 self.root_nodes.append(child)
             self._recursive_tree_init(child, idx + 1)

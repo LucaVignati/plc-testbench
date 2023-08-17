@@ -1,9 +1,9 @@
 from plctestbench.path_manager import PathManager
 from anytree import LevelOrderIter
-from tqdm.notebook import tqdm
 
 from .data_manager import DataManager
 from .plot_manager import PlotManager
+from .utils import progress_monitor
 
 
 class PLCTestbench(object):
@@ -54,11 +54,10 @@ class PLCTestbench(object):
         '''
         Run the testbench.
         '''
-        progress_monitor = self.data_manager.progress_monitor
         data_trees = self.data_manager.get_data_trees()
         self.data_manager.set_run_status('RUNNING')
         try:
-            for data_tree in progress_monitor(self)(data_trees, desc="Audio Tracks"):
+            for data_tree in progress_monitor(data_trees, desc="Audio Tracks"):
                 for node in LevelOrderIter(data_tree):
                     node.run()
         except KeyboardInterrupt:

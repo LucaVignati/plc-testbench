@@ -2,9 +2,9 @@ import numpy as np
 import subprocess
 from time import sleep
 
-from tqdm.notebook import tqdm
 from .worker import Worker
 from .file_wrapper import MSEData, PEAQData, AudioFile
+from .utils import progress_monitor
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -49,7 +49,7 @@ class MSECalculator(OutputAnalyser):
                         range(0, num_samples-N, hop)])
         x_ew = np.array([np.multiply(w, x_e[i:i+N]) for i in
                         range(0, num_samples-N, hop)])
-        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in self.progress_monitor(self)(range(len(x_rw)), desc=self.__str__())]
+        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in progress_monitor(range(len(x_rw)), desc=self.__str__())]
 
         return MSEData(mse)
 
@@ -86,7 +86,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
         num_samples = len(x_r)
 
         x_rk, x_ek = [(np.fft.fft(w*x_r[i:i+N]), np.fft.fft(w*x_e[i:i+N])) for i in
-                        self.progress_monitor(self)(range(0, num_samples-N, hop), desc=self.__str__())]
+                        progress_monitor(range(0, num_samples-N, hop), desc=self.__str__())]
         x_2rk = np.abs(np.array(x_rk))**2
         x_2ek = np.abs(np.array(x_ek))**2
 
@@ -125,7 +125,7 @@ class PEAQCalculator(OutputAnalyser):
         
         peaq_output = completed_process.stdout
 
-        for idx in self.progress_monitor(self)(range(1, 10), desc=self.__str__()):
+        for idx in progress_monitor(range(1, 10), desc=self.__str__()):
             sleep(0.1)
 
         peaq_odg_text = "Objective Difference Grade: "
