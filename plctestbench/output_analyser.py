@@ -1,9 +1,9 @@
-import numpy as np
 import subprocess
 from time import sleep
-
+import numpy as np
+from .settings import Settings
 from .worker import Worker
-from .file_wrapper import MSEData, PEAQData, AudioFile
+from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile
 from .utils import progress_monitor
 
 def normalise(x, amp_scale=1.0):
@@ -12,11 +12,10 @@ def normalise(x, amp_scale=1.0):
 
 class OutputAnalyser(Worker):
 
-    def __str__(self) -> str:
-        return __class__.__name__
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
 
-
-class MSECalculator(OutputAnalyser):
+class SimpleCalculator(OutputAnalyser):
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> MSEData:
         '''
@@ -28,7 +27,8 @@ class MSECalculator(OutputAnalyser):
                 reconstructed_signal: N-length test signal array.
 
             Output:
-                mse: Mean Square Error calculated between the two signals.
+                x_rw: N-length array of windowed reference signal frames.
+                x_ew: N-length array of windowed test signal frames.
         '''
         amp_scale = self.settings.get("amp_scale")
         N = self.settings.get("N")
@@ -49,13 +49,44 @@ class MSECalculator(OutputAnalyser):
                         range(0, num_samples-N, hop)])
         x_ew = np.array([np.multiply(w, x_e[i:i+N]) for i in
                         range(0, num_samples-N, hop)])
-        mse = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in progress_monitor(range(len(x_rw)), desc=self.__str__())]
 
-        return MSEData(mse)
+        return x_rw, x_ew
 
-    def __str__(self) -> str:
-        return __class__.__name__
+class MSECalculator(SimpleCalculator):
 
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+        '''
+        Calculation of Mean Square Error between the reference and signal
+        under test.
+
+            Input:
+                ref_signal: original N-length signal array.
+                reconstructed_signal: N-length test signal array.
+
+            Output:
+                error: Mean Square Error calculated calculated between the two signals.
+        '''
+        x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
+        error = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in tqdm(range(len(x_rw)), desc=str(self))]
+        return SimpleCalculatorData(error)
+
+class MAECalculator(SimpleCalculator):
+
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+        '''
+        Calculation of Mean Absolute Error between the reference and signal
+        under test.
+
+            Input:
+                ref_signal: original N-length signal array.
+                reconstructed_signal: N-length test signal array.
+
+            Output:
+                error: Mean Absolute Error calculated calculated between the two signals.
+        '''
+        x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
+        error = [np.mean(np.abs((x_rw[n] - x_ew[n])), 0) for n in tqdm(range(len(x_rw)), desc=str(self))]
+        return SimpleCalculatorData(error)
 
 class SpectralEnergyCalculator(OutputAnalyser):
 
@@ -94,9 +125,6 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
         return se
 
-    def __str__(self) -> str:
-        return __class__.__name__
-
 class PEAQCalculator(OutputAnalyser):
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> PEAQData:
@@ -117,12 +145,12 @@ class PEAQCalculator(OutputAnalyser):
         new_data = normalise(reconstructed_track_node.get_data())
         reconstructed_track_norm_file = AudioFile.from_audio_file(reconstructed_track_node, new_data=new_data, new_path=new_path)
         completed_process = subprocess.run(["peaq", mode_flag, "--gst-plugin-path", "/usr/lib/gstreamer-1.0/",
-                                           original_track_norm_file.get_path(), reconstructed_track_norm_file.get_path()], capture_output=True, text=True)
-        
+                                           original_track_norm_file.get_path(), reconstructed_track_norm_file.get_path()], capture_output=True, text=True, check=False)
+
         original_track_norm_file.delete()
         reconstructed_track_norm_file.delete()
         print("Completed.")
-        
+
         peaq_output = completed_process.stdout
 
         for idx in progress_monitor(range(1, 10), desc=self.__str__()):
@@ -137,14 +165,7 @@ class PEAQCalculator(OutputAnalyser):
             peaq_odg = float(peaq_odg)
             peaq_di = float(peaq_di)
             return PEAQData(peaq_odg, peaq_di)
-        else:
-            print("The peaq program exited with the following errors:")
-            print(completed_process.stdout)
 
-    def __str__(self) -> str:
-        return __class__.__name__
-
-# class MAECalculator(OutputAnalyser):
-
-#     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+        print("The peaq program exited with the following errors:")
+        print(completed_process.stdout)
         

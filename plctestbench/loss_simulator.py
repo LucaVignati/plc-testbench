@@ -14,7 +14,7 @@ class PacketLossSimulator(Worker):
             seed:   value to be used as a seed for the random number
                     generator.
         '''
-        self.settings = settings
+        super().__init__(settings)
         self.packet_size = settings.get("packet_size")
 
     def run(self, num_samples) ->np.ndarray:
@@ -23,7 +23,7 @@ class PacketLossSimulator(Worker):
         the position of lost samples in the original audio track.
         '''
         lost_samples_idx = []
-        for idx in progress_monitor(range(num_samples), desc=self.__str__()):
+        for idx in progress_monitor(range(num_samples), desc=str(self)):
             if (idx % self.packet_size) == 0:
                 lost_packet = self.tick()
             if lost_packet:
@@ -31,11 +31,15 @@ class PacketLossSimulator(Worker):
 
         return np.array(lost_samples_idx)
 
+    def __str__(self) -> str:
+        return self.__class__.__name__ + '_s' + str(self.settings.get("seed"))
+
     def tick(self) -> bool:
         '''
         Placeholder function to be implemented by the derived classes.
         '''
-        pass
+        raise NotImplementedError
+
 class BinomialPLS(PacketLossSimulator):
     '''
     This class implements a binomial distribution to be used as a loss model
@@ -61,9 +65,6 @@ class BinomialPLS(PacketLossSimulator):
         '''
         b_trial_result = npr.random() <= self.per
         return b_trial_result
-
-    def __str__(self) -> str:
-        return __class__.__name__ + '_s' + str(self.settings.get("seed"))
 
 class GilbertElliotPLS(PacketLossSimulator):
     '''
@@ -118,6 +119,3 @@ class GilbertElliotPLS(PacketLossSimulator):
         if loss <= self.current_state[2]:
             return True
         return False
-
-    def __str__(self) -> str:
-        return __class__.__name__ + '_s' + str(self.settings.get("seed"))

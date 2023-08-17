@@ -1,5 +1,5 @@
-import librosa
 from math import ceil
+import librosa
 import numpy as np
 import tensorflow as tf
 from plctestbench.worker import Worker
@@ -28,7 +28,7 @@ class PLCAlgorithm(Worker):
         self.prepare_to_play(n_channels)
         j = 0
 
-        for i in progress_monitor(range(n_packets), desc=self.__str__()):
+        for i in progress_monitor(range(n_packets), desc=str(self)):
             if i > lost_packets_idx[j] and j < len(lost_packets_idx) - 1: j += 1
             start_idx = i*packet_size
             end_idx = (i+1)*packet_size
@@ -41,19 +41,17 @@ class PLCAlgorithm(Worker):
 
     def prepare_to_play(self, n_channels):
         '''
-        Placeholder function to be implemented by the derived classes.
+        Not all the PLC algorithms need to prepare to play.
+        This function will be executed when the PLC algorithm
+        doesn't override it (because it doesn't need it) so
+        this function does nothing.
         '''
-        pass
 
     def tick(self, buffer: np.ndarray, is_valid: bool) -> np.ndarray:
         '''
         Placeholder function to be implemented by the derived classes.
         '''
-        pass
-
-    def __str__(self) -> str:
-        return __class__.__name__
-
+        raise NotImplementedError
 
 class ZerosPLC(PLCAlgorithm):
 
@@ -77,10 +75,6 @@ class ZerosPLC(PLCAlgorithm):
             reconstructed_buffer = np.zeros(np.shape(buffer))
 
         return reconstructed_buffer
-
-    def __str__(self) -> str:
-        return __class__.__name__
-
 
 class LastPacketPLC(PLCAlgorithm):
 
@@ -108,16 +102,13 @@ class LastPacketPLC(PLCAlgorithm):
             if self.previous_packet is None:
                 self.previous_packet = np.zeros(np.shape(buffer))
             reconstructed_buffer = self.previous_packet
-        
+
         self.previous_packet = buffer
-            
+
         return reconstructed_buffer
 
-    def __str__(self) -> str:
-        return __class__.__name__
-
 class LowCostPLC(PLCAlgorithm):
-    
+
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         self.lcc = LowCostConcealment(settings.get("max_frequency"),
@@ -138,10 +129,6 @@ class LowCostPLC(PLCAlgorithm):
         
         '''
         return self.lcc.process(buffer, is_valid)
-
-    def __str__(self) -> str:
-        return __class__.__name__
-
 
 class ExternalPLC(PLCAlgorithm):
 
@@ -165,10 +152,6 @@ class ExternalPLC(PLCAlgorithm):
         self.bec.process(buffer, reconstructed_buffer, is_valid)
         reconstructed_buffer = np.transpose(reconstructed_buffer)
         return reconstructed_buffer
-
-    def __str__(self) -> str:
-        return __class__.__name__
-
 
 class DeepLearningPLC(PLCAlgorithm):
 
@@ -217,16 +200,3 @@ class DeepLearningPLC(PLCAlgorithm):
             last_packet = np.expand_dims(context[-self.packet_size:, channel_index], axis=0)
             reconstructed_buffer[channel_index, :] = self.model((spectrograms, last_packet))
         return reconstructed_buffer.T
-
-    def __str__(self) -> str:
-        return __class__.__name__
-
-# class LMSRegressionPLC(PLCAlgorithm):
-
-#     def run(self, input_wave, lost_packet_mask):
-#         '''
-
-#         '''
-#         output_wave = input_wave * lost_packet_mask
-
-#         return output_wave

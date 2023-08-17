@@ -66,7 +66,7 @@ class PathManager(object):
         Inputs:
             node:   the node instance to compute the relative path for
         '''
-        if parent == None:
+        if parent is None:
             return self._set_root_node_path(settings)
         
         folder_name = None
@@ -81,6 +81,7 @@ class PathManager(object):
                 os.mkdir(folder_path)
         return folder_name, absolute_path
 
+    @staticmethod
     def change_file_extension(filepath: str, new_extension: str) -> str:
         '''
         This function retrieves the filepath associated to the given node and

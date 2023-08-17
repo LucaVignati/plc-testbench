@@ -1,6 +1,6 @@
+from copy import copy
 from anytree import NodeMixin
 import numpy as np
-from copy import copy
 
 from plctestbench.worker import Worker
 from plctestbench.file_wrapper import FileWrapper, AudioFile, DataFile
@@ -13,9 +13,9 @@ class Node(BaseNode, NodeMixin):
     def __init__(self, file: FileWrapper=None, worker: Worker=None, settings: Settings=None, absolute_path: str=None, parent=None, database=None, folder_name=None) -> None:
         self.file = file
         self.settings = copy(settings)
-        if parent!=None:
+        if parent is not None:
             self.settings.inherit_from(parent.settings)
-        self.worker = worker(self.settings) if worker!=None else None
+        self.worker = worker(self.settings) if worker is not None else None
         self.database = database
         self.parent = parent
         self.folder_name = folder_name
@@ -29,7 +29,7 @@ class Node(BaseNode, NodeMixin):
 
     def get_file(self) -> FileWrapper:
         return self.file
-    
+
     def get_folder_name(self) -> str:
         return self.folder_name
 
@@ -44,13 +44,16 @@ class Node(BaseNode, NodeMixin):
 
     def get_original_track(self) -> AudioFile:
         return self.root.get_file()
-    
+
     def get_lost_samples_mask(self) -> DataFile:
         return self.ancestors[1].get_file()
 
     def get_reconstructed_track(self) -> AudioFile:
         return self.ancestors[2].get_file()
-    
+
+    def get_setting(self, setting_name: str):
+        return self.settings.get(setting_name)
+
     def _get_database(self):
         return self.root.database
 
@@ -62,17 +65,17 @@ class Node(BaseNode, NodeMixin):
         entry["filepath"] = self.file.get_path()
         entry["_id"] = self.get_id()
         entry["file_hash"] = str(hash(self.file))
-        entry["parent"] = self.parent.get_id() if self.parent!=None else None
+        entry["parent"] = self.parent.get_id() if self.parent is not None else None
         self._get_database().add_node(entry, type(self).__name__)
 
     def get_id(self) -> str:
         return str(hash(self.settings))
-    
+
     def run(self):
 
         # Load from database if possible, otherwise run the worker
         current_node = self._load_from_database()
-        if current_node == None:
+        if current_node is None:
             self._run()
             self._save_to_database()
         else:
@@ -80,7 +83,7 @@ class Node(BaseNode, NodeMixin):
 
             # Manage consistency between database and filesystem
             if str(hash(self.file)) != current_node["file_hash"]:
-                if self.parent == None:
+                if self.parent is None:
                     raise Exception("The following audio file has changed: " + self.file.get_path())
                 else:
                     self._get_database().delete_node(self.get_id())
@@ -107,7 +110,7 @@ class OriginalTrackNode(Node):
     def _run(self) -> None:
         print(self.get_track_name())
         self.get_worker().run()
-    
+
 class LostSamplesMaskNode(Node):
     def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None, folder_name=None) -> None:
         super().__init__(file=file, worker=worker, settings=settings, absolute_path=absolute_path, parent=parent, database=database, folder_name=folder_name)
@@ -117,7 +120,7 @@ class LostSamplesMaskNode(Node):
 
     def get_original_track_node(self) -> OriginalTrackNode:
         return self.root
-    
+
     def _run(self) -> None:
         original_track_data = self.get_original_track().get_data()
         num_samples = len(original_track_data)
@@ -133,10 +136,10 @@ class ReconstructedTrackNode(Node):
 
     def get_original_track_node(self) -> OriginalTrackNode:
         return self.root
-    
+
     def get_lost_samples_mask_node(self) -> LostSamplesMaskNode:
         return self.ancestors[1]
-    
+
     def _run(self) -> None:
         original_track = self.get_original_track()
         original_track_data = original_track.get_data()
@@ -153,7 +156,7 @@ class OutputAnalysisNode(Node):
 
     def get_original_track_node(self) -> OriginalTrackNode:
         return self.root
-    
+
     def get_lost_samples_mask_node(self) -> LostSamplesMaskNode:
         return self.ancestors[1]
 
