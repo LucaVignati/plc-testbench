@@ -17,7 +17,7 @@ class OutputAnalyser(Worker):
 
 class SimpleCalculator(OutputAnalyser):
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> MSEData:
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> SimpleCalculatorData:
         '''
         Calculation of Mean Square Error between the reference and signal
         under test.
@@ -67,7 +67,7 @@ class MSECalculator(SimpleCalculator):
                 error: Mean Square Error calculated calculated between the two signals.
         '''
         x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
-        error = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in tqdm(range(len(x_rw)), desc=str(self))]
+        error = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in progress_monitor(self)(range(len(x_rw)), desc=str(self))]
         return SimpleCalculatorData(error)
 
 class MAECalculator(SimpleCalculator):
@@ -85,7 +85,7 @@ class MAECalculator(SimpleCalculator):
                 error: Mean Absolute Error calculated calculated between the two signals.
         '''
         x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
-        error = [np.mean(np.abs((x_rw[n] - x_ew[n])), 0) for n in tqdm(range(len(x_rw)), desc=str(self))]
+        error = [np.mean(np.abs((x_rw[n] - x_ew[n])), 0) for n in progress_monitor(self)(range(len(x_rw)), desc=str(self))]
         return SimpleCalculatorData(error)
 
 class SpectralEnergyCalculator(OutputAnalyser):
@@ -117,7 +117,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
         num_samples = len(x_r)
 
         x_rk, x_ek = [(np.fft.fft(w*x_r[i:i+N]), np.fft.fft(w*x_e[i:i+N])) for i in
-                        progress_monitor(range(0, num_samples-N, hop), desc=self.__str__())]
+                        progress_monitor(self)(range(0, num_samples-N, hop), desc=str(self))]
         x_2rk = np.abs(np.array(x_rk))**2
         x_2ek = np.abs(np.array(x_ek))**2
 
@@ -153,7 +153,7 @@ class PEAQCalculator(OutputAnalyser):
 
         peaq_output = completed_process.stdout
 
-        for idx in progress_monitor(range(1, 10), desc=self.__str__()):
+        for idx in progress_monitor(self)(range(1, 10), desc=str(self)):
             sleep(0.1)
 
         peaq_odg_text = "Objective Difference Grade: "

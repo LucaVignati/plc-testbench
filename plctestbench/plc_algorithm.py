@@ -28,7 +28,7 @@ class PLCAlgorithm(Worker):
         self.prepare_to_play(n_channels)
         j = 0
 
-        for i in progress_monitor(range(n_packets), desc=str(self)):
+        for i in progress_monitor(self)(range(n_packets), desc=str(self)):
             if i > lost_packets_idx[j] and j < len(lost_packets_idx) - 1: j += 1
             start_idx = i*packet_size
             end_idx = (i+1)*packet_size

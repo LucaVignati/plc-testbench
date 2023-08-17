@@ -18,5 +18,5 @@ class OriginalAudio(Worker):
         super().__init__(settings)
 
     def run(self) -> None:
-        for _ in progress_monitor(range(1, 10), desc=str(self)):
+        for _ in progress_monitor(self)(range(1, 10), desc=str(self)):
             sleep(0.1)

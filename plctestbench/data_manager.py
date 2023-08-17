@@ -5,7 +5,7 @@ from .path_manager import PathManager
 from .database_manager import DatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .settings import Settings
-from .utils import get_class, compute_hash, progress_monitor
+from .utils import get_class, compute_hash
 
 
 class DataManager(object):

@@ -24,7 +24,7 @@ if _is_notebook():
     from tqdm.notebook import tqdm
 else:
     from tqdm import tqdm
-progress_monitor = tqdm
+progress_monitor = lambda caller: tqdm
 
 
 def get_class(class_name):

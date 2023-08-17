@@ -56,7 +56,7 @@ class PLCTestbench(object):
         data_trees = self.data_manager.get_data_trees()
         self.data_manager.set_run_status('RUNNING')
         try:
-            for data_tree in progress_monitor(data_trees, desc="Audio Tracks"):
+            for data_tree in progress_monitor(self)(data_trees, desc="Audio Tracks"):
                 for node in LevelOrderIter(data_tree):
                     node.run()
         except KeyboardInterrupt:
