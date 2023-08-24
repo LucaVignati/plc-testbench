@@ -40,7 +40,7 @@ Clone this repository, install the requirements and the plctestbench package:
 
 ```bash
     git clone https://github.com/LucaVignati/plc-testbench.git
-    cd plctestbench
+    cd plc-testbench
     pip install -r requirements.txt
     pip install .
 ```
@@ -65,7 +65,7 @@ Input the settings of the testbench as follows:
 }
 ```
 
-List the audio files you want to input as follows:
+List the audio files you want to input as follows (path relative to `root_folder`):
 ```python
 original_audio_tracks = [(OriginalAudio, OriginalAudioSettings('Blues_Drums.wav')),
                          (OriginalAudio, OriginalAudioSettings('Blues_Piano.wav'))]
@@ -86,7 +86,7 @@ plc_algorithms = [(ZerosPLC, ZerosPLCSettings()),
                   (DeepLearningPLC, DeepLearningPLCSettings()),
                   (ExternalPLC, ExternalPLCSettings())]
 ```
-❗At the moment, the DeepLearningPLC and ExternalPLC algorithms do not work due to some issues with the libraries used. We are working on fixing this.
+❗The DeepLearningPLC algorithm requires the `bufer_size` to be set to 128 in the `Settings` of the `PacketLossSimulator` of choice.
 
 List the metrics you want to use as follows:
 ```python
@@ -117,7 +117,51 @@ You can also plot the waveform of the reconstructed audio tracks, however since 
 You will find both the audio files and the results in the folder specified in the `root_folder` setting.
 
 ## User Interface
-Coming soon™
+This user interface is an ongoing thesis project carried out by Stefano Dallona under the supervision of Luca Vignati.
+It is a web application developed using the React framework.
+The code is available in the following two repositories:
+
+- [plc-testbench-ui](https://github.com/stefano-dallona/plc-testbench-ui)
+- [react-test](https://github.com/stefano-dallona/react-test)
+
+The easiest way to try it out is to use the Docker image provided by Stefano Dallona:
+```bash
+    docker pull stdallona/plc-testbench-ui:1.0.1
+```
+This Docker image already contains the code of PLCTestbench so it only requires a running MongoDB instance (see previous section).
+
+Run the following command to start the container:
+```bash
+    docker run -e DB_USERNAME=$DB_USERNAME \
+               -e DB_PASSWORD=$DB_PASSWORD \
+               -e DB_HOST=$DB_HOST \
+               -e DB_CONN_STRING=$DB_CONN_STRING \
+               -e GEVENT_SUPPORT=$GEVENT_SUPPORT \
+               -e FLASK_APP=$FLASK_APP \
+               -e FLASK_DEBUG=$FLASK_DEBUG \
+               -e FRONTEND_DATA_FOLDER=$FRONTEND_DATA_FOLDER \
+               -e SECURITY_ENABLED=$SECURITY_ENABLED \
+               -p 5000:5000 \
+               -v /path/to/root/folder:/original_tracks \
+               --name plc-testbench-ui \
+               stdallona/plc-testbench-ui:1.0.1
+```
+Where the environment variables are:
+| Variable | Value | Description |
+| --- | --- | --- |
+| DB_USERNAME | myUserAdmin | Username of the database |
+| DB_PASSWORD | admin | Password of the database |
+| DB_HOST | ip.of.the.database | IP address of the database |
+| DB_CONN_STRING | mongodb://ip:27017 | Connection string of the database |
+| GEVENT_SUPPORT | True | Enable gevent support |
+| FLASK_APP | app.py | Flask application |
+| FLASK_DEBUG | True | Enable Flask debug mode |
+| FRONTEND_DATA_FOLDER | /original_tracks | Path to the folder containing the audio files |
+| SECURITY_ENABLED | False | Enable security |
+
+Then open your browser and go to `localhost:5000`.
+
+❗Please consider the pre-release status of this user interface when using it.
 
 ## References
     
