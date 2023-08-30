@@ -5,7 +5,7 @@ from .path_manager import PathManager
 from .database_manager import DatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .settings import Settings
-from .utils import get_class, compute_hash
+from .utils import get_class, compute_hash, progress_monitor
 
 
 class DataManager(object):
@@ -26,6 +26,7 @@ class DataManager(object):
         db_username = testbench_settings['db_username'] if 'db_username' in testbench_settings.keys() else None
         db_password = testbench_settings['db_password'] if 'db_password' in testbench_settings.keys() else None
         db_conn_string = testbench_settings['db_conn_string'] if 'db_conn_string' in testbench_settings.keys() else None
+        self.progress_monitor = testbench_settings['progress_monitor'] if 'progress_monitor' in testbench_settings.keys() else progress_monitor
         
         self.path_manager = PathManager(root_folder)
         self.database_manager = DatabaseManager(ip=db_ip, port=db_port, username=db_username, password=db_password, user=self.user, conn_string=db_conn_string)
@@ -40,6 +41,22 @@ class DataManager(object):
         if not self.database_manager.initialized:
             for node_class, i in zip(self.node_classes, range(len(self.node_classes) - 1)):
                 self.database_manager.add_node({"child_collection": self.node_classes[i + 1].__name__}, node_class.__name__)
+
+    def run_testbench(self) -> None:
+        '''
+        Run the testbench.
+        '''
+        self._set_run_status('RUNNING')
+        try:
+            for root_node in self.progress_monitor(self)(self.root_nodes, desc="Audio Tracks"):
+                for node in LevelOrderIter(root_node):
+                    node.run()
+        except KeyboardInterrupt:
+            print("Simulation interrupted by user.")
+            return
+        finally:
+            self._set_run_status('FAILED')
+        self._set_run_status('COMPLETED')
 
     def set_workers(self, original_audio_tracks: list,
                           packet_loss_simulators: list,
@@ -100,6 +117,7 @@ class DataManager(object):
         worker_class = self.worker_classes[idx]
         node_class = self.node_classes[idx]
         for worker, settings in worker_class:
+            settings.set_progress_monitor(self.progress_monitor)
             folder_name, absolute_path = self.path_manager.get_node_paths(worker, settings, parent)
             if parent is None:
                 database = self.database_manager
@@ -148,7 +166,7 @@ class DataManager(object):
                 workers.append((get_class(worker['name']), settings))
             self.worker_classes.append(workers)
 
-    def set_run_status(self, state: str):
+    def _set_run_status(self, state: str):
         '''
         This function is used to set the state of the run in the database.
         '''

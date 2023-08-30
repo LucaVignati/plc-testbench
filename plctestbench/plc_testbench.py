@@ -2,7 +2,6 @@ from anytree import LevelOrderIter
 
 from .data_manager import DataManager
 from .plot_manager import PlotManager
-from .utils import progress_monitor
 
 
 class PLCTestbench(object):
@@ -53,18 +52,7 @@ class PLCTestbench(object):
         '''
         Run the testbench.
         '''
-        data_trees = self.data_manager.get_data_trees()
-        self.data_manager.set_run_status('RUNNING')
-        try:
-            for data_tree in progress_monitor(self)(data_trees, desc="Audio Tracks"):
-                for node in LevelOrderIter(data_tree):
-                    node.run()
-        except KeyboardInterrupt:
-            print("Simulation interrupted by user.")
-            return
-        finally:
-            self.data_manager.set_run_status('FAILED')
-        self.data_manager.set_run_status('COMPLETED')
+        self.data_manager.run_testbench()
 
     def plot(self, plot_settings={}, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, reconstructed_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
         '''

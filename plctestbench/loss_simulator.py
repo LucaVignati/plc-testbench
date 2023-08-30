@@ -2,7 +2,6 @@ import numpy as np
 import numpy.random as npr
 from plctestbench.worker import Worker
 from .settings import Settings, BinomialPLSSettings, GilbertElliotPLSSettings
-from .utils import progress_monitor
 
 class PacketLossSimulator(Worker):
     '''
@@ -23,7 +22,7 @@ class PacketLossSimulator(Worker):
         the position of lost samples in the original audio track.
         '''
         lost_samples_idx = []
-        for idx in progress_monitor(self)(range(num_samples), desc=str(self)):
+        for idx in self.progress_monitor(range(num_samples), desc=str(self)):
             if (idx % self.packet_size) == 0:
                 lost_packet = self.tick()
             if lost_packet:

@@ -5,6 +5,21 @@ class Settings(object):
     def __init__(self, settings: dict=None) -> None:
         self.settings = {} if settings is None else settings.copy()
 
+    def set_progress_monitor(self, progress_monitor):
+        '''
+        This method is used to set the progress monitor.
+
+            Input:
+                progress_monitor:   the progress monitor to be used.
+        '''
+        self.progress_monitor = progress_monitor
+
+    def get_progress_monitor(self):
+        '''
+        This method is used to get the progress monitor.
+        '''
+        return self.progress_monitor
+
     def inherit_from(self, parent_settings):
         '''
         This method is used to inherit the settings from the parent node.
@@ -13,10 +28,13 @@ class Settings(object):
                 parent_settings:    the parent Settings object.
         '''
         for key, value in parent_settings.get_all().items():
-            self.settings[key] = value
+            self.add(key, value)
 
         # Save parent hash to use in __hash__ method
         self.parent = str(hash(parent_settings))
+
+        # Save progress_monitor
+        self.set_progress_monitor(parent_settings.get_progress_monitor())
 
     def add(self, key, value):
         '''
@@ -73,6 +91,7 @@ class Settings(object):
         This method returns a copy of the settings.
         '''
         settings_copy = Settings(self.settings.copy())
+        settings_copy.set_progress_monitor(self.get_progress_monitor())
         settings_copy.__class__ = self.__class__
         return settings_copy
 
