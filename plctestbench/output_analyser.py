@@ -122,7 +122,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
         se = np.array(x_2rk - 2*np.sqrt(x_2rk * x_2ek) + x_2ek)
 
-        return se
+        return SimpleCalculatorData(se)
 
 class PEAQCalculator(OutputAnalyser):
 

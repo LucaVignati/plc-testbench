@@ -1,10 +1,12 @@
 from copy import copy
 from anytree import NodeMixin
+from time import sleep
 import numpy as np
 
 from plctestbench.worker import Worker
 from plctestbench.file_wrapper import FileWrapper, AudioFile, DataFile
 from plctestbench.settings import Settings
+import plctestbench.utils as plcutils
 
 class BaseNode(object):
     pass
@@ -88,6 +90,9 @@ class Node(BaseNode, NodeMixin):
                 else:
                     self._get_database().delete_node(self.get_id())
                     self.run()
+        
+            for _ in self.worker.progress_monitor(range(0, 2), desc=str(self.worker)):
+                sleep(0.1)
     
     def __str__(self) -> str:
         return "file: " + str(self.file) + '\n' +\

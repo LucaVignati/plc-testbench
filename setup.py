@@ -6,7 +6,7 @@ ext_modules = [
                       ["../ecc_python_bindings/ecc_python_bindings/python_bindings.cpp"])
 ]
 '''
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf8") as fh:
     long_description = fh.read()
 
 exec(open("plctestbench/__version__.py").read())

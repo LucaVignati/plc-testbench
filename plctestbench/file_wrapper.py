@@ -167,16 +167,16 @@ class SimpleCalculatorData(OutputAnalysis):
         return self._error
 
     def __len__(self):
-        return len(self._mse)
+        return len(self._error)
 
     def __iter__(self):
-        return self._mse.__iter__()
+        return self._error.__iter__()
 
     def __next__(self):
-        return self._mse.__next__()
+        return self._error.__next__()
 
     def __getitem__(self, key):
-        return self._mse.__getitem__(key)
+        return self._error.__getitem__(key)
 
     def __hash__(self) -> int:
         return calculate_hash(self._error.tobytes())
