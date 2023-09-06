@@ -1,6 +1,5 @@
-from time import sleep
-
 from plctestbench.settings import Settings
+from plctestbench.utils import dummy_progress_bar
 
 class Worker(object):
     def __init__(self, settings: Settings) -> None:
@@ -18,5 +17,4 @@ class OriginalAudio(Worker):
         super().__init__(settings)
 
     def run(self) -> None:
-        for _ in self.progress_monitor(range(1), desc=str(self)):
-            sleep(0.1)
+        dummy_progress_bar(self)

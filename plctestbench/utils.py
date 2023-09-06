@@ -1,5 +1,6 @@
 import sys
 import hashlib
+from time import sleep
 
 def _is_notebook() -> bool:
     '''
@@ -48,3 +49,10 @@ def escape_email(email):
     This function escapes the given email address.
     '''
     return email.replace('@', '_at_').replace('.', '_dot_')
+
+def dummy_progress_bar(worker):
+    '''
+    This function is used to create a dummy progress bar.
+    '''
+    for _ in worker.progress_monitor(range(1), desc=str(worker)):
+        sleep(0.1)

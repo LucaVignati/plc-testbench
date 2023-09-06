@@ -1,9 +1,9 @@
 import subprocess
-from time import sleep
 import numpy as np
 from .settings import Settings
 from .worker import Worker
 from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile
+from .utils import dummy_progress_bar
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -134,7 +134,6 @@ class PEAQCalculator(OutputAnalyser):
             mode_flag = '--advanced'
         else:
             mode_flag = ''
-        # print("GSTREAMER PEAQ running...", end=" ")
         path = original_track_node.get_path()
         new_path = path[:-4] + "_norm" + path[-4:]
         new_data = normalise(original_track_node.get_data())
@@ -148,12 +147,10 @@ class PEAQCalculator(OutputAnalyser):
 
         original_track_norm_file.delete()
         reconstructed_track_norm_file.delete()
-        # print("Completed.")
 
         peaq_output = completed_process.stdout
 
-        for _ in self.progress_monitor(range(1), desc=str(self)):
-            sleep(0.1)
+        dummy_progress_bar(self)
 
         peaq_odg_text = "Objective Difference Grade: "
         peaq_di_text = "Distortion Index: "
