@@ -52,6 +52,13 @@ Clone and install the [burg-python-bindings](https://github.com/LucaVignati/burg
     python setup.py install
 ```
 
+Clone and install the [cpp_plc_template](https://github.com/LucaVignati/cpp_plc_template):
+```bash
+    git clone https://github.com/LucaVignati/cpp_plc_template.git
+    cd cpp_plc_template
+    python setup.py install
+```
+
 The file `plctestbench.ipynb` contains a Jupyter Notebook with a basic example of how to use the tool.
 
 Input the settings of the testbench as follows:
