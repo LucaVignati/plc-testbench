@@ -38,7 +38,7 @@ class PathManager(object):
             print("The folder %s does not exist", root_folder)
             return
 
-        self.original_tracks_paths = gb.glob(self.root_folder + '/*.wav')
+        self.original_tracks_paths = sorted(gb.glob(self.root_folder + '/*.wav'))
 
     def get_original_tracks(self) -> list:
         return self.original_tracks_paths

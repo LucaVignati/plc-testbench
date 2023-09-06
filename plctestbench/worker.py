@@ -1,8 +1,13 @@
 from plctestbench.settings import Settings
+from plctestbench.utils import dummy_progress_bar
 
 class Worker(object):
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        self.progress_monitor = settings.get_progress_monitor()(self)
+        
+    def get_node_id(self) -> str:
+        return str(hash(self.settings))
 
     def __str__(self) -> str:
         return self.__class__.__name__
@@ -10,3 +15,6 @@ class Worker(object):
 class OriginalAudio(Worker):
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
+
+    def run(self) -> None:
+        dummy_progress_bar(self)

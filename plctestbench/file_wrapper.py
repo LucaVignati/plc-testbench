@@ -166,6 +166,18 @@ class SimpleCalculatorData(OutputAnalysis):
     def get_error(self) -> ndarray:
         return self._error
 
+    def __len__(self):
+        return len(self._error)
+
+    def __iter__(self):
+        return self._error.__iter__()
+
+    def __next__(self):
+        return self._error.__next__()
+
+    def __getitem__(self, key):
+        return self._error.__getitem__(key)
+
     def __hash__(self) -> int:
         return calculate_hash(self._error.tobytes())
 

@@ -1,5 +1,32 @@
 import sys
 import hashlib
+from time import sleep
+
+def _is_notebook() -> bool:
+    '''
+    This function returns True if the code is running in a Jupyter notebook.
+    '''
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+
+
+# Conditional import of tqdm.
+# The progress_monitor alias is used to display progress bars
+# and it can be overridden by the user before running the testbench.
+if _is_notebook():
+    from tqdm.notebook import tqdm
+else:
+    from tqdm import tqdm
+progress_monitor = lambda caller: tqdm
+
 
 def get_class(class_name):
     '''
@@ -22,3 +49,10 @@ def escape_email(email):
     This function escapes the given email address.
     '''
     return email.replace('@', '_at_').replace('.', '_dot_')
+
+def dummy_progress_bar(worker):
+    '''
+    This function is used to create a dummy progress bar.
+    '''
+    for _ in worker.progress_monitor(range(1), desc=str(worker)):
+        sleep(0.1)
