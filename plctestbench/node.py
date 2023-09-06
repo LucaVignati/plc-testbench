@@ -5,6 +5,7 @@ import numpy as np
 from plctestbench.worker import Worker
 from plctestbench.file_wrapper import FileWrapper, AudioFile, DataFile
 from plctestbench.settings import Settings
+from plctestbench.utils import dummy_progress_bar
 
 class BaseNode(object):
     pass
@@ -58,7 +59,7 @@ class Node(BaseNode, NodeMixin):
         return self.root.database
 
     def _load_from_database(self) -> dict:
-        return self._get_database().find_node(str(hash(self.settings)), type(self).__name__)
+        return self._get_database().find_node(self.get_id(), type(self).__name__)
 
     def _save_to_database(self):
         entry = self.settings.get_all().copy()
@@ -88,6 +89,9 @@ class Node(BaseNode, NodeMixin):
                 else:
                     self._get_database().delete_node(self.get_id())
                     self.run()
+            else:
+                # Dummy progress bar needed when not running the worker
+                dummy_progress_bar(self.worker)
     
     def __str__(self) -> str:
         return "file: " + str(self.file) + '\n' +\
@@ -109,6 +113,7 @@ class OriginalTrackNode(Node):
 
     def _run(self) -> None:
         print(self.get_track_name())
+        self.get_worker().run()
 
 class LostSamplesMaskNode(Node):
     def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None, folder_name=None) -> None:

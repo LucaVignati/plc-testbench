@@ -5,6 +5,21 @@ class Settings(object):
     def __init__(self, settings: dict=None) -> None:
         self.settings = {} if settings is None else settings.copy()
 
+    def set_progress_monitor(self, progress_monitor):
+        '''
+        This method is used to set the progress monitor.
+
+            Input:
+                progress_monitor:   the progress monitor to be used.
+        '''
+        self.progress_monitor = progress_monitor
+
+    def get_progress_monitor(self):
+        '''
+        This method is used to get the progress monitor.
+        '''
+        return self.progress_monitor
+
     def inherit_from(self, parent_settings):
         '''
         This method is used to inherit the settings from the parent node.
@@ -13,10 +28,13 @@ class Settings(object):
                 parent_settings:    the parent Settings object.
         '''
         for key, value in parent_settings.get_all().items():
-            self.settings[key] = value
+            self.add(key, value)
 
         # Save parent hash to use in __hash__ method
         self.parent = str(hash(parent_settings))
+
+        # Save progress_monitor
+        self.set_progress_monitor(parent_settings.get_progress_monitor())
 
     def add(self, key, value):
         '''
@@ -73,6 +91,7 @@ class Settings(object):
         This method returns a copy of the settings.
         '''
         settings_copy = Settings(self.settings.copy())
+        settings_copy.set_progress_monitor(self.get_progress_monitor())
         settings_copy.__class__ = self.__class__
         return settings_copy
 
@@ -206,14 +225,14 @@ class ExternalPLCSettings(Settings):
 
 class DeepLearningPLCSettings(Settings):
 
-    def __init__(self, model_path: str,
+    def __init__(self, model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
                        fs_dl: int = 16000,
-                       context_length: float = 0.5,
-                       hop_size: float = 0.25,
-                       window_length: float = 0.5,
-                       lower_edge_hertz: float = 20.0,
-                       upper_edge_hertz: float = 4000.0,
-                       num_mel_bins: int = 64):
+                       context_length: int = 8,
+                       hop_size: int = 160,
+                       window_length: int = 160*3,
+                       lower_edge_hertz: float = 40.0,
+                       upper_edge_hertz: float = 7600.0,
+                       num_mel_bins: int = 100):
         '''
         This class containes the settings for the DeepLearningPLC class.
 
@@ -264,6 +283,25 @@ class MAECalculatorSettings(Settings):
                  amp_scale: float = 1.0,):
         '''
         This class containes the settings for the MAECalculator class.
+
+        Input:
+                N:              size of the windows used for computing
+                                the output measurements.
+                amp_scale:      scale factor for the amplitude of the
+                                tracks.
+        '''
+        super().__init__()
+        self.settings["N"] = N
+        self.settings["hop"] = N//2
+        self.settings["amp_scale"] = amp_scale
+
+class SpectralEnergyCalculatorSettings(Settings):
+
+    def __init__(self,
+                 N: int = 1024,
+                 amp_scale: float = 1.0,):
+        '''
+        This class containes the settings for the SpectralEnergyCalculatorSettings class.
 
         Input:
                 N:              size of the windows used for computing

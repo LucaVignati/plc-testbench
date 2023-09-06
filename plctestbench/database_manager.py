@@ -4,18 +4,30 @@ from pymongo import MongoClient
 from plctestbench.node import Node
 from plctestbench.utils import escape_email
 
-class DatabaseManager(object):
+class Singleton (type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+  
+class DatabaseManager(metaclass=Singleton):
 
-    def __init__(self, ip: str, port: int, username: str, password: str, user: dict) -> None:
+    def __init__(self, ip: str = None, port: int = None, username: str = None, password: str = None, user: dict = None, conn_string: str = None) -> None:
+        if (ip is None or port is None or username is None or password is None or user is None) and conn_string is None:
+            raise Exception("DatabaseManager: missing parameters")
         self.username = username
         self.password = password
         self.email = escape_email(user['email'])
-        self.client = MongoClient(
-            host=ip,
-            port=port,
-            username=self.username,
-            password=self.password,
-        )
+        if conn_string:
+            self.client = MongoClient(conn_string)
+        else:
+            self.client = MongoClient(
+                host=ip,
+                port=port,
+                username=self.username,
+                password=self.password,
+            )
         self._check_if_already_initialized()
         self.save_user(user)
 

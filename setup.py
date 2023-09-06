@@ -1,6 +1,6 @@
 import setuptools
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf8") as fh:
     long_description = fh.read()
 
 exec(open("plctestbench/__version__.py").read())
@@ -22,7 +22,7 @@ setuptools.setup(name='plc-testbench',
                     'numpy',
                     'soundfile',
                     'anytree',
-                    'pymongo'
+                    'pymongo',
                     'tqdm',
                     'matplotlib',
                     'tensorflow',
