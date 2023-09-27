@@ -21,7 +21,7 @@ class PLCAlgorithm(Worker):
         n_packets = ceil(track_length/packet_size)
         rounding_difference = packet_size - track_length % packet_size
         npad = [(0, rounding_difference)]
-        n_channels = np.shape(original_track)[1]
+        n_channels = np.shape(original_track)[1] if len(np.shape(original_track)) > 1 else 1
         for _ in range(n_channels - 1):
             npad.append((0, 0))
         original_track = np.pad(original_track, tuple(npad), 'constant')
