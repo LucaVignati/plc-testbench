@@ -64,6 +64,14 @@ Clone and install the [cpp_plc_template](https://github.com/LucaVignati/cpp_plc_
     python setup.py install
 ```
 
+If you want to use the PEAQ metric, you also need to install the GSTREAMER library and the PEAQ plugin:
+```bash
+    sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio git gtk-doc-tools git2cl automake libtool
+    mkdir gstpeaq && git clone https://github.com/HSU-ANT/gstpeaq.git gstpeaq
+    cd gstpeaq
+    aclocal && autoheader && ./autogen.sh && sed -i 's/SUBDIRS = src doc/SUBDIRS = src/' Makefile.am && ./configure --libdir=/usr/lib && automake && make && make install
+```
+
 The file `plctestbench.ipynb` contains a Jupyter Notebook with a basic example of how to use the tool.
 
 Input the settings of the testbench as follows:
