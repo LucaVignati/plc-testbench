@@ -45,6 +45,11 @@ Clone this repository, install the requirements and the plctestbench package:
     pip install .
 ```
 
+If you want to use it inside Jupyter Notebook you also need to install the ipywidgets package:
+```bash
+    pip install ipywidgets
+```
+
 Clone and install the [burg-python-bindings](https://github.com/LucaVignati/burg-python-bindings):
 ```bash
     git clone https://github.com/LucaVignati/burg-python-bindings.git
@@ -133,7 +138,7 @@ The code is available in the following two repositories:
 
 The easiest way to try it out is to use the Docker image provided by Stefano Dallona:
 ```bash
-    docker pull stdallona/plc-testbench-ui:1.0.1
+    docker pull stdallona/plc-testbench-ui:1.0.3
 ```
 This Docker image already contains the code of PLCTestbench so it only requires a running MongoDB instance (see previous section).
 
@@ -151,7 +156,7 @@ Run the following command to start the container:
                -p 5000:5000 \
                -v /path/to/root/folder:/original_tracks \
                --name plc-testbench-ui \
-               stdallona/plc-testbench-ui:1.0.1
+               stdallona/plc-testbench-ui:1.0.3
 ```
 Where the environment variables are:
 | Variable | Value | Description |
