@@ -146,7 +146,7 @@ The code is available in the following two repositories:
 
 The easiest way to try it out is to use the Docker image provided by Stefano Dallona:
 ```bash
-    docker pull stdallona/plc-testbench-ui:1.0.3
+    docker pull cimil/plc-testbench-ui:latest
 ```
 This Docker image already contains the code of PLCTestbench so it only requires a running MongoDB instance (see previous section).
 
@@ -164,7 +164,7 @@ Run the following command to start the container:
                -p 5000:5000 \
                -v /path/to/root/folder:/original_tracks \
                --name plc-testbench-ui \
-               stdallona/plc-testbench-ui:1.0.3
+               cimil/plc-testbench-ui:latest
 ```
 Where the environment variables are:
 | Variable | Value | Description |
