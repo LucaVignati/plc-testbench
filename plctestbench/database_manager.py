@@ -65,6 +65,7 @@ class DatabaseManager(metaclass=Singleton):
         if filepath.exists():
             filepath.unlink()
         database[collection_name].delete_one({"_id": node_id})
+        database['runs'].update_many({}, {"$pull": {'nodes': {"_id": node_id}}})
 
     def save_run(self, run):
         '''
