@@ -54,5 +54,5 @@ def dummy_progress_bar(worker):
     '''
     This function is used to create a dummy progress bar.
     '''
-    for _ in worker.progress_monitor(range(1), desc=str(worker)):
+    for _ in worker.progress_monitor(range(10), desc=str(worker)):
         sleep(0.1)
