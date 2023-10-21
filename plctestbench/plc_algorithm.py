@@ -1,6 +1,8 @@
 from math import ceil
 import librosa
 import numpy as np
+from burg_plc import BurgBasic
+from cpp_plc_template import BasePlcTemplate
 import tensorflow as tf
 from plctestbench.worker import Worker
 from .settings import Settings
@@ -19,7 +21,7 @@ class PLCAlgorithm(Worker):
         n_packets = ceil(track_length/packet_size)
         rounding_difference = packet_size - track_length % packet_size
         npad = [(0, rounding_difference)]
-        n_channels = np.shape(original_track)[1]
+        n_channels = np.shape(original_track)[1] if len(np.shape(original_track)) > 1 else 1
         for _ in range(n_channels - 1):
             npad.append((0, 0))
         original_track = np.pad(original_track, tuple(npad), 'constant')
@@ -129,18 +131,45 @@ class LowCostPLC(PLCAlgorithm):
         '''
         return self.lcc.process(buffer, is_valid)
 
+class BurgPLC(PLCAlgorithm):
+
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
+        self.train_size = settings.get("train_size")
+        self.order = settings.get("order")
+        self.packet_size = settings.get("packet_size")
+        self.previous_valid = False
+        self.coefficients = np.zeros(self.order)
+        self.burg = BurgBasic(self.train_size)
+
+    def prepare_to_play(self, n_channels):
+        self.context = np.zeros((self.train_size, n_channels), np.float)
+
+    def tick(self, buffer: np.ndarray, is_valid: bool):
+        '''
+        
+        '''
+        reconstructed_buffer = buffer
+        if not is_valid:
+            n_channels = np.shape(buffer)[1]
+            for n_channel in range(n_channels):
+                context = self.context[:, n_channel]
+                if self.previous_valid:
+                    self.coefficients, _ = self.burg.fit(context, self.order)
+                reconstructed_buffer[:, n_channel] = self.burg.predict(context, self.coefficients, self.packet_size)
+
+        self.context = np.roll(self.context, -self.packet_size, axis=0)
+        self.context[-self.packet_size:] = reconstructed_buffer
+
+        self.previous_valid = is_valid
+        return reconstructed_buffer
+
 class ExternalPLC(PLCAlgorithm):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        parameters = BurgEccParameters()
-        parameters.mid_filter_length = self.settings.get("mid_filter_length")
-        parameters.mid_cross_fade_time = self.settings.get("mid_cross_fade_time")
-        parameters.side_filter_length = self.settings.get("side_filter_length")
-        parameters.side_cross_fade_time = self.settings.get("side_cross_fade_time")
-        self.bec = BurgErrorConcealer(parameters)
-        self.bec.set_mode(self.settings.get("ecc_mode"))
-        self.bec.prepare_to_play(self.settings.get("fs"), self.settings.get("packet_size"))
+        self.bpt = BasePlcTemplate()
+        self.bpt.prepare_to_play(self.settings.get("fs"), self.settings.get("packet_size"))
 
     def tick(self, buffer: np.ndarray, is_valid: bool):
         '''
@@ -148,7 +177,7 @@ class ExternalPLC(PLCAlgorithm):
         '''
         buffer = np.transpose(buffer)
         reconstructed_buffer = np.zeros(np.shape(buffer), np.float32)
-        self.bec.process(buffer, reconstructed_buffer, is_valid)
+        self.bpt.process(buffer, reconstructed_buffer, is_valid)
         reconstructed_buffer = np.transpose(reconstructed_buffer)
         return reconstructed_buffer
 

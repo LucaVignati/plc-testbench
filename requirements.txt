@@ -6,3 +6,4 @@ pymongo
 tqdm
 matplotlib
 tensorflow
+librosa

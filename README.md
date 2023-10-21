@@ -45,6 +45,33 @@ Clone this repository, install the requirements and the plctestbench package:
     pip install .
 ```
 
+If you want to use it inside Jupyter Notebook you also need to install the ipywidgets package:
+```bash
+    pip install ipywidgets
+```
+
+Clone and install the [burg-python-bindings](https://github.com/LucaVignati/burg-python-bindings):
+```bash
+    git clone https://github.com/LucaVignati/burg-python-bindings.git
+    cd burg-python-bindings
+    python setup.py install
+```
+
+Clone and install the [cpp_plc_template](https://github.com/LucaVignati/cpp_plc_template):
+```bash
+    git clone https://github.com/LucaVignati/cpp_plc_template.git
+    cd cpp_plc_template
+    python setup.py install
+```
+
+If you want to use the PEAQ metric, you also need to install the GSTREAMER library and the PEAQ plugin:
+```bash
+    sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio git gtk-doc-tools git2cl automake libtool
+    mkdir gstpeaq && git clone https://github.com/HSU-ANT/gstpeaq.git gstpeaq
+    cd gstpeaq
+    aclocal && autoheader && ./autogen.sh && sed -i 's/SUBDIRS = src doc/SUBDIRS = src/' Makefile.am && ./configure --libdir=/usr/lib && automake && make && make install
+```
+
 The file `plctestbench.ipynb` contains a Jupyter Notebook with a basic example of how to use the tool.
 
 Input the settings of the testbench as follows:
@@ -75,10 +102,10 @@ List the PLC algorithms you want to test as follows:
 plc_algorithms = [(ZerosPLC, ZerosPLCSettings()),
                   (LastPacketPLC, LastPacketPLCSettings()),
                   (LowCostPLC, LowCostPLCSettings()),
+                  (BurgPLC, BurgPLCSettings()),
                   (DeepLearningPLC, DeepLearningPLCSettings()),
                   (ExternalPLC, ExternalPLCSettings())]
 ```
-❗At the moment, the ExternalPLC algorithms do not work due to some issues with the libraries used. We are working on fixing this.\
 ❗The DeepLearningPLC algorithm requires the `bufer_size` to be set to 128 in the `Settings` of the `PacketLossSimulator` of choice.
 
 List the metrics you want to use as follows:
@@ -119,7 +146,7 @@ The code is available in the following two repositories:
 
 The easiest way to try it out is to use the Docker image provided by Stefano Dallona:
 ```bash
-    docker pull stdallona/plc-testbench-ui:1.0.1
+    docker pull cimil/plc-testbench-ui:latest
 ```
 This Docker image already contains the code of PLCTestbench so it only requires a running MongoDB instance (see previous section).
 
@@ -137,7 +164,7 @@ Run the following command to start the container:
                -p 5000:5000 \
                -v /path/to/root/folder:/original_tracks \
                --name plc-testbench-ui \
-               stdallona/plc-testbench-ui:1.0.1
+               cimil/plc-testbench-ui:latest
 ```
 Where the environment variables are:
 | Variable | Value | Description |
