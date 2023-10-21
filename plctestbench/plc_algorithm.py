@@ -143,7 +143,7 @@ class BurgPLC(PLCAlgorithm):
         self.burg = BurgBasic(self.train_size)
 
     def prepare_to_play(self, n_channels):
-        self.context = np.zeros((self.train_size, n_channels), np.float)
+        self.context = np.zeros((self.train_size, n_channels), np.double)
 
     def tick(self, buffer: np.ndarray, is_valid: bool):
         '''
