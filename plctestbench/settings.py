@@ -330,7 +330,7 @@ class PEAQCalculatorSettings(Settings):
                 peaq_mode:      mode of the PEAQ algorithm.
         '''
         super().__init__()
-        self.settings["peaq_mode"] = PeaqMode.BASIC
+        self.settings["peaq_mode"] = peaq_mode
 
 class PlotsSettings(Settings):
 
