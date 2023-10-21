@@ -52,7 +52,9 @@ class SimpleCalculator(OutputAnalyser):
         return x_rw, x_ew
 
 class MSECalculator(SimpleCalculator):
-
+    '''
+    MSECalculator is ...
+    '''
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
         '''
         Calculation of Mean Square Error between the reference and signal
@@ -70,7 +72,10 @@ class MSECalculator(SimpleCalculator):
         return SimpleCalculatorData(error)
 
 class MAECalculator(SimpleCalculator):
-
+    '''
+    MAECalculator is ...
+    '''
+    
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
         '''
         Calculation of Mean Absolute Error between the reference and signal
@@ -88,7 +93,10 @@ class MAECalculator(SimpleCalculator):
         return SimpleCalculatorData(error)
 
 class SpectralEnergyCalculator(OutputAnalyser):
-
+    '''
+    SpectralEnergyCalculator is ...
+    '''
+    
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
         '''
         Calculate a difference magnitude signal from the DFT energies of the
@@ -125,7 +133,10 @@ class SpectralEnergyCalculator(OutputAnalyser):
         return SimpleCalculatorData(se)
 
 class PEAQCalculator(OutputAnalyser):
-
+    '''
+    PEAQCalculator is ...
+    '''
+    
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> PEAQData:
         peaq_mode = self.settings.get("peaq_mode")
         if peaq_mode == 'basic':

@@ -1,3 +1,5 @@
+from enum import Enum
+
 from plctestbench.utils import compute_hash
 
 class Settings(object):
@@ -314,9 +316,13 @@ class SpectralEnergyCalculatorSettings(Settings):
         self.settings["hop"] = N//2
         self.settings["amp_scale"] = amp_scale
 
+class PeaqMode(Enum):
+    BASIC = "basic"
+    ADVANCED = "advanced"
+
 class PEAQCalculatorSettings(Settings):
 
-    def __init__(self, peaq_mode: str = 'basic'):
+    def __init__(self, peaq_mode: PeaqMode = PeaqMode.BASIC):
         '''
         This class containes the settings for the PEAQCalculator class.
 
@@ -324,7 +330,7 @@ class PEAQCalculatorSettings(Settings):
                 peaq_mode:      mode of the PEAQ algorithm.
         '''
         super().__init__()
-        self.settings["peaq_mode"] = peaq_mode
+        self.settings["peaq_mode"] = PeaqMode.BASIC
 
 class PlotsSettings(Settings):
 

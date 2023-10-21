@@ -55,6 +55,9 @@ class PLCAlgorithm(Worker):
         raise NotImplementedError
 
 class ZerosPLC(PLCAlgorithm):
+    '''
+    ZerosPLC is ...
+    '''    
 
     def tick(self, buffer: np.ndarray, is_valid: bool):
         '''
@@ -78,6 +81,9 @@ class ZerosPLC(PLCAlgorithm):
         return reconstructed_buffer
 
 class LastPacketPLC(PLCAlgorithm):
+    '''
+    LastPacketPLC is ...
+    '''
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
@@ -109,6 +115,11 @@ class LastPacketPLC(PLCAlgorithm):
         return reconstructed_buffer
 
 class LowCostPLC(PLCAlgorithm):
+    '''
+    This class implements the Low Cost Concealment (LCC) described
+    in "Low-delay error concealment with low computational overhead
+    for audio over ip applications" by Marco Fink and Udo Zölzer
+    '''
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
@@ -132,7 +143,10 @@ class LowCostPLC(PLCAlgorithm):
         return self.lcc.process(buffer, is_valid)
 
 class BurgPLC(PLCAlgorithm):
-
+    '''
+    BurgPLC is ...
+    '''
+    
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         self.train_size = settings.get("train_size")
@@ -165,7 +179,10 @@ class BurgPLC(PLCAlgorithm):
         return reconstructed_buffer
 
 class ExternalPLC(PLCAlgorithm):
-
+    '''
+    ExternalPLC is ...
+    '''
+    
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         self.bpt = BasePlcTemplate()
@@ -182,7 +199,10 @@ class ExternalPLC(PLCAlgorithm):
         return reconstructed_buffer
 
 class DeepLearningPLC(PLCAlgorithm):
-
+    '''
+    DeepLearningPLC is ...
+    '''
+    
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         self.model = tf.keras.models.load_model(settings.get("model_path"), compile=False)
