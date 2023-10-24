@@ -75,7 +75,7 @@ class PathManager(object):
         worker_name = worker.__name__
         absolute_path = path.join(node_path, worker_name)
         if index < len(folder_suffixes):
-            folder_name = worker_name + '-' + folder_suffixes[index]
+            folder_name = worker_name + '-' + str(hash(settings)) + '-' + folder_suffixes[index]
             folder_path = path.join(node_path, folder_name)
             if not path.exists(folder_path):
                 os.mkdir(folder_path)
