@@ -13,6 +13,7 @@ It features the implementation of some of the most common packet loss models, PL
 - **Last Packet**: the lost samples are replaced by the last received packet.
 - **Low-Cost**: implementation of the algorithm proposed in [[2](#2)].
 - **Burg**: Python bindings for the [C++ implementation of the Burg method](https://github.com/matteosacchetto/burg-implementation-experiments).
+- **Elk**: Python bindings for the [C++ implementation of the algorithm used by ELK](https://bitbucket.org/mindswteam/ecc/src/master/).
 - **Deep Learning**: implementation of the algorithm proposed in [[3](#3)].
 - **External**: Python bindings for C++ to simplify the integration of existing algorithms.
 
@@ -56,6 +57,14 @@ Clone and install the [burg-python-bindings](https://github.com/LucaVignati/burg
     cd burg-python-bindings
     python setup.py install
 ```
+
+Clone and install the [ecc](https://bitbucket.org/mindswteam/ecc/src/master/):
+```bash
+   git git clone git@bitbucket.org:mindswteam/ecc.git
+   cd ecc
+   python setup.py install
+```
+❗This reporitory is private. If you don't have access to this repository please switch to the *master* branch to work with open-source algorithms.
 
 Clone and install the [cpp_plc_template](https://github.com/LucaVignati/cpp_plc_template):
 ```bash
