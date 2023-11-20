@@ -1,5 +1,3 @@
-from enum import Enum
-
 from plctestbench.utils import compute_hash
 
 class Settings(object):
@@ -216,6 +214,31 @@ class BurgPLCSettings(Settings):
         super().__init__()
         self.settings["train_size"] = train_size
         self.settings["order"] = order
+
+class ElkPLCSettings(Settings):
+
+    def __init__(self, ecc_mode: str = "stereo",
+                 mid_filter_length: int = 256,
+                 mid_cross_fade_time: float = 0.025,
+                 side_filter_length: int = 32,
+                 side_cross_fade_time: float = 0.025,):
+        '''
+        This class containes the settings for the ElkPLC class.
+
+                Input:
+                    ecc_mode:               Mono or Stereo.
+                    mid_filter_length:      Size of the filter for the mid channel
+                    mid_cross_fade_time:    Time of the crossfade for the mid channel
+                    side_filter_length:     Size of the filter for the mid channel
+                    side_cross_fade_time:   Time of the crossfade for the side channel
+        '''
+        super().__init__()
+        self.settings["ecc_mode"] = ecc_mode
+        self.settings["mid_filter_length"] = mid_filter_length
+        self.settings["mid_cross_fade_time"] = mid_cross_fade_time
+        self.settings["side_filter_length"] = side_filter_length
+        self.settings["side_cross_fade_time"] = side_cross_fade_time
+
 
 class ExternalPLCSettings(Settings):
 

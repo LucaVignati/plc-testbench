@@ -2,6 +2,7 @@ from math import ceil
 import librosa
 import numpy as np
 from burg_plc import BurgBasic
+from elk_plc import BurgErrorConcealer, BurgEccParameters, EccMode
 from cpp_plc_template import BasePlcTemplate
 import tensorflow as tf
 from plctestbench.worker import Worker
@@ -177,6 +178,33 @@ class BurgPLC(PLCAlgorithm):
 
         self.previous_valid = is_valid
         return reconstructed_buffer
+    
+class ElkPLC(PLCAlgorithm):
+    '''
+    ElkPLC is ...
+    '''
+
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
+        parameters = BurgEccParameters()
+        parameters.mid_filter_length = settings.get("mid_filter_length")
+        parameters.mid_cross_fade_time = settings.get("mid_cross_fade_time")
+        parameters.side_filter_length = settings.get("side_filter_length")
+        parameters.side_cross_fade_time = settings.get("side_cross_fade_time")
+        self.bec = BurgErrorConcealer(parameters)
+        ecc_mode = EccMode.STEREO if settings.get("ecc_mode") == "stereo" else EccMode.MONO
+        self.bec.set_mode(ecc_mode)
+        self.bec.prepare_to_play(settings.get("fs"), settings.get("packet_size"))
+    
+    def tick(self, buffer: np.ndarray, is_valid: bool):
+        '''
+        
+        '''
+        buffer = np.transpose(buffer)
+        ecc_buffer = np.zeros(np.shape(buffer), np.float32)
+        self.bec.process(buffer, ecc_buffer, is_valid)
+        ecc_buffer = np.transpose(ecc_buffer)
+        return ecc_buffer
 
 class ExternalPLC(PLCAlgorithm):
     '''
