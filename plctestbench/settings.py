@@ -1,11 +1,16 @@
 from enum import Enum
 
-from plctestbench.utils import compute_hash
+from plctestbench.utils import compute_hash, get_class
 
 class Settings(object):
 
     def __init__(self, settings: dict=None) -> None:
         self.settings = {} if settings is None else settings.copy()
+        for key, value in self.settings.items():
+            if '-' in key:
+                key, cls = key.split('-')
+                # if isinstance(value, dict):
+                self.settings[key] = get_class(cls)(value)
 
     def set_progress_monitor(self, progress_monitor):
         '''
@@ -30,7 +35,8 @@ class Settings(object):
                 parent_settings:    the parent Settings object.
         '''
         for key, value in parent_settings.get_all().items():
-            self.add(key, value)
+            if key != self:
+                self.add(key, value)
 
         # Save parent hash to use in __hash__ method
         self.parent = str(hash(parent_settings))
@@ -67,6 +73,24 @@ class Settings(object):
         '''
         This method is used to retrieve all the settings.
         '''
+        return self.to_dict()
+
+    def to_dict(self):
+        '''
+        This method is used to convert the settings to a dictionary.
+        '''
+        to_delete = []
+        to_add = {}
+        for key, value in self.settings.items():
+            if isinstance(value, Settings):
+                to_add[key + '-' + value.__class__.__name__] = value.get_all()
+                to_delete.append(key)
+            if isinstance(value, Enum):
+                to_add[key + '-' + value.__class__.__name__] = value.name
+                to_delete.append(key)
+        for key in to_delete:
+            del self.settings[key]
+        self.settings.update(to_add)
         return self.settings
 
     def __hash__(self):
@@ -156,25 +180,141 @@ class GilbertElliotPLSSettings(Settings):
         self.settings["h"] = h
         self.settings["k"] = k
 
-class ZerosPLCSettings(Settings):
+class CrossfadeSettings(Settings):
+
+    def __init__(self) -> None:
+        super().__init__()
+class ManualCrossfadeSettings(CrossfadeSettings):
+
+    def __init__(self, length: int = 10,
+                       function: str = "power",
+                       type: str = "power",
+                       exponent: float = 1.0):
+        '''
+        This class containes the settings for the PowerCrossfade class.
+
+            Input:
+                length:     length of the crossfade.
+                funtion:    function used for the crossfade.
+                type:       type of the crossfade.
+                exponent:   exponent of the crossfade.
+        '''
+        super().__init__()
+        self.settings["length"] = length
+        self.settings["function"] = function
+        if function == "power":
+            self.settings["exponent"] = exponent
+        self.settings["type"] = type
+
+class NoCrossfadeSettings(CrossfadeSettings):
 
     def __init__(self):
+        '''
+        This class containes the settings for the NoCrossfade class.
+        '''
+        super().__init__()
+        self.settings["length"] = 0
+        self.settings["function"] = "power"
+        self.settings["exponent"] = 1.0
+        self.settings["type"] = "power"
+
+class LinearCrossfadeSettings(CrossfadeSettings):
+    
+    def __init__(self, length: int = 10, type: str = "power"):
+        '''
+        This class containes the settings for the LinearCrossfade class.
+
+            Input:
+                length:     length of the crossfade.
+        '''
+        super().__init__()
+        self.settings["length"] = length
+        self.settings["function"] = "power"
+        self.settings["exponent"] = 1.0
+        self.settings["type"] = type
+
+class QuadraticCrossfadeSettings(CrossfadeSettings):
+    
+    def __init__(self, length: int = 10, type: str = "power"):
+        '''
+        This class containes the settings for the QuadraticCrossfade class.
+
+            Input:
+                length:     length of the crossfade.
+        '''
+        super().__init__()
+        self.settings["length"] = length
+        self.settings["function"] = "power"
+        self.settings["exponent"] = 2.0
+        self.settings["type"] = type
+
+class CubicCrossfadeSettings(CrossfadeSettings):
+
+    def __init__(self, length: int = 10, type: str = "power"):
+        '''
+        This class containes the settings for the CubicCrossfade class.
+
+            Input:
+                length:     length of the crossfade.
+        '''
+        super().__init__()
+        self.settings["length"] = length
+        self.settings["function"] = "power"
+        self.settings["exponent"] = 3.0
+        self.settings["type"] = type
+
+class SinusoidalCrossfadeSettings(CrossfadeSettings):
+
+    def __init__(self, length: int = 10, type: str = "power"):
+        '''
+        This class containes the settings for the SinusoidalCrossfade class.
+
+            Input:
+                length:     length of the crossfade.
+        '''
+        super().__init__()
+        self.settings["length"] = length
+        self.settings["function"] = "sinusoidal"
+        self.settings["type"] = type
+
+class PLCSettings(Settings):
+
+    def __init__(self, crossfade: CrossfadeSettings,
+                       fade_in: CrossfadeSettings) -> None:
+        super().__init__()
+        self.settings["crossfade"] = crossfade if crossfade is not None else NoCrossfadeSettings()
+        self.settings["fade_in"] = fade_in if fade_in is not None else NoCrossfadeSettings()
+
+class ZerosPLCSettings(PLCSettings):
+
+    def __init__(sel, crossfade: CrossfadeSettings = None,
+                      fade_in: CrossfadeSettings = None) -> None:
         '''
         This class containes the settings for the ZeroPLC class.
         '''
-        super().__init__()
+        super().__init__(crossfade, fade_in)
 
-class LastPacketPLCSettings(Settings):
+class LastPacketPLCSettings(PLCSettings):
 
-    def __init__(self):
+    def __init__(self, crossfade: CrossfadeSettings = None,
+                       fade_in: CrossfadeSettings = None,
+                       mirror_x: bool = False,
+                       mirror_y: bool = False,
+                       clip_strategy: str = "subtract"):
         '''
         This class containes the settings for the LastPacketPLC class.
         '''
-        super().__init__()
+        super().__init__(crossfade, fade_in)
+        self.settings["mirror_x"] = mirror_x
+        self.settings["mirror_y"] = mirror_y
+        self.settings["clip_strategy"] = clip_strategy
 
-class LowCostPLCSettings(Settings):
 
-    def __init__(self, max_frequency: float = 4800,
+class LowCostPLCSettings(PLCSettings):
+
+    def __init__(self, crossfade: CrossfadeSettings = None,
+                       fade_in: CrossfadeSettings = None,
+                       max_frequency: float = 4800,
                        f_min: int = 80,
                        beta: float = 1,
                        n_m: int = 2,
@@ -193,7 +333,7 @@ class LowCostPLCSettings(Settings):
                 fade_out_length: fade_out_length parameter of the LowCostPLC algorithm.
                 extraction_length: extraction_length parameter of the LowCostPLC algorithm.
         '''
-        super().__init__()
+        super().__init__(crossfade, fade_in)
         self.settings["max_frequency"] = max_frequency
         self.settings["f_min"] = f_min
         self.settings["beta"] = beta
@@ -202,34 +342,39 @@ class LowCostPLCSettings(Settings):
         self.settings["fade_out_length"] = fade_out_length
         self.settings["extraction_length"] = extraction_length
 
-class BurgPLCSettings(Settings):
+class BurgPLCSettings(PLCSettings):
 
-    def __init__(self, train_size: int = 512,
+    def __init__(self, crossfade: CrossfadeSettings = None,
+                       fade_in: CrossfadeSettings = None,
+                       context_length: int = 100,
                        order: int = 1):
         '''
         This class containes the settings for the BurgPLC class.
 
             Input:
-                train_size:     size of the training set.
+                context_length: size of the training set.
                 order:          order of the Burg algorithm.
         '''
-        super().__init__()
-        self.settings["train_size"] = train_size
+        super().__init__(crossfade, fade_in)
+        self.settings["context_length"] = context_length
         self.settings["order"] = order
 
-class ExternalPLCSettings(Settings):
+class ExternalPLCSettings(PLCSettings):
 
-    def __init__(self):
+    def __init__(self, crossfade: CrossfadeSettings = None,
+                       fade_in: CrossfadeSettings = None):
         '''
         This class containes the settings for the ExternalPLC class.
         '''
-        super().__init__()
+        super().__init__(crossfade, fade_in)
 
-class DeepLearningPLCSettings(Settings):
+class DeepLearningPLCSettings(PLCSettings):
 
-    def __init__(self, model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
+    def __init__(self, crossfade: CrossfadeSettings = None,
+                       fade_in: CrossfadeSettings = None,
+                       model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
                        fs_dl: int = 16000,
-                       context_length: int = 8,
+                       context_length: int = 8000,
                        hop_size: int = 160,
                        window_length: int = 160*3,
                        lower_edge_hertz: float = 40.0,
@@ -248,11 +393,11 @@ class DeepLearningPLCSettings(Settings):
                 upper_edge_hertz:   upper edge of the tracks.
                 num_mel_bins:       number of mel bins of the tracks.
         '''
-        super().__init__()
+        super().__init__(crossfade, fade_in)
         self.settings["model_path"] = model_path
         self.settings["fs_dl"] = fs_dl
-        self.settings["context_length_s"] = context_length
-        self.settings["context_length"] = context_length * self.settings["fs_dl"]
+        self.settings["context_length"] = context_length
+        self.settings["context_length_samples"] = context_length / 1000.0 * self.settings["fs_dl"]
         self.settings["hop_size"] = hop_size
         self.settings["window_length"] = window_length
         self.settings["lower_edge_hertz"] = lower_edge_hertz
@@ -316,9 +461,13 @@ class SpectralEnergyCalculatorSettings(Settings):
         self.settings["hop"] = N//2
         self.settings["amp_scale"] = amp_scale
 
+class PEAQMode(Enum):
+    basic = 1
+    advanced = 2
+
 class PEAQCalculatorSettings(Settings):
 
-    def __init__(self, peaq_mode: str = 'basic'):
+    def __init__(self, peaq_mode: PEAQMode = PEAQMode.basic):
         '''
         This class containes the settings for the PEAQCalculator class.
 
