@@ -75,6 +75,6 @@ workflows:
           requires:
             - build
           # Only push images from the master branch
-          filters:
-            branches:
-              only: master
+          # filters:
+          #   branches:
+          #     only: master
