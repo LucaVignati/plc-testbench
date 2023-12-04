@@ -14,6 +14,8 @@ RUN npm run build
 FROM python:3.8-slim-buster as ui-backend-build
 #FROM tiangolo/uwsgi-nginx-flask:python3.8-alpine
 
+WORKDIR /
+RUN git clone https://github.com/stefano-dallona/plc-testbench-ui.git
 WORKDIR /plc-testbench-ui
 
 ENV VIRTUAL_ENV=/opt/venv
@@ -46,9 +48,6 @@ RUN git clone https://github.com/LucaVignati/cpp_plc_template.git && cd cpp_plc_
 WORKDIR /plc-testbench
 COPY . .
 RUN cd /plc-testbench && python setup.py sdist && python3 -m pip install -f ./dist plc-testbench && cp -r dl_models /plc-testbench-ui
-
-WORKDIR /
-RUN git clone https://github.com/stefano-dallona/plc-testbench-ui.git
 
 COPY --from=ui-frontend-build /plc-testbench-ui/react-test/build /plc-testbench-ui/frontend/build/
 
