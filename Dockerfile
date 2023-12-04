@@ -47,7 +47,7 @@ WORKDIR /plc-testbench
 COPY . .
 RUN cd /plc-testbench && python setup.py sdist && python3 -m pip install -f ./dist plc-testbench && cp -r dl_models /plc-testbench-ui
 
-WORKDIR /plc-testbench-ui
+WORKDIR /
 RUN git clone https://github.com/stefano-dallona/plc-testbench-ui.git
 
 COPY --from=ui-frontend-build /plc-testbench-ui/react-test/build /plc-testbench-ui/frontend/build/
