@@ -27,8 +27,6 @@ WORKDIR /
 RUN git clone https://github.com/stefano-dallona/plc-testbench-ui.git
 WORKDIR /plc-testbench-ui
 
-# Install dependencies:
-COPY requirements.txt .
 # Start of download and compile gstpeaq
 RUN mkdir gstpeaq && git clone https://github.com/HSU-ANT/gstpeaq.git gstpeaq
 WORKDIR /plc-testbench-ui/gstpeaq
@@ -36,8 +34,7 @@ RUN aclocal && autoheader && ./autogen.sh && sed -i 's/SUBDIRS = src doc/SUBDIRS
 # End of download and compile gstpeaq
 # Install ui dependencies
 WORKDIR /plc-testbench-ui
-COPY requirements.txt /tmp
-RUN python3 -m pip install --upgrade pip && python3 -m pip install -r /tmp/requirements.txt
+RUN python3 -m pip install --upgrade pip && python3 -m pip install -r /plc-testbench-ui/requirements.txt
 # Install burg-python-bindings
 WORKDIR /
 RUN git clone https://github.com/LucaVignati/burg-python-bindings.git && cd burg-python-bindings && python setup.py install
@@ -51,4 +48,4 @@ RUN cd /plc-testbench && python setup.py sdist && python3 -m pip install -f ./di
 
 COPY --from=ui-frontend-build /plc-testbench-ui/react-test/build /plc-testbench-ui/frontend/build/
 
-ENTRYPOINT [ "python3", "app.py" ]
+ENTRYPOINT python3 /plc-testbench-ui/app.py
