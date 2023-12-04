@@ -14,13 +14,13 @@ RUN npm run build
 FROM python:3.8-slim-buster as ui-backend-build
 #FROM tiangolo/uwsgi-nginx-flask:python3.8-alpine
 
-WORKDIR /
-RUN git clone https://github.com/stefano-dallona/plc-testbench-ui.git
-WORKDIR /plc-testbench-ui
-
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+WORKDIR /
+RUN git clone https://github.com/stefano-dallona/plc-testbench-ui.git
+WORKDIR /plc-testbench-ui
 
 # Install dependencies:
 COPY requirements.txt .
