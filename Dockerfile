@@ -45,7 +45,7 @@ RUN git clone https://github.com/LucaVignati/cpp_plc_template.git && cd cpp_plc_
 # Install plctestbench
 WORKDIR /plc-testbench
 COPY . .
-RUN cd plc-testbench && python setup.py sdist && python3 -m pip install -f ./dist plc-testbench && cp -r dl_models /plc-testbench-ui
+RUN cd /plc-testbench && python setup.py sdist && python3 -m pip install -f ./dist plc-testbench && cp -r dl_models /plc-testbench-ui
 
 WORKDIR /plc-testbench-ui
 RUN git clone https://github.com/stefano-dallona/plc-testbench-ui.git
