@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.random as npr
 from plctestbench.worker import Worker
-from .settings import Settings, BinomialPLSSettings, GilbertElliotPLSSettings
+from .settings import Settings, BinomialPLSSettings, GilbertElliotPLSSettings, MetronomePLSSettings
 
 class PacketLossSimulator(Worker):
     '''
@@ -64,6 +64,34 @@ class BinomialPLS(PacketLossSimulator):
         '''
         b_trial_result = npr.random() <= self.per
         return b_trial_result
+    
+class MetronomePLS(PacketLossSimulator):
+    '''
+    This class implements a metronome packet loss model.
+    '''
+
+    def __init__(self, settings: MetronomePLSSettings) -> None:
+        '''
+        Variables:
+            period: the period in samples of the lost packets
+        '''
+        super().__init__(settings)
+        self.period = settings.get("period")
+        self.duration = settings.get("duration")
+        self.counter = 0
+
+    def tick(self) -> bool:
+        '''
+        This function returns True every period samples.
+        Output:
+            True if the packet has been lost
+        '''
+        self.counter += 1
+        if self.counter == self.period:
+            self.counter = 0
+        if self.counter < self.duration:
+            return True
+        return False
 
 class GilbertElliotPLS(PacketLossSimulator):
     '''

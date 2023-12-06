@@ -130,6 +130,27 @@ class BinomialPLSSettings(Settings):
         self.settings["packet_size"] = packet_size
         self.settings["per"] = per
 
+class MetronomePLSSettings(Settings):
+
+    def __init__(self, seed: int = 1,
+                       packet_size: int = 32,
+                       period: int = 100,
+                       duration: int = 5) -> None:
+        '''
+        This class containes the settings for the MetronomePLS class.
+
+            Input:
+                period:         number of packets between the occurence of
+                                the first lost packet of each burst.
+                duration:       number of consecutive lost packets in each
+                                burst.
+        '''
+        super().__init__()
+        self.settings["seed"] = seed
+        self.settings["packet_size"] = packet_size
+        self.settings["period"] = period
+        self.settings["duration"] = duration
+
 class GilbertElliotPLSSettings(Settings):
 
     def __init__(self, seed: int = 1,
