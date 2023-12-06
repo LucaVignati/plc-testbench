@@ -78,7 +78,8 @@ class MetronomePLS(PacketLossSimulator):
         super().__init__(settings)
         self.period = settings.get("period")
         self.duration = settings.get("duration")
-        self.counter = 0
+        self.offset = settings.get("offset")
+        self.counter = - self.offset
 
     def tick(self) -> bool:
         '''
@@ -89,7 +90,7 @@ class MetronomePLS(PacketLossSimulator):
         self.counter += 1
         if self.counter == self.period:
             self.counter = 0
-        if self.counter < self.duration:
+        if self.counter < self.duration and self.counter >= 0:
             return True
         return False
 
