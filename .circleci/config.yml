@@ -46,7 +46,8 @@ jobs:
 
     steps:
       # Set up a separate Docker environment to run `docker` commands in
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
 
       # Load and un-archive the Docker image
       - attach_workspace:
