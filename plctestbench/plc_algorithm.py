@@ -19,7 +19,7 @@ class PLCAlgorithm(Worker):
             raise ValueError("fade in length cannot be longer than the packet size")
         self.fade_in = Crossfade(self.settings, self.settings.get("fade_in"))
         try:
-            self.context_length = self.settings.get("context_length")
+            self.context_length = self.settings.get("context_length") * self.settings.get("fs") / 1000
         except:
             self.context_length = self.packet_size
 
