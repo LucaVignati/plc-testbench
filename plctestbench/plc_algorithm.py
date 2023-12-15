@@ -7,14 +7,19 @@ import tensorflow as tf
 from plctestbench.worker import Worker
 from .settings import Settings
 from .low_cost_concealment import LowCostConcealment
-from .crossfade import Crossfade
+from .crossfade import Crossfade, MultibandCrossfade
 
 class PLCAlgorithm(Worker):
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
         self.packet_size = self.settings.get("packet_size")
-        self.crossfade = Crossfade(self.settings, self.settings.get("crossfade"))
+        self.crossfade_settings = self.settings.get("crossfade")
+        if isinstance(self.crossfade_settings, list):
+            self.crossfade_class = MultibandCrossfade
+        else:
+            self.crossfade_class = Crossfade
+        self.crossfade = self.crossfade_class(self.settings, self.crossfade_settings)
         if self.settings.get("fade_in").get("length") > self.packet_size:
             raise ValueError("fade in length cannot be longer than the packet size")
         self.fade_in = Crossfade(self.settings, self.settings.get("fade_in"))

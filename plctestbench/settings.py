@@ -9,8 +9,11 @@ class Settings(object):
         for key, value in self.settings.items():
             if '-' in key:
                 key, cls = key.split('-')
-                # if isinstance(value, dict):
-                self.settings[key] = get_class(cls)(value)
+                if '~' in key:
+                    key, _ = key.split('~')
+                    self.settings.setdefault(key, []).append(get_class(cls)(value))
+                else:
+                    self.settings[key] = get_class(cls)(value)
 
     def set_progress_monitor(self, progress_monitor):
         '''
@@ -79,15 +82,27 @@ class Settings(object):
         '''
         This method is used to convert the settings to a dictionary.
         '''
-        to_delete = []
-        to_add = {}
-        for key, value in self.settings.items():
+        def parse_values(key, value, to_delete: list = [], to_add: dict = {}):
             if isinstance(value, Settings):
                 to_add[key + '-' + value.__class__.__name__] = value.get_all()
                 to_delete.append(key)
             if isinstance(value, Enum):
                 to_add[key + '-' + value.__class__.__name__] = value.name
                 to_delete.append(key)
+            if isinstance(value, list):
+                for idx, item in enumerate(value):
+                    _, new_dict_entry = parse_values(key + '~' + str(idx), item)
+                    if len(new_dict_entry) > 0:
+                        to_add.update(new_dict_entry)
+                if len(new_dict_entry) > 0:
+                    to_delete.append(key)
+
+            return to_delete, to_add
+
+        to_delete = []
+        to_add = {}
+        for key, value in self.settings.items():
+            parse_values(key, value, to_delete, to_add)
         for key in to_delete:
             del self.settings[key]
         self.settings.update(to_add)
@@ -179,6 +194,20 @@ class GilbertElliotPLSSettings(Settings):
         self.settings["r"] = r
         self.settings["h"] = h
         self.settings["k"] = k
+
+class MultibandCrossfadeSettings(Settings):
+
+    def __init__(self, frequencies: list = [200, 2000],
+                       order: int = 4):
+        '''
+        This class containes the settings for the MultibandCrossfade class.
+
+            Input:
+                crossfade_settings:     list of the settings for the crossfades.
+        '''
+        super().__init__()
+        self.settings["frequencies"] = frequencies
+        self.settings["order"] = order
 
 class CrossfadeSettings(Settings):
 
