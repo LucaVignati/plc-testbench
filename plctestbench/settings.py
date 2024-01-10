@@ -1,19 +1,61 @@
 from enum import Enum
+from inspect import isclass
 
 from plctestbench.utils import compute_hash, get_class
 
 class Settings(object):
 
     def __init__(self, settings: dict=None) -> None:
-        self.settings = {} if settings is None else settings.copy()
-        for key, value in self.settings.items():
+        self.settings = {} if settings is None else self.from_dict(settings)
+
+    def from_dict(cls, settings_dict):
+        '''
+        This method is used to convert a dictionary back to settings.
+        '''
+        def reconstruct_values(key, value):
             if '-' in key:
-                key, cls = key.split('-')
-                if '~' in key:
-                    key, _ = key.split('~')
-                    self.settings.setdefault(key, []).append(get_class(cls)(value))
-                else:
-                    self.settings[key] = get_class(cls)(value)
+                key, class_name = key.split('-')
+                return key, get_class(class_name)(value)
+            elif '~' in key:
+                key, idx = key.split('~')
+                return key, [reconstruct_values(idx, value)]
+            elif '&' in key:
+                key, idx = key.split('&')
+                return key, (reconstruct_values(idx, value))
+            elif '$' in key:
+                key, subkey = key.split('$')
+                return key, {subkey: reconstruct_values(subkey, value)}
+            elif '#' in key:
+                key = key.rstrip('#')
+                return key, globals()[value]
+            else:
+                return key, value
+
+        new_settings = {}
+        for key, value in settings_dict.items():
+            new_key, new_value = reconstruct_values(key, value)
+            if new_key in new_settings and isinstance(new_settings[new_key], list):
+                new_settings[new_key].append(new_value)
+            elif new_key in new_settings and isinstance(new_settings[new_key], tuple):
+                new_settings[new_key] = new_settings[new_key] + (new_value,)
+            elif new_key in new_settings and isinstance(new_settings[new_key], dict):
+                new_settings[new_key].update(new_value)
+            else:
+                new_settings[new_key] = new_value
+
+        return new_settings
+
+    # def to_settings(self) -> None:
+    #     for key, value in self.settings.items():
+    #         if '#' in key:
+    #             self.settings[key] = get_class(value)
+    #         if '-' in key:
+    #             key, cls = key.split('-')
+    #             if '~' in key:
+    #                 key, _ = key.split('~')
+    #                 self.settings.setdefault(key, []).append(get_class(cls)(value))
+    #             else:
+    #                 self.settings[key] = get_class(cls)(value)
 
     def set_progress_monitor(self, progress_monitor):
         '''
@@ -76,15 +118,15 @@ class Settings(object):
         '''
         This method is used to retrieve all the settings.
         '''
-        return self.to_dict()
+        return self.settings
 
     def to_dict(self):
         '''
         This method is used to convert the settings to a dictionary.
-        '''
+        ''' 
         def parse_values(key, value, to_delete: list = [], to_add: dict = {}):
             if isinstance(value, Settings):
-                to_add[key + '-' + value.__class__.__name__] = value.get_all()
+                to_add[key + '-' + value.__class__.__name__] = value.to_dict()
                 to_delete.append(key)
             if isinstance(value, Enum):
                 to_add[key + '-' + value.__class__.__name__] = value.name
@@ -96,17 +138,34 @@ class Settings(object):
                         to_add.update(new_dict_entry)
                 if len(new_dict_entry) > 0:
                     to_delete.append(key)
-
+            if isinstance(value, tuple):
+                for idx, item in enumerate(value):
+                    _, new_dict_entry = parse_values(key + '&' + str(idx), item)
+                    if len(new_dict_entry) > 0:
+                        to_add.update(new_dict_entry)
+                if len(new_dict_entry) > 0:
+                    to_delete.append(key)
+            if isinstance(value, dict):
+                for subkey, subvalue in value.items():
+                    _, new_dict_entry = parse_values(key + '$' + subkey, subvalue)
+                    if len(new_dict_entry) > 0:
+                        to_add.update(new_dict_entry)
+                if len(new_dict_entry) > 0:
+                    to_delete.append(key)
+            if isclass(value):
+                to_add[key + '#'] = value.__name__
+                to_delete.append(key)
             return to_delete, to_add
 
         to_delete = []
         to_add = {}
+        settings_dict = self.settings.copy()
         for key, value in self.settings.items():
             parse_values(key, value, to_delete, to_add)
         for key in to_delete:
-            del self.settings[key]
-        self.settings.update(to_add)
-        return self.settings
+            del settings_dict[key]
+        settings_dict.update(to_add)
+        return settings_dict
 
     def __hash__(self):
         '''
@@ -120,11 +179,12 @@ class Settings(object):
         '''
         This method returns a string representation of the settings.
         '''
+        settings_dict = self.to_dict()
         string = f"{'name'}: {self.__class__.__name__}\n"
-        keys = list(self.settings.keys())
+        keys = list(settings_dict.keys())
         keys.sort()
         for key in keys:
-            string += f"{key}: {self.settings[key]}\n"
+            string += f"{key}: {settings_dict[key]}\n"
         return string
 
     def __copy__(self):
@@ -195,16 +255,60 @@ class GilbertElliotPLSSettings(Settings):
         self.settings["h"] = h
         self.settings["k"] = k
 
-class MultibandCrossfadeSettings(Settings):
+class StereoImageType(Enum):
+    DUAL_MONO = 2
+    MID_SIDE = 3
 
-    def __init__(self, frequencies: list = [200, 2000],
-                       order: int = 4):
+class AdvancedPLCSettings(Settings):
+
+    def __init__(self, settings: dict[str, list[Settings]],
+                       frequencies: dict[str, list[int]] = {},
+                       order: int = 4,
+                       stereo_image_processing: StereoImageType = StereoImageType.DUAL_MONO,
+                       channel_link: bool = True):
         '''
-        This class containes the settings for the MultibandCrossfade class.
+        This class containes the settings for the AdvancedPLC class.
 
             Input:
-                crossfade_settings:     list of the settings for the crossfades.
+                band_settings:              list of settings for each frequency band.
+                frequencies:                list of frequencies used for the crossover (Full band or L/Mid).
+                frequencies_b:              list of frequencies used for the crossover (R/Side if unlinked).
+                order:                      order of the crossover.
+                stereo_image_processing:    type of stereo image processing.
+                channel_link:               flag for channel link.
         '''
+        keys = set(settings.keys())
+        assert keys == {'linked'} or keys == {'left', 'right'} or keys == {'mid', 'side'}, "The settings must be either linked, left/right or mid/side."
+        freq_keys = set(frequencies.keys())
+        assert keys == freq_keys or len(freq_keys) == 0, "If present, the frequencies must be either linked, left/right or mid/side."
+        if len(freq_keys) > 0:
+            for key in keys:
+                assert len(frequencies[key]) == len(settings[key]) - 1, \
+                    f"The number of frequencies for {key} must be one less than the number of settings."
+
+        super().__init__()
+        self.settings["settings"] = settings
+        self.settings["frequencies"] = frequencies
+        self.settings["order"] = order
+        self.settings["stereo_image_processing"] = stereo_image_processing
+        self.settings["channel_link"] = channel_link
+
+    def set_progress_monitor(self, progress_monitor):
+        super().set_progress_monitor(progress_monitor)
+        for band_settings in self.settings["settings"].values():
+            for _, settings in band_settings:
+                settings.set_progress_monitor(self.progress_monitor)
+
+    def inherit_from(self, parent_settings):
+        super().inherit_from(parent_settings)
+        for band_settings in self.settings["settings"].values():
+            for _, settings in band_settings:
+                settings.inherit_from(parent_settings)
+
+class MultibandSettings(Settings):
+
+    def __init__(self, frequencies: list = [200, 2000],
+                       order: int = 4) -> None:
         super().__init__()
         self.settings["frequencies"] = frequencies
         self.settings["order"] = order
@@ -491,12 +595,12 @@ class SpectralEnergyCalculatorSettings(Settings):
         self.settings["amp_scale"] = amp_scale
 
 class PEAQMode(Enum):
-    basic = 1
-    advanced = 2
+    BASIC = 1
+    ADVANCED = 2
 
 class PEAQCalculatorSettings(Settings):
 
-    def __init__(self, peaq_mode: PEAQMode = PEAQMode.basic):
+    def __init__(self, peaq_mode: PEAQMode = PEAQMode.BASIC):
         '''
         This class containes the settings for the PEAQCalculator class.
 

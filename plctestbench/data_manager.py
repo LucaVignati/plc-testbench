@@ -117,6 +117,8 @@ class DataManager(object):
         worker_class = self.worker_classes[idx]
         node_class = self.node_classes[idx]
         for worker, settings in worker_class:
+            # if isinstance(settings, tuple):
+                
             settings.set_progress_monitor(self.progress_monitor)
             folder_name, absolute_path = self.path_manager.get_node_paths(worker, settings, parent)
             if parent is None:
@@ -136,7 +138,7 @@ class DataManager(object):
         for worker_class in self.worker_classes:
             workers = []
             for worker, settings in worker_class:
-                workers.append({"name": worker.__name__, "settings": settings.get_all()})
+                workers.append({"name": worker.__name__, "settings": settings.to_dict()})
             self.run['workers'].append(workers)
 
         self.run['nodes'] = []

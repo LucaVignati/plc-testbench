@@ -5,9 +5,12 @@ from burg_plc import BurgBasic
 from cpp_plc_template import BasePlcTemplate
 import tensorflow as tf
 from plctestbench.worker import Worker
-from .settings import Settings
+from .settings import Settings, StereoImageType
 from .low_cost_concealment import LowCostConcealment
 from .crossfade import Crossfade, MultibandCrossfade
+from .filters import LinkwitzRileyCrossover
+from .spatial import MidSideCodec, CodecMode
+from .utils import recursive_split_audio, get_class, force_2d
 
 class PLCAlgorithm(Worker):
 
@@ -24,7 +27,7 @@ class PLCAlgorithm(Worker):
             raise ValueError("fade in length cannot be longer than the packet size")
         self.fade_in = Crossfade(self.settings, self.settings.get("fade_in"))
         try:
-            self.context_length = self.settings.get("context_length") * self.settings.get("fs") / 1000
+            self.context_length = int(self.settings.get("context_length") * self.settings.get("fs") / 1000)
         except:
             self.context_length = self.packet_size
 
@@ -38,12 +41,11 @@ class PLCAlgorithm(Worker):
             '''
             '''
             rounding_difference = self.packet_size - track_length % self.packet_size
-            npad = [(0, rounding_difference)]
-            for _ in range(self.n_channels - 1):
-                npad.append((0, 0))
-            return np.pad(original_track, tuple(npad), 'constant')
+            npad = ((0, rounding_difference),(0, 0))
+            return np.pad(original_track, npad, 'constant')
         
-        self.n_channels = np.shape(original_track)[1] if len(np.shape(original_track)) > 1 else 1
+        original_track = force_2d(original_track)
+        self.n_channels = np.shape(original_track)[1]
         lost_packets_idx = lost_samples_idx[::self.packet_size]/self.packet_size
         track_length = len(original_track)
         n_packets = ceil(track_length/self.packet_size)
@@ -96,6 +98,7 @@ class PLCAlgorithm(Worker):
         '''
         This function is called for every buffer.
         '''
+        buffer = buffer
         self.context = np.roll(self.context, -self.packet_size, axis=1)
         self.context[-self.packet_size:, :] = buffer
         return buffer
@@ -122,6 +125,56 @@ class PLCAlgorithm(Worker):
             prediction = self._predict(buffer)
             output_buffer = self.crossfade(prediction, buffer)
         return output_buffer
+
+class AdvancedPLC(Worker):
+    '''
+    
+    '''
+
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
+        self.plc_algorithms = []
+        all_plc_settings = self.settings.get("settings")
+        self.plc_algorithms = {channel: [worker(settings) for worker, settings in settings_list] \
+                               for channel, settings_list in all_plc_settings.items()}
+        self.frequencies = self.settings.get("frequencies")
+        self.crossover_order = self.settings.get("order")
+        self.stereo_image_processing = self.settings.get("stereo_image_processing")
+        self.channel_link = self.settings.get("channel_link")
+        self.fs = self.settings.get("fs")
+        self.crossovers = {channel: [LinkwitzRileyCrossover(self.crossover_order, freq, self.fs) for freq in frequency_list] \
+                           for channel, frequency_list in self.frequencies.items()}
+        self.mid_side = True if self.stereo_image_processing == StereoImageType.MID_SIDE else False
+        self.mid_side_codec = MidSideCodec()
+
+    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
+        '''
+        
+        '''
+        original_track = force_2d(original_track)
+        original_track = self.mid_side_codec(original_track) if self.mid_side else original_track
+        processed_track = {}
+        if self.channel_link:
+            processed_track['linked'] = original_track
+        else:
+            for idx, channel in enumerate(self.frequencies.keys()):
+                processed_track[channel] = original_track[:, idx]
+        for channel, crossovers in self.crossovers.items():
+            processed_track[channel] = recursive_split_audio(processed_track[channel], crossovers, [])
+
+        reconstructed_track = np.zeros(np.shape(original_track), np.float32)
+        reconstructed_track_bands = {channel: np.zeros(np.shape(track_bands[0]), np.float32) for channel, track_bands in processed_track.items()}
+        for channel, plc_algorithms in self.progress_monitor(list(self.plc_algorithms.items()), desc=str(self)):
+            for idx, plc_algorithm in self.progress_monitor(list(enumerate(plc_algorithms)), desc=channel.capitalize()):
+                reconstructed_track_bands[channel] += plc_algorithm.run(processed_track[channel][idx], lost_samples_idx)
+        if not self.channel_link:
+            reconstructed_track = np.concatenate(list(reconstructed_track_bands.values()), axis=-1)
+        else:
+            reconstructed_track = reconstructed_track_bands['linked']
+        if self.mid_side:
+            reconstructed_track = self.mid_side_codec(reconstructed_track, type=CodecMode.DECODE)
+
+        return reconstructed_track
 
 class ZerosPLC(PLCAlgorithm):
     '''

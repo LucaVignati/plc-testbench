@@ -1,6 +1,7 @@
 import sys
 import hashlib
 from time import sleep
+import numpy as np
 
 def _is_notebook() -> bool:
     '''
@@ -56,3 +57,17 @@ def dummy_progress_bar(worker):
     '''
     for _ in worker.progress_monitor(range(10), desc=str(worker)):
         sleep(0.1)
+
+def recursive_split_audio(audio: np.ndarray, xovers: list, bands: list = []) -> list:
+        lp_audio, hp_audio = xovers[0].split(audio)
+        bands.append(lp_audio)
+        if len(xovers) == 1:
+            bands.append(hp_audio)
+        else:
+            recursive_split_audio(hp_audio, xovers[1:], bands)
+        return bands
+
+def force_2d(arr):
+    if arr.ndim == 1:
+        arr = np.expand_dims(arr, axis=-1)
+    return arr
