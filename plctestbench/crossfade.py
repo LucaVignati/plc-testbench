@@ -67,11 +67,12 @@ def recursive_split_audio(audio: np.ndarray, xovers: list, bands: list = []) -> 
 class MultibandCrossfade(object):
     def __init__(self, settings: Settings, crossfade_settings: list) -> None:
         self.settings = settings
-        self.multiband_settings = crossfade_settings[0]
-        self.crossfade_settings = crossfade_settings[1:]
-        self.frequencies = self.multiband_settings.get("frequencies")
+        #self.multiband_settings = crossfade_settings[0]
+        #self.crossfade_settings = crossfade_settings[1:]
+        self.crossfade_settings = crossfade_settings
+        self.frequencies = self.settings.get("frequencies")
         assert len(self.frequencies) + 1 == len(self.crossfade_settings), "Number of bands and number of crossfade settings do not match"
-        self.crossover_order = self.multiband_settings.get("order")
+        self.crossover_order = self.settings.get("order")
         self.fs = self.settings.get("fs")
         self.crossovers = [LinkwitzRileyCrossover(self.crossover_order, freq, self.settings.get("fs")) for freq in self.frequencies]
         self.crossfades = [Crossfade(self.settings, xfade_settings) for xfade_settings in self.crossfade_settings]

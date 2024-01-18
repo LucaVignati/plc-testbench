@@ -9,8 +9,8 @@ class LinkwitzRileyFilter:
         self.sos = self._design_filter()
 
     def _design_filter(self):
-        nyquist_frequency = 0.5 * self.sampling_rate
-        normalized_cutoff_frequency = self.cutoff_frequency / nyquist_frequency
+        nyquist_frequency = 0.5 * float(self.sampling_rate)
+        normalized_cutoff_frequency = float(self.cutoff_frequency) / float(nyquist_frequency)
         sos = iirfilter(N=self.order, Wn=normalized_cutoff_frequency, btype=self.type, ftype='butter', output='sos')
         return sos
 
