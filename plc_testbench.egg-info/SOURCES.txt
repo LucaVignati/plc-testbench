@@ -7,9 +7,11 @@ plc_testbench.egg-info/requires.txt
 plc_testbench.egg-info/top_level.txt
 plctestbench/__init__.py
 plctestbench/__version__.py
+plctestbench/crossfade.py
 plctestbench/data_manager.py
 plctestbench/database_manager.py
 plctestbench/file_wrapper.py
+plctestbench/filters.py
 plctestbench/loss_simulator.py
 plctestbench/low_cost_concealment.py
 plctestbench/node.py
