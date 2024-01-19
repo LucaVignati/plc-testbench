@@ -15,7 +15,7 @@ class Settings(object):
             if '-' in key:
                 original_key = str(key)
                 key, cls = key.split('-')
-                obj = Settings(value)
+                obj = Settings(value) if Settings in get_class(cls).__mro__ else get_class(cls)(value)
                 obj.__class__ = get_class(cls)
                 if '~' in key:
                     key, _ = key.split('~')
@@ -48,6 +48,8 @@ class Settings(object):
         '''
         for key, value in parent_settings.get_all().items():
             if key != self:
+                if isinstance(value, Settings):
+                    value.unflatten()
                 self.add(key, value)
 
         # Save parent hash to use in __hash__ method
@@ -235,7 +237,7 @@ class CrossfadeFunction(Enum):
     
 class CrossfadeType(Enum):
     power = "power"
-    sinusoidal = "amplitude"
+    amplitude = "amplitude"
         
 class NoCrossfadeSettings(CrossfadeSettings):
 
@@ -334,10 +336,10 @@ class PLCSettings(Settings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
                        fade_in: List[CrossfadeSettings] = None,
-                       frequencies: List[int] = [20, 2000],
+                       frequencies: List[int] = [],
                        order: int = 4) -> None:
         super().__init__()
-        self.settings["crossfade"] = crossfade if crossfade is not None else [NoCrossfadeSettings() for frequency in frequencies]
+        self.settings["crossfade"] = crossfade if crossfade is not None else [NoCrossfadeSettings() for i in range(len(frequencies) + 1)]
         self.settings["fade_in"] = fade_in if fade_in is not None else [NoCrossfadeSettings()]
         self.settings["frequencies"] = frequencies
         self.settings["order"] = order
@@ -348,7 +350,7 @@ class ZerosPLCSettings(PLCSettings):
 
     def __init__(sel, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                      frequencies: List[int] = [20, 2000]) -> None:
+                      frequencies: List[int] = []) -> None:
         '''
         This class containes the settings for the ZeroPLC class.
         '''
@@ -361,7 +363,7 @@ class LastPacketPLCSettings(PLCSettings):
                        mirror_x: bool = False,
                        mirror_y: bool = False,
                        clip_strategy: str = "subtract",
-                       frequencies: List[int] = [20, 2000]):
+                       frequencies: List[int] = []):
         '''
         This class containes the settings for the LastPacketPLC class.
         '''
@@ -382,7 +384,7 @@ class LowCostPLCSettings(PLCSettings):
                        fade_in_length: int = 10,
                        fade_out_length: float = 0.5,
                        extraction_length: int = 2,
-                       frequencies: List[int] = [20, 2000]):
+                       frequencies: List[int] = []):
         '''
         This class containes the settings for the LowCostPLC class.
 
@@ -410,7 +412,7 @@ class BurgPLCSettings(PLCSettings):
                        fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                        context_length: int = 100,
                        order: int = 1,
-                       frequencies: List[int] = [20, 2000]):
+                       frequencies: List[int] = []):
         '''
         This class containes the settings for the BurgPLC class.
 
@@ -426,7 +428,7 @@ class ExternalPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                        fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       frequencies: List[int] = [20, 2000]):
+                       frequencies: List[int] = []):
         '''
         This class containes the settings for the ExternalPLC class.
         '''

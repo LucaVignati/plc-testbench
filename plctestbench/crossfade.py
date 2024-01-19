@@ -1,5 +1,5 @@
 import numpy as np
-from plctestbench.settings import Settings
+from plctestbench.settings import Settings, CrossfadeFunction, CrossfadeType
 from .filters import LinkwitzRileyCrossover
 
 def power_crossfade(settings: Settings) -> np.array:
@@ -11,23 +11,25 @@ def sinusoidal_crossfade(settings: Settings) -> np.array:
 class Crossfade(object):
     def __init__(self, settings: Settings, crossfade_settings: Settings) -> None:
         self.settings = settings
+        self.settings.unflatten()
         self.crossfade_settings = crossfade_settings
+        self.crossfade_settings.unflatten()
         self.fs = settings.get("fs")
         self.length = self.crossfade_settings.get("length")
         self.crossfade_settings.length_in_samples = round(self.length * self.fs * 0.001)
         self._ongoing = False
         self.idx = 0
         
-        self.function = crossfade_settings.get("function")
-        if self.function == "power":
-            self.crossfade_buffer_a = power_crossfade(crossfade_settings)
-        elif self.function == "sinusoidal":
-            self.crossfade_buffer_a = sinusoidal_crossfade(crossfade_settings)
+        self.function = self.crossfade_settings.get("function")
+        if self.function == CrossfadeFunction.power:
+            self.crossfade_buffer_a = power_crossfade(self.crossfade_settings)
+        elif self.function == CrossfadeFunction.sinusoidal:
+            self.crossfade_buffer_a = sinusoidal_crossfade(self.crossfade_settings)
 
         self.type = crossfade_settings.get("type")
-        if self.type == "power":
+        if self.type == CrossfadeType.power:
             self.crossfade_buffer_b = (1 - self.crossfade_buffer_a ** 2) ** 1/2
-        elif self.type == "amplitude":
+        elif self.type == CrossfadeType.amplitude:
             self.crossfade_buffer_b = 1 - self.crossfade_buffer_a
 
     def __call__(self, prediction: np.ndarray, buffer: np.ndarray = None) -> np.ndarray:
