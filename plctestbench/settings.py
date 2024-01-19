@@ -333,12 +333,12 @@ class SinusoidalCrossfadeSettings(CrossfadeSettings):
 class PLCSettings(Settings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
-                       fade_in: CrossfadeSettings = NoCrossfadeSettings(),
+                       fade_in: List[CrossfadeSettings] = None,
                        frequencies: List[int] = [20, 2000],
                        order: int = 4) -> None:
         super().__init__()
         self.settings["crossfade"] = crossfade if crossfade is not None else [NoCrossfadeSettings() for frequency in frequencies]
-        self.settings["fade_in"] = fade_in if fade_in is not None else NoCrossfadeSettings()
+        self.settings["fade_in"] = fade_in if fade_in is not None else [NoCrossfadeSettings()]
         self.settings["frequencies"] = frequencies
         self.settings["order"] = order
         
@@ -347,7 +347,7 @@ class PLCSettings(Settings):
 class ZerosPLCSettings(PLCSettings):               
 
     def __init__(sel, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                      fade_in: CrossfadeSettings = NoCrossfadeSettings(),
+                      fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                       frequencies: List[int] = [20, 2000]) -> None:
         '''
         This class containes the settings for the ZeroPLC class.
@@ -357,7 +357,7 @@ class ZerosPLCSettings(PLCSettings):
 class LastPacketPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: CrossfadeSettings = NoCrossfadeSettings(),
+                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                        mirror_x: bool = False,
                        mirror_y: bool = False,
                        clip_strategy: str = "subtract",
@@ -374,7 +374,7 @@ class LastPacketPLCSettings(PLCSettings):
 class LowCostPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: CrossfadeSettings = NoCrossfadeSettings(),
+                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                        max_frequency: float = 4800,
                        f_min: int = 80,
                        beta: float = 1,
@@ -407,7 +407,7 @@ class LowCostPLCSettings(PLCSettings):
 class BurgPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: CrossfadeSettings = NoCrossfadeSettings(),
+                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                        context_length: int = 100,
                        order: int = 1,
                        frequencies: List[int] = [20, 2000]):
@@ -425,7 +425,7 @@ class BurgPLCSettings(PLCSettings):
 class ExternalPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: CrossfadeSettings = NoCrossfadeSettings(),
+                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                        frequencies: List[int] = [20, 2000]):
         '''
         This class containes the settings for the ExternalPLC class.
@@ -435,7 +435,7 @@ class ExternalPLCSettings(PLCSettings):
 class DeepLearningPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: CrossfadeSettings = NoCrossfadeSettings(),
+                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
                        model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
                        fs_dl: int = 16000,
                        context_length: int = 8000,
