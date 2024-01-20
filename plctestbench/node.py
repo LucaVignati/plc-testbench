@@ -16,7 +16,6 @@ class Node(BaseNode, NodeMixin):
         self.settings = copy(settings)
         if parent is not None:
             self.settings.inherit_from(parent.settings)
-        self.settings.unflatten()
         self.worker = worker(self.settings) if worker is not None else None
         self.database = database
         self.parent = parent

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: plc-testbench
-Version: 0.8.2
+Version: 0.8.1
 Summary: Framework comparison and benchmarking                               of error concealment algorithms
 Home-page: https://bitbucket.org/mindswteam/ecc-testbench
 Author: Luca Vignati
