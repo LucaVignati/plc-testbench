@@ -8,5 +8,4 @@
 alohaecc.egg-info
 build/
 dist/
-venv/
-plctestbench-*/
+.*venv
