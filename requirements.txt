@@ -7,4 +7,3 @@ tqdm
 matplotlib
 tensorflow
 librosa
-typing_inspect

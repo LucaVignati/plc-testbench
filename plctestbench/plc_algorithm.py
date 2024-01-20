@@ -13,7 +13,6 @@ class PLCAlgorithm(Worker):
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
-        self.frequencies = self.settings.get("frequencies")
         self.packet_size = self.settings.get("packet_size")
         self.crossfade_settings = self.settings.get("crossfade")
         if isinstance(self.crossfade_settings, list):
@@ -21,10 +20,9 @@ class PLCAlgorithm(Worker):
         else:
             self.crossfade_class = Crossfade
         self.crossfade = self.crossfade_class(self.settings, self.crossfade_settings)
-        fade_in_settings = self.settings.get("fade_in")[0]
-        if fade_in_settings.settings.get("length") > self.packet_size:
+        if self.settings.get("fade_in").get("length") > self.packet_size:
             raise ValueError("fade in length cannot be longer than the packet size")
-        self.fade_in = Crossfade(self.settings, fade_in_settings)
+        self.fade_in = Crossfade(self.settings, self.settings.get("fade_in"))
         try:
             self.context_length = self.settings.get("context_length") * self.settings.get("fs") / 1000
         except:

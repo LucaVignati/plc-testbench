@@ -1,2 +1,3 @@
+ecc_external
 plctestbench
 test

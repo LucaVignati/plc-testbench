@@ -28,7 +28,6 @@ setuptools.setup(name='plc-testbench',
                     'tensorflow',
                     'cpp-plc-template',
                     'burg-plc',
-                    'typing_inspect',
                  ],
                  python_requires='>=3.7',
                  )
