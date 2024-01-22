@@ -71,8 +71,6 @@ class Settings(object):
         '''
         for key, value in parent_settings.get_all().items():
             if key != self:
-                if isinstance(value, Settings):
-                    value.unflatten()
                 self.add(key, value)
 
         # Save parent hash to use in __hash__ method
@@ -128,21 +126,21 @@ class Settings(object):
                     _, new_dict_entry = parse_values(key + '~' + str(idx), item)
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
-                if len(new_dict_entry) > 0:
+                if len(value) > 0:
                     to_delete.append(key)
             if isinstance(value, tuple):
                 for idx, item in enumerate(value):
                     _, new_dict_entry = parse_values(key + '&' + str(idx), item)
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
-                if len(new_dict_entry) > 0:
+                if len(value) > 0:
                     to_delete.append(key)
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
                     _, new_dict_entry = parse_values(key + '$' + subkey, subvalue)
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
-                if len(new_dict_entry) > 0:
+                if len(value.keys()) > 0:
                     to_delete.append(key)
             if isclass(value):
                 to_add[key + '#'] = value.__name__
@@ -304,8 +302,6 @@ class CrossfadeSettings(Settings):
 
     def __init__(self) -> None:
         super().__init__()
-        self.length_in_samples = 0
-        self.settings["length_in_samples"] = 0
 
 class CrossfadeFunction(Enum):
     power = "power"
@@ -410,40 +406,42 @@ class SinusoidalCrossfadeSettings(CrossfadeSettings):
 
 class PLCSettings(Settings):
 
-    def __init__(self, crossfade: List[CrossfadeSettings] = None,
-                       fade_in: List[CrossfadeSettings] = None,
-                       frequencies: List[int] = [],
-                       order: int = 4) -> None:
+    def __init__(self, crossfade: CrossfadeSettings = None,
+                       fade_in: CrossfadeSettings = None,
+                       crossfade_frequencies: List[int] = None,
+                       crossfade_order: int = None) -> None:
         super().__init__()
-        self.settings["crossfade"] = crossfade if crossfade is not None else [NoCrossfadeSettings() for i in range(len(frequencies) + 1)]
+        crossfade = [crossfade] if not isinstance(crossfade, list) else crossfade
+        fade_in = [fade_in] if not isinstance(fade_in, list) else fade_in
+        self.settings["crossfade_frequencies"] = crossfade_frequencies if crossfade_frequencies is not None else []
+        self.settings["crossfade"] = crossfade if crossfade is not None else [NoCrossfadeSettings() for _ in range(len(self.settings.get("crossfade_frequencies")) + 1)]
         self.settings["fade_in"] = fade_in if fade_in is not None else [NoCrossfadeSettings()]
-        self.settings["frequencies"] = frequencies
-        self.settings["order"] = order
-        
-        #assert len(self.settings["crossfade"]) == len(self.settings["frequencies"]), "The number of crossfade settings must be equal to the number of frequencies."
+        self.settings["crossover_order"] =crossfade_order if crossfade_order is not None else 4
 
 class ZerosPLCSettings(PLCSettings):               
 
-    def __init__(sel, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                      fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                      frequencies: List[int] = []) -> None:
+    def __init__(sel, crossfade: List[CrossfadeSettings] = None,
+                      fade_in: CrossfadeSettings = None,
+                      crossfade_frequencies: List[int] = None,
+                      crossfade_order: int = None) -> None:
         '''
         This class containes the settings for the ZeroPLC class.
         '''
-        super().__init__(crossfade, fade_in, frequencies)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
 
 class LastPacketPLCSettings(PLCSettings):
 
-    def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
+    def __init__(self, crossfade: List[CrossfadeSettings] = None,
+                       fade_in: List[CrossfadeSettings] = None,
+                       crossfade_frequencies: List[int] = None,
+                       crossfade_order: int = None,
                        mirror_x: bool = False,
                        mirror_y: bool = False,
-                       clip_strategy: str = "subtract",
-                       frequencies: List[int] = []):
+                       clip_strategy: str = "subtract"):
         '''
         This class containes the settings for the LastPacketPLC class.
         '''
-        super().__init__(crossfade, fade_in, frequencies)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
         self.settings["mirror_x"] = mirror_x
         self.settings["mirror_y"] = mirror_y
         self.settings["clip_strategy"] = clip_strategy
@@ -451,16 +449,17 @@ class LastPacketPLCSettings(PLCSettings):
 
 class LowCostPLCSettings(PLCSettings):
 
-    def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
+    def __init__(self, crossfade: List[CrossfadeSettings] = None,
+                       fade_in: List[CrossfadeSettings] = None,
+                       crossfade_frequencies: List[int] = None,
+                       crossfade_order: int = None,
                        max_frequency: float = 4800,
                        f_min: int = 80,
                        beta: float = 1,
                        n_m: int = 2,
                        fade_in_length: int = 10,
                        fade_out_length: float = 0.5,
-                       extraction_length: int = 2,
-                       frequencies: List[int] = []):
+                       extraction_length: int = 2):
         '''
         This class containes the settings for the LowCostPLC class.
 
@@ -473,7 +472,7 @@ class LowCostPLCSettings(PLCSettings):
                 fade_out_length: fade_out_length parameter of the LowCostPLC algorithm.
                 extraction_length: extraction_length parameter of the LowCostPLC algorithm.
         '''
-        super().__init__(crossfade, fade_in, frequencies)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
         self.settings["max_frequency"] = max_frequency
         self.settings["f_min"] = f_min
         self.settings["beta"] = beta
@@ -484,11 +483,12 @@ class LowCostPLCSettings(PLCSettings):
 
 class BurgPLCSettings(PLCSettings):
 
-    def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
+    def __init__(self, crossfade: List[CrossfadeSettings] = None,
+                       fade_in: List[CrossfadeSettings] = None,
+                       crossfade_frequencies: List[int] = None,
+                       crossfade_order: int = None,
                        context_length: int = 100,
-                       order: int = 1,
-                       frequencies: List[int] = []):
+                       order: int = 1):
         '''
         This class containes the settings for the BurgPLC class.
 
@@ -496,24 +496,27 @@ class BurgPLCSettings(PLCSettings):
                 context_length: size of the training set.
                 order:          order of the Burg algorithm.
         '''
-        super().__init__(crossfade, fade_in, frequencies)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
         self.settings["context_length"] = context_length
         self.settings["order"] = order
 
 class ExternalPLCSettings(PLCSettings):
 
-    def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       frequencies: List[int] = []):
+    def __init__(self, crossfade: List[CrossfadeSettings] = None,
+                       fade_in: List[CrossfadeSettings] = None,
+                       crossfade_frequencies: List[int] = None,
+                       crossfade_order: int = None):
         '''
         This class containes the settings for the ExternalPLC class.
         '''
-        super().__init__(crossfade, fade_in, frequencies)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
 
 class DeepLearningPLCSettings(PLCSettings):
 
-    def __init__(self, crossfade: List[CrossfadeSettings] = [NoCrossfadeSettings()],
-                       fade_in: List[CrossfadeSettings] = [NoCrossfadeSettings()],
+    def __init__(self, crossfade: List[CrossfadeSettings] = None,
+                       fade_in: List[CrossfadeSettings] = None,
+                       crossfade_frequencies: List[int] = None,
+                       crossfade_order: int = None,
                        model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
                        fs_dl: int = 16000,
                        context_length: int = 8000,
@@ -521,8 +524,7 @@ class DeepLearningPLCSettings(PLCSettings):
                        window_length: int = 160*3,
                        lower_edge_hertz: float = 40.0,
                        upper_edge_hertz: float = 7600.0,
-                       num_mel_bins: int = 100,
-                       frequencies: List[int] = []):
+                       num_mel_bins: int = 100):
         '''
         This class containes the settings for the DeepLearningPLC class.
 
@@ -536,7 +538,7 @@ class DeepLearningPLCSettings(PLCSettings):
                 upper_edge_hertz:   upper edge of the tracks.
                 num_mel_bins:       number of mel bins of the tracks.
         '''
-        super().__init__(crossfade, fade_in, frequencies)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
         self.settings["model_path"] = model_path
         self.settings["fs_dl"] = fs_dl
         self.settings["context_length"] = context_length
