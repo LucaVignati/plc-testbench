@@ -406,8 +406,8 @@ class SinusoidalCrossfadeSettings(CrossfadeSettings):
 
 class PLCSettings(Settings):
 
-    def __init__(self, crossfade: CrossfadeSettings = None,
-                       fade_in: CrossfadeSettings = None,
+    def __init__(self, crossfade: List[CrossfadeSettings] = None,
+                       fade_in: List[CrossfadeSettings] = None,
                        crossfade_frequencies: List[int] = None,
                        crossfade_order: int = None) -> None:
         super().__init__()
