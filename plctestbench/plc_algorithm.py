@@ -16,6 +16,7 @@ class PLCAlgorithm(Worker):
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
+        self.frequencies = self.settings.get("frequencies")
         self.packet_size = self.settings.get("packet_size")
         self.crossfade_settings = self.settings.get("crossfade")
         if isinstance(self.crossfade_settings, list):
@@ -23,9 +24,10 @@ class PLCAlgorithm(Worker):
         else:
             self.crossfade_class = Crossfade
         self.crossfade = self.crossfade_class(self.settings, self.crossfade_settings)
-        if self.settings.get("fade_in").get("length") > self.packet_size:
+        fade_in_settings = self.settings.get("fade_in")[0]
+        if fade_in_settings.settings.get("length") > self.packet_size:
             raise ValueError("fade in length cannot be longer than the packet size")
-        self.fade_in = Crossfade(self.settings, self.settings.get("fade_in"))
+        self.fade_in = Crossfade(self.settings, fade_in_settings)
         try:
             self.context_length = int(self.settings.get("context_length") * self.settings.get("fs") / 1000)
         except:
@@ -144,7 +146,7 @@ class AdvancedPLC(Worker):
         self.fs = self.settings.get("fs")
         self.crossovers = {channel: [LinkwitzRileyCrossover(self.crossover_order, freq, self.fs) for freq in frequency_list] \
                            for channel, frequency_list in self.frequencies.items()}
-        self.mid_side = True if self.stereo_image_processing == StereoImageType.MID_SIDE else False
+        self.mid_side = True if self.stereo_image_processing == StereoImageType.mid_side else False
         self.mid_side_codec = MidSideCodec()
 
     def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):

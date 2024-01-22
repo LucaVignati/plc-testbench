@@ -1,5 +1,5 @@
 import numpy as np
-from plctestbench.settings import Settings
+from plctestbench.settings import Settings, MultibandSettings, CrossfadeFunction, CrossfadeType
 from .filters import LinkwitzRileyCrossover
 from .utils import recursive_split_audio
 
@@ -19,16 +19,16 @@ class Crossfade(object):
         self._ongoing = False
         self.idx = 0
         
-        self.function = crossfade_settings.get("function")
-        if self.function == "power":
-            self.crossfade_buffer_a = power_crossfade(crossfade_settings)
-        elif self.function == "sinusoidal":
-            self.crossfade_buffer_a = sinusoidal_crossfade(crossfade_settings)
+        self.function = self.crossfade_settings.get("function")
+        if self.function == CrossfadeFunction.power:
+            self.crossfade_buffer_a = power_crossfade(self.crossfade_settings)
+        elif self.function == CrossfadeFunction.sinusoidal:
+            self.crossfade_buffer_a = sinusoidal_crossfade(self.crossfade_settings)
 
-        self.type = crossfade_settings.get("type")
-        if self.type == "power":
+        self.type = self.crossfade_settings.get("type")
+        if self.type == CrossfadeType.power:
             self.crossfade_buffer_b = (1 - self.crossfade_buffer_a ** 2) ** 1/2
-        elif self.type == "amplitude":
+        elif self.type == CrossfadeType.amplitude:
             self.crossfade_buffer_b = 1 - self.crossfade_buffer_a
 
     def __call__(self, prediction: np.ndarray, buffer: np.ndarray = None) -> np.ndarray:
@@ -60,9 +60,9 @@ class Crossfade(object):
 class MultibandCrossfade(object):
     def __init__(self, settings: Settings, crossfade_settings: list) -> None:
         self.settings = settings
-        self.multiband_settings = crossfade_settings[0]
-        self.crossfade_settings = crossfade_settings[1:]
-        self.frequencies = self.multiband_settings.get("frequencies")
+        self.multiband_settings = MultibandSettings(self.settings.get("frequencies"), self.settings.get("order"))
+        self.crossfade_settings = crossfade_settings
+        self.frequencies = self.settings.get("frequencies")
         assert len(self.frequencies) + 1 == len(self.crossfade_settings), "Number of bands and number of crossfade settings do not match"
         self.crossover_order = self.multiband_settings.get("order")
         self.fs = self.settings.get("fs")

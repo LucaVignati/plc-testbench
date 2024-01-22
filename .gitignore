@@ -6,6 +6,7 @@
 
 .vscode/
 alohaecc.egg-info
-build
-dist
-.*venv
+build/
+dist/
+venv/
+plctestbench-*

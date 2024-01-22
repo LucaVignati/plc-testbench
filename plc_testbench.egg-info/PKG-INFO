@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: plc-testbench
-Version: 0.7.1
+Version: 0.8.4
 Summary: Framework comparison and benchmarking                               of error concealment algorithms
 Home-page: https://bitbucket.org/mindswteam/ecc-testbench
 Author: Luca Vignati
@@ -26,6 +26,7 @@ It features the implementation of some of the most common packet loss models, PL
 - **Burg**: Python bindings for the [C++ implementation of the Burg method](https://github.com/matteosacchetto/burg-implementation-experiments).
 - **Deep Learning**: implementation of the algorithm proposed in [[3](#3)].
 - **External**: Python bindings for C++ to simplify the integration of existing algorithms.
+- **Advanced**: allows to apply different PLC algorithms to different frequency bands and audio channels (M/S processing included).
 
 **Metrics**
 - **Mean Square Error**: the mean square error between the original and reconstructed signal.
@@ -54,6 +55,33 @@ Clone this repository, install the requirements and the plctestbench package:
     cd plc-testbench
     pip install -r requirements.txt
     pip install .
+```
+
+If you want to use it inside Jupyter Notebook you also need to install the ipywidgets package:
+```bash
+    pip install ipywidgets
+```
+
+Clone and install the [burg-python-bindings](https://github.com/LucaVignati/burg-python-bindings):
+```bash
+    git clone https://github.com/LucaVignati/burg-python-bindings.git
+    cd burg-python-bindings
+    python setup.py install
+```
+
+Clone and install the [cpp_plc_template](https://github.com/LucaVignati/cpp_plc_template):
+```bash
+    git clone https://github.com/LucaVignati/cpp_plc_template.git
+    cd cpp_plc_template
+    python setup.py install
+```
+
+If you want to use the PEAQ metric, you also need to install the GSTREAMER library and the PEAQ plugin:
+```bash
+    sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio git gtk-doc-tools git2cl automake libtool
+    mkdir gstpeaq && git clone https://github.com/HSU-ANT/gstpeaq.git gstpeaq
+    cd gstpeaq
+    aclocal && autoheader && ./autogen.sh && sed -i 's/SUBDIRS = src doc/SUBDIRS = src/' Makefile.am && ./configure --libdir=/usr/lib && automake && make && make install
 ```
 
 The file `plctestbench.ipynb` contains a Jupyter Notebook with a basic example of how to use the tool.
@@ -86,10 +114,10 @@ List the PLC algorithms you want to test as follows:
 plc_algorithms = [(ZerosPLC, ZerosPLCSettings()),
                   (LastPacketPLC, LastPacketPLCSettings()),
                   (LowCostPLC, LowCostPLCSettings()),
+                  (BurgPLC, BurgPLCSettings()),
                   (DeepLearningPLC, DeepLearningPLCSettings()),
                   (ExternalPLC, ExternalPLCSettings())]
 ```
-❗At the moment, the ExternalPLC algorithms do not work due to some issues with the libraries used. We are working on fixing this.\
 ❗The DeepLearningPLC algorithm requires the `bufer_size` to be set to 128 in the `Settings` of the `PacketLossSimulator` of choice.
 
 List the metrics you want to use as follows:
@@ -120,6 +148,93 @@ You can also plot the waveform of the reconstructed audio tracks, however since 
 
 You will find both the audio files and the results in the folder specified in the `root_folder` setting.
 
+## Advanced Usage
+
+More advanced features are hidden by default to simplify the basic usage of the tool. In this paragraph we will show how to use them.
+
+### Crossfade
+
+When a packet is lost, the PLC algorithm has to reconstruct the lost samples. However, the reconstructed samples are not going to be identical to the original ones. This is why we implemented a crossfade feature, which allows to gradually transition from the original samples to the reconstructed ones, and vice versa.
+
+The crossfade can be customized in the following aspects:
+- **Length**: the duration of the crossfade in milliseconds.
+- **Function**: the function to use:
+    - **Power**: the crossfade is $x^n$.
+    - **Sinusoidal**: the crossfade is sinusoidal ($\sin\left(x\right)$ for $0 < x < \frac{\pi}{2}$).
+- **Exponent**: the exponent of the power crossfade function.
+- **Type**:
+    - **Equal Power**: the sum of the squares of the two crossfades is equal to 1.
+    - **Equal Amplitude**: the sum of the two crossfades is equal to 1.
+
+The crossfade can be applied to the left or the right of the lost samples, or both. The following example illustrates how to configure the settings to use the crossfade:
+```python
+    crossfade_settings = ManualCrossfadeSettings(length=1,\
+                        function='power', exponent=2.0, type='power')
+
+    (ZerosPLC, ZerosPLCSettings(fade_in=QuadraticCrossfadeSettings(length=1),\
+        crossfade=crossfade_settings))
+```
+As shown in the previous example, the `fade_in` parameter of any `PLCAlgorithm` determines the crossfade to apply to the left of the lost samples, while the `crossfade` parameter determines the crossfade to apply to the right of the lost samples. It is important to note that the length of the `fade_in` crossfade cannot be greater than the length of the lost packet.
+
+The `ManualCrossfadeSettings` class allows to manually set the parameters of the crossfade.
+However, there are other convenience classes that are pre-set to some common configurations:
+- `NoCrossfadeSettings`: disables the crossfade.
+- `LinearCrossfadeSettings`: applies a linear crossfade (`function` = 'power' and `exponent` = 1.0).
+- `QuadraticCrossfadeSettings`: applies a quadratic crossfade (`function` = 'power' and `exponent` = 2.0).
+- `CubicCrossfadeSettings`: applies a cubic crossfade (`function` = 'power' and `exponent` = 3.0).
+- `SinusoidalCrossfadeSettings`: applies a sinusoidal crossfade (`function` = 'sinusoidal').
+
+
+Both the `fade_in` and `crossfade` parameters always default to `NoCrossfadeSettings` so that the crossfade is disabled by default.
+
+### Multiband Crossfade
+
+Different crossfade settings can be applied to different frequency bands. This can be useful mitigate some of the artifacts introduced by the crossfade.
+
+This is an example configuration for three bands crossfade:
+```python
+    multiband_crossfade_settings = \
+        [MultibandSettings(frequencies = [200, 2000]),
+         QuadraticCrossfadeSettings(length=50),
+         QuadraticCrossfadeSettings(length=5),
+         QuadraticCrossfadeSettings(length=1)]
+
+    (ZerosPLC, ZerosPLCSettings(crossfade=multiband_crossfade_settings))
+```
+The `MultibandSettings` class allows to specify the frequencies of the bands. The first frequency is the upper bound of the first band, while the last frequency is the lower bound of the last band. The number of frequencies determines the number of bands.
+
+The list beginning with the `MultibandSettings` class contains the crossfade settings for each band. The first element of the list is the crossfade settings for the first band, the second element is the crossfade settings for the second band, and so on. The length of the list must be equal to the number of bands.
+
+Each band can have its own crossfade settings, totally unrelated to the other bands.
+
+### Advanced PLC
+
+The `AdvancedPLC` object allow for two complex beheviours simultaneously:
+- **Multiband PLC**: different PLC algorithms can be applied to different frequency bands. 
+- **Spatial PLC**: different PLC algorithms can be applied to different audio channels (featuring M/S processing).
+
+An example configuration of the settings to achieve such beheaviours is the following:
+```python
+    frequencies = {'mid': [200, 2000], 'side': [1000]}
+    band_settings = {\
+        'mid':
+            [(ZerosPLC, ZerosPLCSettings()),
+             (BurgPLC, BurgPLCSettings(order=512)),
+             (BurgPLC, BurgPLCSettings(order=256))],
+        'side':
+            [(LastPacketPLC, LastPacketPLCSettings()),
+             (BurgPLC, BurgPLCSettings(order=256))]}
+
+    (AdvancedPLC, AdvancedPLCSettings(band_settings, frequencies = frequencies, channel_link=False, stereo_image_processing = StereoImageType.MID_SIDE))
+```
+The `frequencies` parameter is a dictionary that maps the name of the channel to a list of frequencies.
+
+The `band_settings` parameter is a dictionary that maps the name of the channel to a list of tuples. Each tuple contains the PLC algorithm to apply to the band and its settings. The length of each list must be equal to the number of bands of that channel.
+
+If L/R or M/S channels require different PLC algorithms, the `channel_link` parameter needs to be set to `False` and the related settings need to be specified in the `band_settings` parameter using the `left` and `right` or `mid` and `side` keys.
+
+Alternatively, if the same PLC algorithms need to be applied to both channels (regardless of the L/R or M/S coding), the `channel_link` parameter needs to be set to `True` and the related settings need to be specified in the `band_settings` parameter using the `linked` key.
+
 ## User Interface
 This user interface is an ongoing thesis project carried out by Stefano Dallona under the supervision of Luca Vignati.
 It is a web application developed using the React framework.
@@ -130,7 +245,7 @@ The code is available in the following two repositories:
 
 The easiest way to try it out is to use the Docker image provided by Stefano Dallona:
 ```bash
-    docker pull stdallona/plc-testbench-ui:1.0.1
+    docker pull cimil/plc-testbench-ui:latest
 ```
 This Docker image already contains the code of PLCTestbench so it only requires a running MongoDB instance (see previous section).
 
@@ -148,7 +263,7 @@ Run the following command to start the container:
                -p 5000:5000 \
                -v /path/to/root/folder:/original_tracks \
                --name plc-testbench-ui \
-               stdallona/plc-testbench-ui:1.0.1
+               cimil/plc-testbench-ui:latest
 ```
 Where the environment variables are:
 | Variable | Value | Description |
