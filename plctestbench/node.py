@@ -1,4 +1,4 @@
-from copy import copy
+from copy import deepcopy
 from anytree import NodeMixin
 import numpy as np
 
@@ -13,7 +13,7 @@ class BaseNode(object):
 class Node(BaseNode, NodeMixin):
     def __init__(self, file: FileWrapper=None, worker: Worker=None, settings: Settings=None, absolute_path: str=None, parent=None, database=None, folder_name=None) -> None:
         self.file = file
-        self.settings = copy(settings)
+        self.settings = deepcopy(settings)
         if parent is not None:
             self.settings.inherit_from(parent.settings)
         self.settings.unflatten()
@@ -63,7 +63,7 @@ class Node(BaseNode, NodeMixin):
         return self._get_database().find_node(self.get_id(), type(self).__name__)
 
     def _save_to_database(self):
-        entry = self.settings.get_all().copy()
+        entry = self.settings.to_dict().copy()
         entry["filepath"] = self.file.get_path()
         entry["_id"] = self.get_id()
         entry["file_hash"] = str(hash(self.file))

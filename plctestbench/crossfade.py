@@ -1,6 +1,7 @@
 import numpy as np
 from plctestbench.settings import Settings, CrossfadeFunction, CrossfadeType
 from .filters import LinkwitzRileyCrossover
+from .utils import recursive_split_audio
 
 def power_crossfade(settings: Settings) -> np.array:
     return np.array([x ** settings.get("exponent") for x in np.linspace(0, 1, settings.length_in_samples)])
@@ -58,14 +59,6 @@ class Crossfade(object):
             self._ongoing = False
         return self._ongoing
 
-def recursive_split_audio(audio: np.ndarray, xovers: list, bands: list = []) -> list:
-        lp_audio, hp_audio = xovers[0].split(audio)
-        bands.append(lp_audio)
-        if len(xovers) == 1:
-            bands.append(hp_audio)
-            return
-        else:
-            recursive_split_audio(hp_audio, xovers[1:], bands)
 class MultibandCrossfade(object):
     def __init__(self, settings: Settings, crossfade_settings: list) -> None:
         self.settings = settings

@@ -15,6 +15,7 @@ It features the implementation of some of the most common packet loss models, PL
 - **Burg**: Python bindings for the [C++ implementation of the Burg method](https://github.com/matteosacchetto/burg-implementation-experiments).
 - **Deep Learning**: implementation of the algorithm proposed in [[3](#3)].
 - **External**: Python bindings for C++ to simplify the integration of existing algorithms.
+- **Advanced**: allows to apply different PLC algorithms to different frequency bands and audio channels (M/S processing included).
 
 **Metrics**
 - **Mean Square Error**: the mean square error between the original and reconstructed signal.
@@ -135,6 +136,93 @@ testbench.plot(to_file=True, original_tracks=True, lost_samples_masks=True, outp
 You can also plot the waveform of the reconstructed audio tracks, however since we're plotting the entire duration of the audio file, the differences with the original tracks are not going to be visible. This is why we developed a user interface for this application.
 
 You will find both the audio files and the results in the folder specified in the `root_folder` setting.
+
+## Advanced Usage
+
+More advanced features are hidden by default to simplify the basic usage of the tool. In this paragraph we will show how to use them.
+
+### Crossfade
+
+When a packet is lost, the PLC algorithm has to reconstruct the lost samples. However, the reconstructed samples are not going to be identical to the original ones. This is why we implemented a crossfade feature, which allows to gradually transition from the original samples to the reconstructed ones, and vice versa.
+
+The crossfade can be customized in the following aspects:
+- **Length**: the duration of the crossfade in milliseconds.
+- **Function**: the function to use:
+    - **Power**: the crossfade is $x^n$.
+    - **Sinusoidal**: the crossfade is sinusoidal ($\sin\left(x\right)$ for $0 < x < \frac{\pi}{2}$).
+- **Exponent**: the exponent of the power crossfade function.
+- **Type**:
+    - **Equal Power**: the sum of the squares of the two crossfades is equal to 1.
+    - **Equal Amplitude**: the sum of the two crossfades is equal to 1.
+
+The crossfade can be applied to the left or the right of the lost samples, or both. The following example illustrates how to configure the settings to use the crossfade:
+```python
+    crossfade_settings = ManualCrossfadeSettings(length=1,\
+                        function='power', exponent=2.0, type='power')
+
+    (ZerosPLC, ZerosPLCSettings(fade_in=QuadraticCrossfadeSettings(length=1),\
+        crossfade=crossfade_settings))
+```
+As shown in the previous example, the `fade_in` parameter of any `PLCAlgorithm` determines the crossfade to apply to the left of the lost samples, while the `crossfade` parameter determines the crossfade to apply to the right of the lost samples. It is important to note that the length of the `fade_in` crossfade cannot be greater than the length of the lost packet.
+
+The `ManualCrossfadeSettings` class allows to manually set the parameters of the crossfade.
+However, there are other convenience classes that are pre-set to some common configurations:
+- `NoCrossfadeSettings`: disables the crossfade.
+- `LinearCrossfadeSettings`: applies a linear crossfade (`function` = 'power' and `exponent` = 1.0).
+- `QuadraticCrossfadeSettings`: applies a quadratic crossfade (`function` = 'power' and `exponent` = 2.0).
+- `CubicCrossfadeSettings`: applies a cubic crossfade (`function` = 'power' and `exponent` = 3.0).
+- `SinusoidalCrossfadeSettings`: applies a sinusoidal crossfade (`function` = 'sinusoidal').
+
+
+Both the `fade_in` and `crossfade` parameters always default to `NoCrossfadeSettings` so that the crossfade is disabled by default.
+
+### Multiband Crossfade
+
+Different crossfade settings can be applied to different frequency bands. This can be useful mitigate some of the artifacts introduced by the crossfade.
+
+This is an example configuration for three bands crossfade:
+```python
+    multiband_crossfade_settings = \
+        [MultibandSettings(frequencies = [200, 2000]),
+         QuadraticCrossfadeSettings(length=50),
+         QuadraticCrossfadeSettings(length=5),
+         QuadraticCrossfadeSettings(length=1)]
+
+    (ZerosPLC, ZerosPLCSettings(crossfade=multiband_crossfade_settings))
+```
+The `MultibandSettings` class allows to specify the frequencies of the bands. The first frequency is the upper bound of the first band, while the last frequency is the lower bound of the last band. The number of frequencies determines the number of bands.
+
+The list beginning with the `MultibandSettings` class contains the crossfade settings for each band. The first element of the list is the crossfade settings for the first band, the second element is the crossfade settings for the second band, and so on. The length of the list must be equal to the number of bands.
+
+Each band can have its own crossfade settings, totally unrelated to the other bands.
+
+### Advanced PLC
+
+The `AdvancedPLC` object allow for two complex beheviours simultaneously:
+- **Multiband PLC**: different PLC algorithms can be applied to different frequency bands. 
+- **Spatial PLC**: different PLC algorithms can be applied to different audio channels (featuring M/S processing).
+
+An example configuration of the settings to achieve such beheaviours is the following:
+```python
+    frequencies = {'mid': [200, 2000], 'side': [1000]}
+    band_settings = {\
+        'mid':
+            [(ZerosPLC, ZerosPLCSettings()),
+             (BurgPLC, BurgPLCSettings(order=512)),
+             (BurgPLC, BurgPLCSettings(order=256))],
+        'side':
+            [(LastPacketPLC, LastPacketPLCSettings()),
+             (BurgPLC, BurgPLCSettings(order=256))]}
+
+    (AdvancedPLC, AdvancedPLCSettings(band_settings, frequencies = frequencies, channel_link=False, stereo_image_processing = StereoImageType.MID_SIDE))
+```
+The `frequencies` parameter is a dictionary that maps the name of the channel to a list of frequencies.
+
+The `band_settings` parameter is a dictionary that maps the name of the channel to a list of tuples. Each tuple contains the PLC algorithm to apply to the band and its settings. The length of each list must be equal to the number of bands of that channel.
+
+If L/R or M/S channels require different PLC algorithms, the `channel_link` parameter needs to be set to `False` and the related settings need to be specified in the `band_settings` parameter using the `left` and `right` or `mid` and `side` keys.
+
+Alternatively, if the same PLC algorithms need to be applied to both channels (regardless of the L/R or M/S coding), the `channel_link` parameter needs to be set to `True` and the related settings need to be specified in the `band_settings` parameter using the `linked` key.
 
 ## User Interface
 This user interface is an ongoing thesis project carried out by Stefano Dallona under the supervision of Luca Vignati.
