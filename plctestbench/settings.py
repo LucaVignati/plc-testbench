@@ -439,6 +439,10 @@ class ZerosPLCSettings(PLCSettings):
         '''
         super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
 
+class ClipStrategy(Enum):
+    subtract = "subtract"
+    clip = "clip"
+
 class LastPacketPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
@@ -447,7 +451,7 @@ class LastPacketPLCSettings(PLCSettings):
                        crossfade_order: int = None,
                        mirror_x: bool = False,
                        mirror_y: bool = False,
-                       clip_strategy: str = "subtract"):
+                       clip_strategy: ClipStrategy = ClipStrategy.subtract):
         '''
         This class containes the settings for the LastPacketPLC class.
         '''
