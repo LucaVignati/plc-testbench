@@ -1,4 +1,5 @@
 from math import ceil
+from abc import ABC, abstractmethod
 import librosa
 import numpy as np
 from burg_plc import BurgBasic
@@ -12,7 +13,20 @@ from .filters import LinkwitzRileyCrossover
 from .spatial import MidSideCodec, CodecMode
 from .utils import recursive_split_audio, get_class, force_2d
 
-class PLCAlgorithm(Worker):
+class PLCInterface(ABC):
+    '''
+    PLCInterface glues together PLCAlgorithm and AdvancedPLC
+    under a common interface that can be used by the UI to
+    display them in the same list.
+    '''
+
+    @abstractmethod
+    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
+        '''
+        '''
+        pass
+
+class PLCAlgorithm(Worker, PLCInterface):
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
@@ -126,7 +140,7 @@ class PLCAlgorithm(Worker):
             output_buffer = self.crossfade(prediction, buffer)
         return output_buffer
 
-class AdvancedPLC(Worker):
+class AdvancedPLC(Worker, PLCInterface):
     '''
     
     '''
