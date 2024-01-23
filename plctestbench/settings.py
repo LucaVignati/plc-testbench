@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List
 from typing_inspect import get_parameters
 from inspect import isclass
+from typing import List
 
 from plctestbench.utils import compute_hash, get_class
 
@@ -10,24 +11,33 @@ class Settings(object):
     def __init__(self, settings: dict=None) -> None:
         self.settings = {} if settings is None else self.from_dict(settings)
 
-    def from_dict(cls, settings_dict):
+    def from_dict(self, settings_dict):
         '''
         This method is used to convert a dictionary back to settings.
         '''
         def reconstruct_values(key, value):
-            if '-' in key:
+            special_chars = list(filter(lambda x: x in ['-', '~', '&', '$', '#'], list(str(key))))
+            last_special_char = special_chars[-1] if len(special_chars) > 0 else None
+            if last_special_char == '-':
                 key, class_name = key.split('-')
-                return key, get_class(class_name)(value)
-            elif '~' in key:
+                new_value = value
+                clazz = get_class(class_name)
+                if Settings in clazz.__mro__:
+                    new_value = clazz()
+                    new_value.settings = self.from_dict(value)
+                else:
+                    new_value = get_class(class_name)(value)
+                return key, new_value
+            elif last_special_char == '~':
                 key, idx = key.split('~')
-                return key, [reconstruct_values(idx, value)]
-            elif '&' in key:
+                return key, [value]
+            elif last_special_char == '&':
                 key, idx = key.split('&')
-                return key, (reconstruct_values(idx, value))
-            elif '$' in key:
+                return key, (value)
+            elif last_special_char == '$':
                 key, subkey = key.split('$')
-                return key, {subkey: reconstruct_values(subkey, value)}
-            elif '#' in key:
+                return key, {subkey: value}
+            elif last_special_char == '#':
                 key = key.rstrip('#')
                 return key, globals()[value]
             else:
@@ -37,7 +47,7 @@ class Settings(object):
         for key, value in settings_dict.items():
             new_key, new_value = reconstruct_values(key, value)
             if new_key in new_settings and isinstance(new_settings[new_key], list):
-                new_settings[new_key].append(new_value)
+                new_settings[new_key] += new_value
             elif new_key in new_settings and isinstance(new_settings[new_key], tuple):
                 new_settings[new_key] = new_settings[new_key] + (new_value,)
             elif new_key in new_settings and isinstance(new_settings[new_key], dict):
@@ -123,21 +133,21 @@ class Settings(object):
                 to_delete.append(key)
             if isinstance(value, list):
                 for idx, item in enumerate(value):
-                    _, new_dict_entry = parse_values(key + '~' + str(idx), item)
+                    _, new_dict_entry = parse_values(key + '~' + str(idx), item, [], {})
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
                 if len(value) > 0:
                     to_delete.append(key)
             if isinstance(value, tuple):
                 for idx, item in enumerate(value):
-                    _, new_dict_entry = parse_values(key + '&' + str(idx), item)
+                    _, new_dict_entry = parse_values(key + '&' + str(idx), item, [], {})
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
                 if len(value) > 0:
                     to_delete.append(key)
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
-                    _, new_dict_entry = parse_values(key + '$' + subkey, subvalue)
+                    _, new_dict_entry = parse_values(key + '$' + subkey, subvalue, [], {})
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
                 if len(value.keys()) > 0:
@@ -249,15 +259,15 @@ class GilbertElliotPLSSettings(Settings):
         self.settings["k"] = k
 
 class StereoImageType(Enum):
-    DUAL_MONO = 2
-    MID_SIDE = 3
+    dual_mono = "dual_mono"
+    mid_side = "mid_side"
 
 class AdvancedPLCSettings(Settings):
 
-    def __init__(self, settings: dict[str, list[Settings]],
-                       frequencies: dict[str, list[int]] = {},
+    def __init__(self, settings: "dict[str, list[Settings]]",
+                       frequencies: "dict[str, list[int]]" = {},
                        order: int = 4,
-                       stereo_image_processing: StereoImageType = StereoImageType.DUAL_MONO,
+                       stereo_image_processing: StereoImageType = StereoImageType.dual_mono,
                        channel_link: bool = True):
         '''
         This class containes the settings for the AdvancedPLC class.
@@ -340,7 +350,7 @@ class ManualCrossfadeSettings(CrossfadeSettings):
         '''
         super().__init__()
         self.settings["length"] = length
-        self.settings["function"] = CrossfadeFunction.power
+        self.settings["function"] = function
         if function == CrossfadeFunction.power:
             self.settings["exponent"] = exponent
         self.settings["type"] = type
@@ -421,7 +431,7 @@ class PLCSettings(Settings):
 class ZerosPLCSettings(PLCSettings):               
 
     def __init__(sel, crossfade: List[CrossfadeSettings] = None,
-                      fade_in: CrossfadeSettings = None,
+                      fade_in: List[CrossfadeSettings] = None,
                       crossfade_frequencies: List[int] = None,
                       crossfade_order: int = None) -> None:
         '''
@@ -607,12 +617,12 @@ class SpectralEnergyCalculatorSettings(Settings):
         self.settings["amp_scale"] = amp_scale
 
 class PEAQMode(Enum):
-    BASIC = 1
-    ADVANCED = 2
+    basic = "basic"
+    advanced = "advanced"
 
 class PEAQCalculatorSettings(Settings):
 
-    def __init__(self, peaq_mode: PEAQMode = PEAQMode.BASIC):
+    def __init__(self, peaq_mode: PEAQMode = PEAQMode.basic):
         '''
         This class containes the settings for the PEAQCalculator class.
 
@@ -637,3 +647,4 @@ class PlotsSettings(Settings):
         self.settings["dpi"] = dpi
         self.settings["linewidth"] = linewidth
         self.settings["figsize"] = figsize
+

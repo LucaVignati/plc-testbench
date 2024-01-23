@@ -26,7 +26,7 @@ class Crossfade(object):
         elif self.function == CrossfadeFunction.sinusoidal:
             self.crossfade_buffer_a = sinusoidal_crossfade(self.crossfade_settings)
 
-        self.type = crossfade_settings.get("type")
+        self.type = self.crossfade_settings.get("type")
         if self.type == CrossfadeType.power:
             self.crossfade_buffer_b = (1 - self.crossfade_buffer_a ** 2) ** 1/2
         elif self.type == CrossfadeType.amplitude:

@@ -144,7 +144,7 @@ class AdvancedPLC(Worker):
         self.fs = self.settings.get("fs")
         self.crossovers = {channel: [LinkwitzRileyCrossover(self.crossover_order, freq, self.fs) for freq in frequency_list] \
                            for channel, frequency_list in self.frequencies.items()}
-        self.mid_side = True if self.stereo_image_processing == StereoImageType.MID_SIDE else False
+        self.mid_side = True if self.stereo_image_processing == StereoImageType.mid_side else False
         self.mid_side_codec = MidSideCodec()
 
     def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):

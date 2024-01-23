@@ -21,6 +21,7 @@ plctestbench/plc_algorithm.py
 plctestbench/plc_testbench.py
 plctestbench/plot_manager.py
 plctestbench/settings.py
+plctestbench/spatial.py
 plctestbench/utils.py
 plctestbench/worker.py
 test/__init__.py
