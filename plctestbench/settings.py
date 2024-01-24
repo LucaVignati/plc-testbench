@@ -147,21 +147,21 @@ class Settings(object):
                     _, new_dict_entry = parse_values(key + '~' + str(idx), item, [], {})
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
-                if len(value) > 0:
+                if 'new_dict_entry' in locals() and len(new_dict_entry) > 0:
                     to_delete.append(key)
             if isinstance(value, tuple):
                 for idx, item in enumerate(value):
                     _, new_dict_entry = parse_values(key + '&' + str(idx), item, [], {})
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
-                if len(value) > 0:
+                if 'new_dict_entry' in locals() and len(new_dict_entry) > 0:
                     to_delete.append(key)
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
                     _, new_dict_entry = parse_values(key + '$' + subkey, subvalue, [], {})
                     if len(new_dict_entry) > 0:
                         to_add.update(new_dict_entry)
-                if len(value.keys()) > 0:
+                if 'new_dict_entry' in locals() and len(new_dict_entry) > 0:
                     to_delete.append(key)
             if isclass(value):
                 to_add[key + '#'] = value.__name__
