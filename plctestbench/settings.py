@@ -503,8 +503,7 @@ class DeepLearningPLCSettings(PLCSettings):
                        window_length: int = 160*3,
                        lower_edge_hertz: float = 40.0,
                        upper_edge_hertz: float = 7600.0,
-                       num_mel_bins: int = 100,
-                       frequencies: List[int] = []):
+                       num_mel_bins: int = 100):
         '''
         This class containes the settings for the DeepLearningPLC class.
 
