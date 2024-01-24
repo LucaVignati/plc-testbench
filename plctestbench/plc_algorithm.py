@@ -16,7 +16,6 @@ class PLCAlgorithm(Worker):
 
     def __init__(self, settings: Settings):
         super().__init__(settings)
-        self.frequencies = self.settings.get("frequencies")
         self.packet_size = self.settings.get("packet_size")
         self.crossfade_settings = self.settings.get("crossfade")
         if isinstance(self.crossfade_settings, list):
@@ -25,7 +24,7 @@ class PLCAlgorithm(Worker):
             self.crossfade_class = Crossfade
         self.crossfade = self.crossfade_class(self.settings, self.crossfade_settings)
         fade_in_settings = self.settings.get("fade_in")[0]
-        if fade_in_settings.settings.get("length") > self.packet_size:
+        if fade_in_settings.get("length") > self.packet_size:
             raise ValueError("fade in length cannot be longer than the packet size")
         self.fade_in = Crossfade(self.settings, fade_in_settings)
         try:
@@ -100,7 +99,6 @@ class PLCAlgorithm(Worker):
         '''
         This function is called for every buffer.
         '''
-        buffer = buffer
         self.context = np.roll(self.context, -self.packet_size, axis=1)
         self.context[-self.packet_size:, :] = buffer
         return buffer
@@ -128,16 +126,20 @@ class PLCAlgorithm(Worker):
             output_buffer = self.crossfade(prediction, buffer)
         return output_buffer
 
-class AdvancedPLC(Worker):
+class AdvancedPLC(PLCAlgorithm):
     '''
     
     '''
-
+    def get_worker(self, worker_settings, settings):
+        class_name = type(worker_settings).__name__.replace("Settings", "")
+        worker_settings.set_progress_monitor(settings.get_progress_monitor())
+        return globals()[class_name](worker_settings)
+    
     def __init__(self, settings: Settings) -> None:
-        super().__init__(settings)
+        Worker.__init__(self, settings)
         self.plc_algorithms = []
         all_plc_settings = self.settings.get("settings")
-        self.plc_algorithms = {channel: [worker(settings) for worker, settings in settings_list] \
+        self.plc_algorithms = {channel: [self.get_worker(worker_settings, settings) for worker_settings in settings_list] \
                                for channel, settings_list in all_plc_settings.items()}
         self.frequencies = self.settings.get("frequencies")
         self.crossover_order = self.settings.get("order")

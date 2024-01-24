@@ -1,7 +1,8 @@
 import numpy as np
-from plctestbench.settings import Settings, MultibandSettings, CrossfadeFunction, CrossfadeType
+from plctestbench.settings import Settings, CrossfadeFunction, CrossfadeType
 from .filters import LinkwitzRileyCrossover
 from .utils import recursive_split_audio
+from .settings import CrossfadeFunction, CrossfadeType
 
 def power_crossfade(settings: Settings) -> np.array:
     return np.array([x ** settings.get("exponent") for x in np.linspace(0, 1, settings.length_in_samples)])
@@ -60,11 +61,10 @@ class Crossfade(object):
 class MultibandCrossfade(object):
     def __init__(self, settings: Settings, crossfade_settings: list) -> None:
         self.settings = settings
-        self.multiband_settings = MultibandSettings(self.settings.get("frequencies"), self.settings.get("order"))
         self.crossfade_settings = crossfade_settings
-        self.frequencies = self.settings.get("frequencies")
+        self.frequencies = self.settings.get("crossfade_frequencies")
         assert len(self.frequencies) + 1 == len(self.crossfade_settings), "Number of bands and number of crossfade settings do not match"
-        self.crossover_order = self.multiband_settings.get("order")
+        self.crossover_order = self.settings.get("crossover_order")
         self.fs = self.settings.get("fs")
         self.crossovers = [LinkwitzRileyCrossover(self.crossover_order, freq, self.settings.get("fs")) for freq in self.frequencies]
         self.crossfades = [Crossfade(self.settings, xfade_settings) for xfade_settings in self.crossfade_settings]
