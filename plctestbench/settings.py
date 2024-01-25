@@ -56,18 +56,6 @@ class Settings(object):
 
         return new_settings if new_settings.keys() == settings_dict.keys() else self.from_dict(new_settings)
 
-    # def to_settings(self) -> None:
-    #     for key, value in self.settings.items():
-    #         if '#' in key:
-    #             self.settings[key] = get_class(value)
-    #         if '-' in key:
-    #             key, cls = key.split('-')
-    #             if '~' in key:
-    #                 key, _ = key.split('~')
-    #                 self.settings.setdefault(key, []).append(get_class(cls)(value))
-    #             else:
-    #                 self.settings[key] = get_class(cls)(value)
-
     def set_progress_monitor(self, progress_monitor):
         '''
         This method is used to set the progress monitor.
