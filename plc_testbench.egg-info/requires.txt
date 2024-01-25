@@ -1,8 +1,10 @@
 numpy
 soundfile
 anytree
-pybind11
 pymongo
 tqdm
 matplotlib
 tensorflow
+cpp-plc-template
+burg-plc
+typing_inspect
