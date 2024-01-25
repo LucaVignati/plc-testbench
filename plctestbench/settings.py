@@ -389,7 +389,7 @@ class PLCSettings(Settings):
         crossfade = [crossfade] if not isinstance(crossfade, list) else crossfade
         fade_in = [fade_in] if not isinstance(fade_in, list) else fade_in
         self.settings["crossfade_frequencies"] = crossfade_frequencies if crossfade_frequencies is not None else []
-        self.settings["crossfade"] = crossfade if crossfade is not None else [NoCrossfadeSettings() for _ in range(len(self.settings.get("crossfade_frequencies")) + 1)]
+        self.settings["crossfade"] = [ crossfade[idx] if crossfade is not None and len(crossfade) > idx else NoCrossfadeSettings() for idx in range(len(self.settings.get("crossfade_frequencies")) + 1)]
         self.settings["fade_in"] = fade_in if fade_in is not None else [NoCrossfadeSettings()]
         self.settings["crossover_order"] =crossfade_order if crossfade_order is not None else 4
 
@@ -530,7 +530,7 @@ class DeepLearningPLCSettings(PLCSettings):
 
 class AdvancedPLCSettings(PLCSettings):
 
-    def __init__(self, settings: "dict[str, list[PLCSettings]]" = {'linked': [LastPacketPLCSettings()]},
+    def __init__(self, settings: "dict[str, list[PLCSettings]]" = {'linked': [LastPacketPLCSettings(crossfade_frequencies=[3000])]},
                        frequencies: "dict[str, list[int]]" = {'linked': []},
                        order: int = 4,
                        stereo_image_processing: StereoImageType = StereoImageType.dual_mono,
