@@ -126,16 +126,20 @@ class PLCAlgorithm(Worker):
             output_buffer = self.crossfade(prediction, buffer)
         return output_buffer
 
-class AdvancedPLC(Worker):
+class AdvancedPLC(PLCAlgorithm):
     '''
     
     '''
-
+    def get_worker(self, worker_settings, settings):
+        class_name = type(worker_settings).__name__.replace("Settings", "")
+        worker_settings.set_progress_monitor(settings.get_progress_monitor())
+        return globals()[class_name](worker_settings)
+    
     def __init__(self, settings: Settings) -> None:
-        super().__init__(settings)
+        Worker.__init__(self, settings)
         self.plc_algorithms = []
         all_plc_settings = self.settings.get("settings")
-        self.plc_algorithms = {channel: [worker(settings) for worker, settings in settings_list] \
+        self.plc_algorithms = {channel: [self.get_worker(worker_settings, settings) for worker_settings in settings_list] \
                                for channel, settings_list in all_plc_settings.items()}
         self.frequencies = self.settings.get("frequencies")
         self.crossover_order = self.settings.get("order")
