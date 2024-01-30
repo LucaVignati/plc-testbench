@@ -411,7 +411,7 @@ class PLCSettings(Settings):
         def change_callback(cloned_settings):
             crossfade_frequencies = cloned_settings.get("crossfade_frequencies")
             crossfade_bands = cloned_settings.get("crossfade")
-            new_bands_settings = [crossfade_bands[index] if index < len(crossfade_bands) else NoCrossfadeSettings() for index, frequency in enumerate(crossfade_frequencies)]
+            new_bands_settings = [crossfade_bands[index] if index < len(crossfade_bands) else NoCrossfadeSettings() for index in range(len(crossfade_frequencies) + 1)]
             cloned_settings.settings["crossfade"] = new_bands_settings
         
         return self.__change_setting__("crossfade_frequencies", crossfade_frequencies, change_callback)
