@@ -291,9 +291,15 @@ class CrossfadeFunction(Enum):
     power = "power"
     sinusoidal = "sinusoidal"
     
+    def toJson(self):
+        return self.value
+    
 class CrossfadeType(Enum):
     power = "power"
     amplitude = "amplitude"
+    
+    def toJson(self):
+        return self.value
 
 class NoCrossfadeSettings(CrossfadeSettings):
 
