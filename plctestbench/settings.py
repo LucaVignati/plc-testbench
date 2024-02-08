@@ -170,14 +170,15 @@ class Settings(object):
     def clone(self):
         return deepcopy(self)
     
-    def __change_setting__(self, name: str, value, change_callback):
+    def __change_setting__(self, name: str, value, change_callback: callable = None):
         if value == self.get(name):
             return self
         
         cloned_settings = self.clone()
         cloned_settings.settings[name] = value
         
-        change_callback(cloned_settings)
+        if (change_callback and callable(change_callback)):
+            change_callback(cloned_settings)
         
         cloned_settings.__validate__()
         return cloned_settings
@@ -290,9 +291,15 @@ class CrossfadeFunction(Enum):
     power = "power"
     sinusoidal = "sinusoidal"
     
+    def toJson(self):
+        return self.value
+    
 class CrossfadeType(Enum):
     power = "power"
     amplitude = "amplitude"
+    
+    def toJson(self):
+        return self.value
 
 class NoCrossfadeSettings(CrossfadeSettings):
 
@@ -394,12 +401,15 @@ class PLCSettings(Settings):
                        crossfade_frequencies: List[int] = None,
                        crossfade_order: int = None) -> None:
         super().__init__()
-        crossfade = [crossfade] if not isinstance(crossfade, list) else crossfade
-        fade_in = [fade_in] if not isinstance(fade_in, list) else fade_in
+        crossfade = [crossfade] if crossfade and not isinstance(crossfade, list) else crossfade
+        fade_in = [fade_in] if fade_in and not isinstance(fade_in, list) else fade_in
         self.settings["crossfade_frequencies"] = crossfade_frequencies if crossfade_frequencies is not None else []
+        self.settings["crossfade"] = [ NoCrossfadeSettings() for _ in range(len(self.get("crossfade_frequencies")) + 1)]
         self.settings["crossfade"] = [ crossfade[idx] if crossfade is not None and len(crossfade) > idx else NoCrossfadeSettings() for idx in range(len(self.get("crossfade_frequencies")) + 1)]
         self.settings["fade_in"] = fade_in if fade_in is not None else [NoCrossfadeSettings()]
-        self.settings["crossover_order"] =crossfade_order if crossfade_order is not None else 4
+        self.settings["crossover_order"] = crossfade_order if crossfade_order is not None else 4
+        
+        self.__validate__()
 
     def __validate__(self):
         assert len(self.get("crossfade")) == len(self.get("crossfade_frequencies")) + 1, "The number of crossfade settings must be one more than the number of crossfade frequencies."
