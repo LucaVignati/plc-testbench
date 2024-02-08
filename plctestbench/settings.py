@@ -2,6 +2,7 @@ from enum import Enum
 from typing_inspect import get_parameters
 from inspect import isclass
 from typing import List
+from copy import deepcopy
 
 from plctestbench.utils import compute_hash, get_class
 
@@ -165,6 +166,25 @@ class Settings(object):
             del settings_dict[key]
         settings_dict.update(to_add)
         return settings_dict
+    
+    def clone(self):
+        return deepcopy(self)
+    
+    def __change_setting__(self, name: str, value, change_callback: callable = None):
+        if value == self.get(name):
+            return self
+        
+        cloned_settings = self.clone()
+        cloned_settings.settings[name] = value
+        
+        if (change_callback and callable(change_callback)):
+            change_callback(cloned_settings)
+        
+        cloned_settings.__validate__()
+        return cloned_settings
+    
+    def __validate__(self):
+        pass
 
     def __hash__(self):
         '''
@@ -197,6 +217,7 @@ class Settings(object):
         settings_copy.set_progress_monitor(self.get_progress_monitor())
         settings_copy.__class__ = self.__class__
         return settings_copy
+
 
 class OriginalAudioSettings(Settings):
 
@@ -270,9 +291,15 @@ class CrossfadeFunction(Enum):
     power = "power"
     sinusoidal = "sinusoidal"
     
+    def toJson(self):
+        return self.value
+    
 class CrossfadeType(Enum):
     power = "power"
     amplitude = "amplitude"
+    
+    def toJson(self):
+        return self.value
 
 class NoCrossfadeSettings(CrossfadeSettings):
 
@@ -374,12 +401,26 @@ class PLCSettings(Settings):
                        crossfade_frequencies: List[int] = None,
                        crossfade_order: int = None) -> None:
         super().__init__()
-        crossfade = [crossfade] if not isinstance(crossfade, list) else crossfade
-        fade_in = [fade_in] if not isinstance(fade_in, list) else fade_in
+        crossfade = [crossfade] if crossfade and not isinstance(crossfade, list) else crossfade
+        fade_in = [fade_in] if fade_in and not isinstance(fade_in, list) else fade_in
         self.settings["crossfade_frequencies"] = crossfade_frequencies if crossfade_frequencies is not None else []
-        self.settings["crossfade"] = [ crossfade[idx] if crossfade is not None and len(crossfade) > idx else NoCrossfadeSettings() for idx in range(len(self.settings.get("crossfade_frequencies")) + 1)]
+        self.settings["crossfade"] = [ NoCrossfadeSettings() for _ in range(0, len(self.get("crossfade_frequencies")) + 1)]
         self.settings["fade_in"] = fade_in if fade_in is not None else [NoCrossfadeSettings()]
-        self.settings["crossover_order"] =crossfade_order if crossfade_order is not None else 4
+        self.settings["crossover_order"] = crossfade_order if crossfade_order is not None else 4
+        
+        self.__validate__()
+
+    def __validate__(self):
+        assert len(self.get("crossfade")) == len(self.get("crossfade_frequencies")) + 1, "The number of crossfade settings must be one more than the number of crossfade frequencies."
+    
+    def set_crossfade_frequencies(self, crossfade_frequencies: List[int]) -> Settings:
+        def change_callback(cloned_settings):
+            crossfade_frequencies = cloned_settings.get("crossfade_frequencies")
+            crossfade_bands = cloned_settings.get("crossfade")
+            new_bands_settings = [crossfade_bands[index] if index < len(crossfade_bands) else NoCrossfadeSettings() for index in range(0, len(crossfade_frequencies) + 1)]
+            cloned_settings.settings["crossfade"] = new_bands_settings
+        
+        return self.__change_setting__("crossfade_frequencies", crossfade_frequencies, change_callback)
 
 class ZerosPLCSettings(PLCSettings):               
 
@@ -534,21 +575,24 @@ class AdvancedPLCSettings(PLCSettings):
                 stereo_image_processing:    type of stereo image processing.
                 channel_link:               flag for channel link.
         '''
-        keys = set(settings.keys())
-        assert keys == {'linked'} or keys == {'left', 'right'} or keys == {'mid', 'side'}, "The settings must be either linked, left/right or mid/side."
-        freq_keys = set(frequencies.keys())
-        assert keys == freq_keys or len(freq_keys) == 0, "If present, the frequencies must be either linked, left/right or mid/side."
-        if len(freq_keys) > 0:
-            for key in keys:
-                assert len(frequencies[key]) == len(settings[key]) - 1, \
-                    f"The number of frequencies for {key} must be one less than the number of settings."
-
         Settings.__init__(self)
         self.settings["settings"] = settings
         self.settings["frequencies"] = frequencies
         self.settings["order"] = order
         self.settings["stereo_image_processing"] = stereo_image_processing
         self.settings["channel_link"] = channel_link
+        
+        self.__validate__()
+        
+    def __validate__(self):
+        keys = set(self.get("settings").keys())
+        assert keys == {'linked'} or keys == {'left', 'right'} or keys == {'mid', 'side'}, "The settings must be either linked, left/right or mid/side."
+        freq_keys = set(self.get("frequencies").keys())
+        assert keys == freq_keys or len(freq_keys) == 0, "If present, the frequencies must be either linked, left/right or mid/side."
+        if len(freq_keys) > 0:
+            for key in keys:
+                assert len(self.get("frequencies")[key]) == len(self.get("settings")[key]) - 1, \
+                    f"The number of frequencies for {key} must be one less than the number of settings."
 
     def set_progress_monitor(self, progress_monitor):
         super().set_progress_monitor(progress_monitor)
@@ -561,6 +605,62 @@ class AdvancedPLCSettings(PLCSettings):
         for band_settings in self.settings["settings"].values():
             for settings in band_settings:
                 settings.inherit_from(parent_settings)
+    
+    def set_frequencies(self, frequencies: "dict[str, list[int]]") -> Settings:
+        def change_callback(cloned_settings):
+            channel_settings = cloned_settings.get("settings")
+            new_channel_settings = { channel: channel_settings[channel] for channel in frequencies.keys() if channel in channel_settings.keys() }
+            for channel, freqs in frequencies.items():
+                if channel not in new_channel_settings.keys():
+                    new_channel_settings[channel] = [ ZerosPLCSettings() for i in range(0, len(freqs) + 1)]
+                else:
+                    new_channel_settings[channel] = [ new_channel_settings[channel][i] if i < len(new_channel_settings[channel]) else ZerosPLCSettings() for i in range(0, len(freqs) + 1) ]
+            cloned_settings.settings["settings"] = new_channel_settings
+            cloned_settings.settings["stereo_image_processing"] = StereoImageType.dual_mono if "left" in new_channel_settings.keys() else StereoImageType.mid_side
+            cloned_settings.settings["channel_link"] = new_channel_settings.keys() == {'linked'}
+        
+        return self.__change_setting__("frequencies", frequencies, change_callback)
+
+    def set_stereo_image_processing(self, stereo_image_processing: StereoImageType) -> Settings:
+        def change_callback(cloned_settings):
+            frequencies = cloned_settings.get("frequencies")
+            channel_settings = cloned_settings.get("settings")
+            keys = set(channel_settings.keys())
+            if keys == {'linked'}:
+                return cloned_settings  
+            if keys == {'left', 'right'}:
+                frequencies = { "mid" if k == "left" else "side": v for k, v in frequencies.items()}
+                channel_settings = { "mid" if k == "left" else "side": v for k, v in channel_settings.items()}
+            elif keys == {'mid', 'side'}:
+                frequencies = { "left" if k == "mid" else "right": v for k, v in frequencies.items()}
+                channel_settings = { "left" if k == "mid" else "right": v for k, v in channel_settings.items()}
+            cloned_settings.settings["frequencies"] = frequencies
+            cloned_settings.settings["settings"] = channel_settings
+        
+        return self.__change_setting__("stereo_image_processing", stereo_image_processing, change_callback)
+    
+    def set_channel_link(self, channel_link) -> Settings:
+        def change_callback(cloned_settings):
+            frequencies = cloned_settings.get("frequencies")
+            channel_settings = cloned_settings.get("settings")
+            if channel_link:
+                frequencies = {"linked": next(iter(frequencies.values()))}
+                channel_settings = {"linked": next(iter(channel_settings.values()))}
+            else:
+                stereo_image_processing = cloned_settings.get("stereo_image_processing")
+                frequencies = {
+                    "left" if stereo_image_processing == StereoImageType.dual_mono else "mid" : next(iter(frequencies.values())),
+                    "right" if stereo_image_processing == StereoImageType.dual_mono else "side" : next(iter(frequencies.values())),
+                }
+                channel_settings = {
+                    "left" if stereo_image_processing == StereoImageType.dual_mono else "mid" : next(iter(channel_settings.values())),
+                    "right" if stereo_image_processing == StereoImageType.dual_mono else "side" : next(iter(channel_settings.values())),
+                }
+            cloned_settings.settings["frequencies"] = frequencies
+            cloned_settings.settings["settings"] = channel_settings
+        
+        return self.__change_setting__("channel_link", channel_link, change_callback)
+
 
 class MSECalculatorSettings(Settings):
 
