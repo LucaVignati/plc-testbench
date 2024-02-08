@@ -420,8 +420,7 @@ class PLCSettings(Settings):
             new_bands_settings = [crossfade_bands[index] if index < len(crossfade_bands) else NoCrossfadeSettings() for index in range(0, len(crossfade_frequencies) + 1)]
             cloned_settings.settings["crossfade"] = new_bands_settings
         
-        new_value = crossfade_frequencies.split(",") if crossfade_frequencies.strip() != "" else []
-        return self.__change_setting__("crossfade_frequencies", new_value, change_callback)
+        return self.__change_setting__("crossfade_frequencies", crossfade_frequencies, change_callback)
 
 class ZerosPLCSettings(PLCSettings):               
 
