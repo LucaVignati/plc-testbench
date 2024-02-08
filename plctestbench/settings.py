@@ -404,8 +404,7 @@ class PLCSettings(Settings):
         crossfade = [crossfade] if crossfade and not isinstance(crossfade, list) else crossfade
         fade_in = [fade_in] if fade_in and not isinstance(fade_in, list) else fade_in
         self.settings["crossfade_frequencies"] = crossfade_frequencies if crossfade_frequencies is not None else []
-        self.settings["crossfade"] = [ NoCrossfadeSettings() for _ in range(len(self.get("crossfade_frequencies")) + 1)]
-        self.settings["crossfade"] = [ crossfade[idx] if crossfade is not None and len(crossfade) > idx else NoCrossfadeSettings() for idx in range(len(self.get("crossfade_frequencies")) + 1)]
+        self.settings["crossfade"] = [ NoCrossfadeSettings() for _ in range(0, len(self.get("crossfade_frequencies")) + 1)]
         self.settings["fade_in"] = fade_in if fade_in is not None else [NoCrossfadeSettings()]
         self.settings["crossover_order"] = crossfade_order if crossfade_order is not None else 4
         
