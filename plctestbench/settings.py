@@ -170,6 +170,17 @@ class Settings(object):
     def clone(self):
         return deepcopy(self)
     
+    def assert_setting_is_number(self, setting_name: str):
+        value = self.get(setting_name)
+        if not isinstance(value, (int, float)):
+            raise AssertionError(f"{setting_name} is not a number")
+
+    def assert_setting_is_number_in_range(self, setting_name: str, min_value, max_value):
+        self.assert_setting_is_number(setting_name)
+        value = self.get(setting_name)
+        if not (min_value <= value <= max_value):
+            raise AssertionError(f"{setting_name} is not in the range [{min_value}, {max_value}]")
+    
     def __change_setting__(self, name: str, value, change_callback: callable = None):
         if value == self.get(name):
             return self
@@ -277,6 +288,12 @@ class GilbertElliotPLSSettings(Settings):
         self.settings["r"] = r
         self.settings["h"] = h
         self.settings["k"] = k
+    
+    def __validate__(self):
+        self.assert_setting_is_number_in_range("p", 0, 1)
+        self.assert_setting_is_number_in_range("r", 0, 1)
+        self.assert_setting_is_number_in_range("h", 0, 1)
+        self.assert_setting_is_number_in_range("k", 0, 1)
 
 class StereoImageType(Enum):
     dual_mono = "dual_mono"
