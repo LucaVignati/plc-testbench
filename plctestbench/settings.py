@@ -174,12 +174,30 @@ class Settings(object):
         value = self.get(setting_name)
         if not isinstance(value, (int, float)):
             raise AssertionError(f"{setting_name} is not a number")
-
-    def assert_setting_is_number_in_range(self, setting_name: str, min_value, max_value):
+    
+    def assert_setting_is_number_greater_than(self, setting_name: str, min_value):
         self.assert_setting_is_number(setting_name)
         value = self.get(setting_name)
-        if not (min_value <= value <= max_value):
-            raise AssertionError(f"{setting_name} is not in the range [{min_value}, {max_value}]")
+        if value < min_value:
+            raise AssertionError(f"{setting_name} should be greater or equal than {min_value}")
+    
+    def assert_setting_is_number_less_than(self, setting_name: str, max_value):
+        self.assert_setting_is_number(setting_name)
+        value = self.get(setting_name)
+        if value > max_value:
+            raise AssertionError(f"{setting_name} should be smaller or equal than {max_value}")
+
+    def assert_setting_is_number_in_range(self, setting_name: str, min_value = None, max_value = None):
+        try:
+            if min_value is not None:
+                self.assert_setting_is_number_greater_than(setting_name, min_value)
+            if max_value is not None:
+                self.assert_setting_is_number_less_than(setting_name, max_value)
+        except AssertionError as e:
+            if min_value is not None and max_value is not None:
+                raise AssertionError(f"{setting_name} should be in the range [{min_value}, {max_value}]")
+            else:
+                raise e
     
     def __change_setting__(self, name: str, value, change_callback: callable = None):
         if value == self.get(name):
@@ -263,6 +281,12 @@ class BinomialPLSSettings(Settings):
         self.settings["packet_size"] = packet_size
         self.settings["per"] = per
 
+        self.__validate__()
+
+    def __validate__(self):
+        self.assert_setting_is_number_in_range("packet_size", min_value=1)
+        self.assert_setting_is_number_in_range("per", 0, 1)
+
 class GilbertElliotPLSSettings(Settings):
 
     def __init__(self, seed: int = 1,
@@ -288,8 +312,11 @@ class GilbertElliotPLSSettings(Settings):
         self.settings["r"] = r
         self.settings["h"] = h
         self.settings["k"] = k
+
+        self.__validate__()
     
     def __validate__(self):
+        self.assert_setting_is_number_in_range("packet_size", min_value=1)
         self.assert_setting_is_number_in_range("p", 0, 1)
         self.assert_setting_is_number_in_range("r", 0, 1)
         self.assert_setting_is_number_in_range("h", 0, 1)
@@ -298,11 +325,6 @@ class GilbertElliotPLSSettings(Settings):
 class StereoImageType(Enum):
     dual_mono = "dual_mono"
     mid_side = "mid_side"
-
-class CrossfadeSettings(Settings):
-
-    def __init__(self) -> None:
-        super().__init__()
 
 class CrossfadeFunction(Enum):
     power = "power"
@@ -318,24 +340,35 @@ class CrossfadeType(Enum):
     def toJson(self):
         return self.value
 
+class CrossfadeSettings(Settings):
+
+    def __init__(self, length: int, function: CrossfadeFunction, exponent: float, type: CrossfadeType):
+        super().__init__()
+        self.settings["length"] = length if length is not None else 10
+        self.settings["function"] = function if function is not None else CrossfadeFunction.power
+        self.settings["exponent"] = exponent if exponent is not None else 1.0
+        self.settings["type"] = type if type is not None else CrossfadeType.power
+
+        self.__validate__()
+
+    def __validate__(self):
+        self.assert_setting_is_number_in_range("length", min_value=0)
+        self.assert_setting_is_number_in_range("exponent", min_value=0)
+
 class NoCrossfadeSettings(CrossfadeSettings):
 
     def __init__(self):
         '''
         This class containes the settings for the NoCrossfade class.
         '''
-        super().__init__()
-        self.settings["length"] = 0
-        self.settings["function"] = CrossfadeFunction.power
-        self.settings["exponent"] = 1.0
-        self.settings["type"] = CrossfadeType.power
+        super().__init__(length=0, function=CrossfadeFunction.power, exponent=1.0, type=CrossfadeType.power)
 
 class ManualCrossfadeSettings(CrossfadeSettings):
 
-    def __init__(self, length: int = 10,
-                       function: CrossfadeFunction = CrossfadeFunction.power,
-                       type: CrossfadeType = CrossfadeType.power,
-                       exponent: float = 1.0):
+    def __init__(self, length: int = None,
+                       function: CrossfadeFunction = None,
+                       exponent: float = None,
+                       type: CrossfadeType = None):
         '''
         This class containes the settings for the PowerCrossfade class.
 
@@ -345,90 +378,78 @@ class ManualCrossfadeSettings(CrossfadeSettings):
                 type:       type of the crossfade.
                 exponent:   exponent of the crossfade.
         '''
-        super().__init__()
-        self.settings["length"] = length
-        self.settings["function"] = function
-        if function == CrossfadeFunction.power:
-            self.settings["exponent"] = exponent
-        self.settings["type"] = type
+        super().__init__(length, function, exponent, type)
 
 class LinearCrossfadeSettings(CrossfadeSettings):
     
-    def __init__(self, length: int = 10, type: CrossfadeType = CrossfadeType.power):
+    def __init__(self, length: int = None, type: CrossfadeType = None):
         '''
         This class containes the settings for the LinearCrossfade class.
 
             Input:
                 length:     length of the crossfade.
         '''
-        super().__init__()
-        self.settings["length"] = length
-        self.settings["function"] = CrossfadeFunction.power
-        self.settings["exponent"] = 1.0
-        self.settings["type"] = type
+        super().__init__(length=length, function=CrossfadeFunction.power, exponent=1.0, type=type)
 
 class QuadraticCrossfadeSettings(CrossfadeSettings):
     
-    def __init__(self, length: int = 10, type: CrossfadeType = CrossfadeType.power):
+    def __init__(self, length: int = None, type: CrossfadeType = None):
         '''
         This class containes the settings for the QuadraticCrossfade class.
 
             Input:
                 length:     length of the crossfade.
         '''
-        super().__init__()
-        self.settings["length"] = length
-        self.settings["function"] = CrossfadeFunction.power
-        self.settings["exponent"] = 2.0
-        self.settings["type"] = type
+        super().__init__(length=length, function=CrossfadeFunction.power, exponent=2.0, type=type)
 
 class CubicCrossfadeSettings(CrossfadeSettings):
 
-    def __init__(self, length: int = 10, type: CrossfadeType = CrossfadeType.power):
+    def __init__(self, length: int = None, type: CrossfadeType = None):
         '''
         This class containes the settings for the CubicCrossfade class.
 
             Input:
                 length:     length of the crossfade.
         '''
-        super().__init__()
-        self.settings["length"] = length
-        self.settings["function"] = CrossfadeFunction.power
-        self.settings["exponent"] = 3.0
-        self.settings["type"] = type
+        super().__init__(length=length, function=CrossfadeFunction.power, exponent=3.0, type=type)
 
 class SinusoidalCrossfadeSettings(CrossfadeSettings):
 
-    def __init__(self, length: int = 10, type: CrossfadeType = CrossfadeType.power):
+    def __init__(self, length: int = None, type: CrossfadeType = None):
         '''
         This class containes the settings for the SinusoidalCrossfade class.
 
             Input:
                 length:     length of the crossfade.
         '''
-        super().__init__()
-        self.settings["length"] = length
-        self.settings["function"] = CrossfadeFunction.sinusoidal
-        self.settings["type"] = type
+        super().__init__(length=length, function=CrossfadeFunction.sinusoidal, type=type)
 
 class PLCSettings(Settings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
                        fade_in: List[CrossfadeSettings] = None,
                        crossfade_frequencies: List[int] = None,
-                       crossfade_order: int = None) -> None:
+                       crossover_order: int = None) -> None:
         super().__init__()
         crossfade = [crossfade] if crossfade and not isinstance(crossfade, list) else crossfade
         fade_in = [fade_in] if fade_in and not isinstance(fade_in, list) else fade_in
         self.settings["crossfade_frequencies"] = crossfade_frequencies if crossfade_frequencies is not None else []
-        self.settings["crossfade"] = [ NoCrossfadeSettings() for _ in range(0, len(self.get("crossfade_frequencies")) + 1)]
+        self.__validate_frequencies__()
+        self.settings["crossfade"] = crossfade if crossfade is not None else [NoCrossfadeSettings() for _ in range(0, len(self.get("crossfade_frequencies")) + 1)]
         self.settings["fade_in"] = fade_in if fade_in is not None else [NoCrossfadeSettings()]
-        self.settings["crossover_order"] = crossfade_order if crossfade_order is not None else 4
-        
-        self.__validate__()
+        self.settings["crossover_order"] = crossover_order if crossover_order is not None else 4
+
+    def __validate_frequencies__(self):
+        crossfade_frequencies = self.get("crossfade_frequencies")
+        if len(crossfade_frequencies) > 0:
+            assert crossfade_frequencies[0] >= 0, "The first crossfade frequency must be greater than or equal to 0."
+            assert all(x<y for x, y in zip(crossfade_frequencies, crossfade_frequencies[1:])), "The crossfade frequencies must be in increasing order."
+            assert crossfade_frequencies[-1] <= 20000, "The last crossfade frequency must be less than or equal to 20000."
 
     def __validate__(self):
+        self.__validate_frequencies__()
         assert len(self.get("crossfade")) == len(self.get("crossfade_frequencies")) + 1, "The number of crossfade settings must be one more than the number of crossfade frequencies."
+        self.assert_setting_is_number_in_range("crossover_order", min_value=1)
     
     def set_crossfade_frequencies(self, crossfade_frequencies: List[int]) -> Settings:
         def change_callback(cloned_settings):
@@ -441,14 +462,16 @@ class PLCSettings(Settings):
 
 class ZerosPLCSettings(PLCSettings):               
 
-    def __init__(sel, crossfade: List[CrossfadeSettings] = None,
+    def __init__(self, crossfade: List[CrossfadeSettings] = None,
                       fade_in: List[CrossfadeSettings] = None,
                       crossfade_frequencies: List[int] = None,
-                      crossfade_order: int = None) -> None:
+                      crossover_order: int = None) -> None:
         '''
         This class containes the settings for the ZeroPLC class.
         '''
-        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
+
+        self.__validate__()
 
 class ClipStrategy(Enum):
     subtract = "subtract"
@@ -459,17 +482,19 @@ class LastPacketPLCSettings(PLCSettings):
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
                        fade_in: List[CrossfadeSettings] = None,
                        crossfade_frequencies: List[int] = None,
-                       crossfade_order: int = None,
+                       crossover_order: int = None,
                        mirror_x: bool = False,
                        mirror_y: bool = False,
                        clip_strategy: ClipStrategy = ClipStrategy.subtract):
         '''
         This class containes the settings for the LastPacketPLC class.
         '''
-        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
         self.settings["mirror_x"] = mirror_x
         self.settings["mirror_y"] = mirror_y
         self.settings["clip_strategy"] = clip_strategy
+
+        self.__validate__()
 
 
 class LowCostPLCSettings(PLCSettings):
@@ -477,7 +502,7 @@ class LowCostPLCSettings(PLCSettings):
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
                        fade_in: List[CrossfadeSettings] = None,
                        crossfade_frequencies: List[int] = None,
-                       crossfade_order: int = None,
+                       crossover_order: int = None,
                        max_frequency: float = 4800,
                        f_min: int = 80,
                        beta: float = 1,
@@ -497,7 +522,7 @@ class LowCostPLCSettings(PLCSettings):
                 fade_out_length: fade_out_length parameter of the LowCostPLC algorithm.
                 extraction_length: extraction_length parameter of the LowCostPLC algorithm.
         '''
-        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
         self.settings["max_frequency"] = max_frequency
         self.settings["f_min"] = f_min
         self.settings["beta"] = beta
@@ -506,12 +531,28 @@ class LowCostPLCSettings(PLCSettings):
         self.settings["fade_out_length"] = fade_out_length
         self.settings["extraction_length"] = extraction_length
 
+        self.__validate__()
+
+    def __validate__(self):
+        super().__validate__()
+        self.assert_setting_is_number_in_range("max_frequency", min_value=0)
+        self.assert_setting_is_number_in_range("f_min", min_value=0)
+        self.assert_setting_is_number_in_range("beta", min_value=0)
+        self.assert_setting_is_number_in_range("n_m", min_value=0)
+        self.assert_setting_is_number_in_range("fade_in_length", min_value=0)
+        self.assert_setting_is_number_in_range("fade_out_length", min_value=0)
+        self.assert_setting_is_number_in_range("extraction_length", min_value=0)
+        
+        assert self.get("max_frequency") > self.get("f_min"), "The maximum frequency must be greater than the minimum frequency."
+        assert not (self.get("fade_in_length") != 0 and self.get("fade_in")[0].__class__ != NoCrossfadeSettings), "The built-in fade_in_length cannot be used in conjunction with the general fade_in mechanism."
+        assert not (self.get("fade_out_length") != 0 and self.get("crossfade")[0].__class__ != NoCrossfadeSettings and len(self.get("crossfade")) == 1), "The built-in fade_out_length cannot be used in conjunction with the general crossfade mechanism."
+
 class BurgPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
                        fade_in: List[CrossfadeSettings] = None,
                        crossfade_frequencies: List[int] = None,
-                       crossfade_order: int = None,
+                       crossover_order: int = None,
                        context_length: int = 100,
                        order: int = 1):
         '''
@@ -521,27 +562,34 @@ class BurgPLCSettings(PLCSettings):
                 context_length: size of the training set.
                 order:          order of the Burg algorithm.
         '''
-        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
         self.settings["context_length"] = context_length
         self.settings["order"] = order
+
+        self.__validate__()
+
+    def __validate__(self):
+        super().__validate__()
+        self.assert_setting_is_number_in_range("context_length", min_value=1)
+        self.assert_setting_is_number_in_range("order", min_value=1)
 
 class ExternalPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
                        fade_in: List[CrossfadeSettings] = None,
                        crossfade_frequencies: List[int] = None,
-                       crossfade_order: int = None):
+                       crossover_order: int = None):
         '''
         This class containes the settings for the ExternalPLC class.
         '''
-        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
 
 class DeepLearningPLCSettings(PLCSettings):
 
     def __init__(self, crossfade: List[CrossfadeSettings] = None,
                        fade_in: List[CrossfadeSettings] = None,
                        crossfade_frequencies: List[int] = None,
-                       crossfade_order: int = None,
+                       crossover_order: int = None,
                        model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
                        fs_dl: int = 16000,
                        context_length: int = 8000,
@@ -563,7 +611,7 @@ class DeepLearningPLCSettings(PLCSettings):
                 upper_edge_hertz:   upper edge of the tracks.
                 num_mel_bins:       number of mel bins of the tracks.
         '''
-        super().__init__(crossfade, fade_in, crossfade_frequencies, crossfade_order)
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
         self.settings["model_path"] = model_path
         self.settings["fs_dl"] = fs_dl
         self.settings["context_length"] = context_length
@@ -573,6 +621,18 @@ class DeepLearningPLCSettings(PLCSettings):
         self.settings["lower_edge_hertz"] = lower_edge_hertz
         self.settings["upper_edge_hertz"] = upper_edge_hertz
         self.settings["num_mel_bins"] = num_mel_bins
+
+        self.__validate__()
+
+    def __validate__(self):
+        super().__validate__()
+        self.assert_setting_is_number_in_range("fs_dl", min_value=1)
+        self.assert_setting_is_number_in_range("context_length", min_value=1)
+        self.assert_setting_is_number_in_range("hop_size", min_value=1)
+        self.assert_setting_is_number_in_range("window_length", min_value=1)
+        self.assert_setting_is_number_in_range("lower_edge_hertz", min_value=0)
+        assert self.get("lower_edge_hertz") < self.get("upper_edge_hertz"), "The lower edge must be less than the upper edge."
+        self.assert_setting_is_number_in_range("num_mel_bins", min_value=1)
 
 class AdvancedPLCSettings(PLCSettings):
 
@@ -602,6 +662,7 @@ class AdvancedPLCSettings(PLCSettings):
         self.__validate__()
         
     def __validate__(self):
+        super().__validate__()
         keys = set(self.get("settings").keys())
         assert keys == {'linked'} or keys == {'left', 'right'} or keys == {'mid', 'side'}, "The settings must be either linked, left/right or mid/side."
         freq_keys = set(self.get("frequencies").keys())
