@@ -1,7 +1,7 @@
 from enum import Enum
 from typing_inspect import get_parameters
 from inspect import isclass
-from typing import List
+from typing import List, Dict
 from copy import deepcopy
 
 from plctestbench.utils import compute_hash, get_class
@@ -422,7 +422,7 @@ class SinusoidalCrossfadeSettings(CrossfadeSettings):
             Input:
                 length:     length of the crossfade.
         '''
-        super().__init__(length=length, function=CrossfadeFunction.sinusoidal, type=type)
+        super().__init__(length=length, function=CrossfadeFunction.sinusoidal, exponent=None, type=type)
 
 class PLCSettings(Settings):
 
@@ -637,7 +637,7 @@ class DeepLearningPLCSettings(PLCSettings):
 class AdvancedPLCSettings(PLCSettings):
 
     def __init__(self, settings: "dict[str, list[PLCSettings]]" = {'linked': [LastPacketPLCSettings(crossfade_frequencies=[3000])]},
-                       frequencies: "dict[str, list[int]]" = {'linked': []},
+                       frequencies: Dict[str, List[int]] = {'linked': []},
                        order: int = 4,
                        stereo_image_processing: StereoImageType = StereoImageType.dual_mono,
                        channel_link: bool = True):
@@ -662,7 +662,6 @@ class AdvancedPLCSettings(PLCSettings):
         self.__validate__()
         
     def __validate__(self):
-        super().__validate__()
         keys = set(self.get("settings").keys())
         assert keys == {'linked'} or keys == {'left', 'right'} or keys == {'mid', 'side'}, "The settings must be either linked, left/right or mid/side."
         freq_keys = set(self.get("frequencies").keys())
