@@ -6,6 +6,9 @@ class Worker(object):
         self.settings = settings
         self.progress_monitor = settings.get_progress_monitor()(self)
         
+    def set_progress_monitor(self, progress_monitor) -> None:
+        self.progress_monitor = progress_monitor
+
     def get_node_id(self) -> str:
         return str(hash(self.settings))
 

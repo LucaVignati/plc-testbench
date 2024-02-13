@@ -10,7 +10,7 @@ from .low_cost_concealment import LowCostConcealment
 from .crossfade import Crossfade, MultibandCrossfade
 from .filters import LinkwitzRileyCrossover
 from .spatial import MidSideCodec, CodecMode
-from .utils import recursive_split_audio, get_class, force_2d
+from .utils import recursive_split_audio, get_class, force_2d, prepare_progress_monitor
 
 class PLCAlgorithm(Worker):
 
@@ -168,9 +168,18 @@ class AdvancedPLC(PLCAlgorithm):
 
         reconstructed_track = np.zeros(np.shape(original_track), np.float32)
         reconstructed_track_bands = {channel: np.zeros(np.shape(track_bands[0]), np.float32) for channel, track_bands in processed_track.items()}
-        for channel, plc_algorithms in self.progress_monitor(list(self.plc_algorithms.items()), desc=str(self)):
-            for idx, plc_algorithm in self.progress_monitor(list(enumerate(plc_algorithms)), desc=channel.capitalize()):
+        n_packets = ceil(len(original_track)/self.settings.get("packet_size"))
+        number_of_iterations = sum([len(plc_algorithms) for plc_algorithms in self.plc_algorithms.values()]) * n_packets
+        progress_monitor = self.progress_monitor(total=number_of_iterations, desc=str(self))
+        composite_progress_monitor = prepare_progress_monitor(progress_monitor)
+
+        for channel, plc_algorithms in self.plc_algorithms.items():
+            for idx, plc_algorithm in enumerate(plc_algorithms):
+                plc_algorithm.set_progress_monitor(composite_progress_monitor)
+                progress_monitor.set_description(f"{self} - {channel} - {plc_algorithm}")
                 reconstructed_track_bands[channel] += plc_algorithm.run(processed_track[channel][idx], lost_samples_idx)
+        progress_monitor.set_description(f"{self}")
+        progress_monitor.close()
         if not self.channel_link:
             reconstructed_track = np.concatenate(list(reconstructed_track_bands.values()), axis=-1)
         else:

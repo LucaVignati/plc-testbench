@@ -71,3 +71,10 @@ def force_2d(arr):
     if arr.ndim == 1:
         arr = np.expand_dims(arr, axis=-1)
     return arr
+
+def prepare_progress_monitor(progress_monitor) -> callable:
+            def composite_progress_monitor(iterable, desc):
+                    for item in iterable:
+                        progress_monitor.update(1)
+                        yield item
+            return composite_progress_monitor
