@@ -812,6 +812,20 @@ class PEAQCalculatorSettings(Settings):
         super().__init__()
         self.settings["peaq_mode"] = peaq_mode
 
+class PerceptualCalculatorSettings(Settings):
+
+    def __init__(self, intorno_length: int = 300,
+                       min_frequency: float = 32.7,
+                       max_frequency: float = 20000,
+                       bins_per_octave: int = 12,
+                       minimum_window: int = 128) -> None:
+        super().__init__()
+        self.settings["intorno_length"] = intorno_length
+        self.settings["min_frequency"] = min_frequency
+        self.settings["max_frequency"] = max_frequency
+        self.settings["bins_per_octave"] = bins_per_octave
+        self.settings["minimum_window"] = minimum_window
+
 class PlotsSettings(Settings):
 
     def __init__(self, dpi: int = 300,

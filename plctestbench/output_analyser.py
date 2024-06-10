@@ -2,8 +2,9 @@ import subprocess
 import numpy as np
 from .settings import Settings
 from .worker import Worker
-from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile
+from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile, DataFile
 from .utils import dummy_progress_bar
+from .perceptual_metric import *
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -55,7 +56,7 @@ class MSECalculator(SimpleCalculator):
     '''
     MSECalculator is ...
     '''
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs: DataFile = None):
         '''
         Calculation of Mean Square Error between the reference and signal
         under test.
@@ -76,7 +77,7 @@ class MAECalculator(SimpleCalculator):
     MAECalculator is ...
     '''
     
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs: DataFile = None):
         '''
         Calculation of Mean Absolute Error between the reference and signal
         under test.
@@ -97,7 +98,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
     SpectralEnergyCalculator is ...
     '''
     
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs: DataFile = None):
         '''
         Calculate a difference magnitude signal from the DFT energies of the
         reference and signal under test.
@@ -137,7 +138,7 @@ class PEAQCalculator(OutputAnalyser):
     PEAQCalculator is ...
     '''
     
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile) -> PEAQData:
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs: DataFile = None) -> PEAQData:
         peaq_mode = self.settings.get("peaq_mode")
         if peaq_mode == 'basic':
             mode_flag = '--basic'
@@ -176,3 +177,43 @@ class PEAQCalculator(OutputAnalyser):
         print("The peaq program exited with the following errors:")
         print(completed_process.stdout)
         
+class PerceptualCalculator(OutputAnalyser):
+    '''
+    PerceptualCalculator is ...
+    '''
+    
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
+        self.fs = self.settings.get("fs")
+        self.packet_size = self.settings.get("packet_size")
+        self.intorno_length = self.settings.get("intorno_length")  
+        self.min_frequency = self.settings.get("min_frequency")
+        self.max_frequency = self.settings.get("max_frequency")
+        self.bins_per_octave = self.settings.get("bins_per_octave")
+        self.minimum_window = self.settings.get("minimum_window")
+
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data: DataFile = None):
+        lost_samples_idxs = lost_samples_idxs_data.get_data()
+        intorni_original = extract_intorni(original_track_node, lost_samples_idxs, self.intorno_length, self.fs, self.packet_size)
+        intorni_reconstructed = extract_intorni(reconstructed_track_node, lost_samples_idxs, self.intorno_length, self.fs, self.packet_size)
+        intorni_difference = [intorno_reconstructed - intorno_original for intorno_reconstructed, intorno_original in zip(intorni_reconstructed[1], intorni_original[1])]
+        
+        pm = PerceptualMetric(self.min_frequency, self.max_frequency, self.bins_per_octave, self.minimum_window, len(intorni_original[1][0][:, 0]), self.fs, self.intorno_length)
+
+        cqt_original = [pm.cqt(intorno[:, 0])[0] for intorno in intorni_original[1]]
+        cqt_difference = [pm.cqt(intorno[:, 0])[0] for intorno in intorni_difference]
+                             
+        cqts = {'original': cqt_original,
+                'difference': cqt_difference,
+                'idx': [int(idx) for idx in intorni_original[0]]}
+        
+        # Convert to list of dictionaries
+        cqts = [dict(zip(cqts.keys(), values)) for values in zip(*cqts.values())]
+        
+        metric = np.zeros(len(original_track_node.get_data())//self.packet_size)
+
+        for cqt in self.progress_monitor(cqts, desc=str(self)):
+            perc_metric = pm(cqt)
+            metric[cqt['idx']] = perc_metric
+        
+        return SimpleCalculatorData(metric)

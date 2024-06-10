@@ -170,5 +170,6 @@ class OutputAnalysisNode(Node):
     def _run(self) -> None:
         original_track = self.get_original_track()
         reconstructed_track = self.get_reconstructed_track()
-        output_analysis = self.get_worker().run(original_track, reconstructed_track)
+        lost_samples_idx = self.get_lost_samples_mask()
+        output_analysis = self.get_worker().run(original_track, reconstructed_track, lost_samples_idx)
         self.file = DataFile(output_analysis, self.absolute_path + '.pickle')

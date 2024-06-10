@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from .node import ReconstructedTrackNode, Node, OriginalTrackNode, LostSamplesMaskNode, OutputAnalysisNode
-from .output_analyser import SimpleCalculator, MSECalculator, MAECalculator, SpectralEnergyCalculator, PEAQCalculator
+from .output_analyser import SimpleCalculator, MSECalculator, MAECalculator, SpectralEnergyCalculator, PEAQCalculator, PerceptualCalculator
+from .file_wrapper import SimpleCalculatorData
 
 class PlotManager(object):
 
@@ -91,12 +92,14 @@ class PlotManager(object):
         original_track_length = (len(original_track.get_data()))/samplerate
         data = node.get_file().get_data()
         fig = plt.figure(figsize=self.figsize, dpi=self.dpi)
-        if issubclass(node.worker.__class__, SimpleCalculator):
+        if isinstance(data, SimpleCalculatorData):
             worker_class = node.worker.__class__
             if worker_class == MSECalculator:
                 name = "Mean Square Error"
             elif worker_class == MAECalculator:
                 name = "Mean Absolute Error"
+            elif worker_class == PerceptualCalculator:
+                name = "Perceived Error"
             else:
                 raise NotImplementedError("Plotting for " + worker_class.__name__ + " not implemented")
             fig.suptitle(name)
@@ -118,7 +121,7 @@ class PlotManager(object):
                 else:
                     channel_data = subsampled_error
                 label = "Channel " + str(n + 1)
-                ax.plot(x, channel_data, label=label)
+                ax.plot(x[:len(channel_data)], channel_data, label=label)
             plt.legend(loc="upper left")
             if to_file:
                 fig.savefig(node.get_path(), bbox_inches='tight')
