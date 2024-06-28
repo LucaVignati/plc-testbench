@@ -4,7 +4,7 @@ from inspect import isclass
 from typing import List, Dict
 from copy import deepcopy
 
-from plctestbench.utils import compute_hash, get_class
+from plctestbench.utils import compute_hash, get_class, relative_to_root
 
 class Settings(object):
 
@@ -612,7 +612,7 @@ class DeepLearningPLCSettings(PLCSettings):
                 num_mel_bins:       number of mel bins of the tracks.
         '''
         super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
-        self.settings["model_path"] = model_path
+        self.settings["model_path"] = relative_to_root(model_path)
         self.settings["fs_dl"] = fs_dl
         self.settings["context_length"] = context_length
         self.settings["context_length_samples"] = context_length / 1000.0 * self.settings["fs_dl"]
@@ -818,13 +818,15 @@ class PerceptualCalculatorSettings(Settings):
                        min_frequency: float = 32.7,
                        max_frequency: float = 20000,
                        bins_per_octave: int = 12,
-                       minimum_window: int = 128) -> None:
+                       minimum_window: int = 128,
+                       masking: bool = True) -> None:
         super().__init__()
         self.settings["intorno_length"] = intorno_length
         self.settings["min_frequency"] = min_frequency
         self.settings["max_frequency"] = max_frequency
         self.settings["bins_per_octave"] = bins_per_octave
         self.settings["minimum_window"] = minimum_window
+        self.settings["masking"] = masking
 
 class PlotsSettings(Settings):
 

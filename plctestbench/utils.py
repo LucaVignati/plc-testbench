@@ -2,6 +2,9 @@ import sys
 import hashlib
 from time import sleep
 import numpy as np
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def _is_notebook() -> bool:
     '''
@@ -78,3 +81,6 @@ def prepare_progress_monitor(progress_monitor) -> callable:
                         progress_monitor.update(1)
                         yield item
             return composite_progress_monitor
+
+def relative_to_root(path):
+    return PROJECT_ROOT.joinpath(path)

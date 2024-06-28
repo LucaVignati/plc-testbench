@@ -1,4 +1,5 @@
 from .settings import Settings
+from .utils import relative_to_root
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator as RGI
@@ -37,7 +38,7 @@ def extract_intorni(audio_file, lost_samples_idxs, intorno_size, fs, packet_size
         packet_idxs.append(center_idx//packet_size)
     return packet_idxs, intorni
 
-def S1dataset_generateTFmaskfunc(center_f, f_axis, plot=False, ERBspac=1, timespac=0.001, varargin=[8]):
+def S1dataset_generateTFmaskfunc(center_f, f_axis, ERBspac=1, timespac=0.001, varargin=[8]):
     
     def freq_to_erb(freq):
         return 21.4 * np.log10(1 + freq / 229)
@@ -54,7 +55,7 @@ def S1dataset_generateTFmaskfunc(center_f, f_axis, plot=False, ERBspac=1, timesp
         """
         return (np.exp(erb / 9.26449) - 1) * 24.7 * 9.26449
     
-    data = np.load('masking_data/S1dataset_rawdata.npz')
+    data = np.load(relative_to_root('masking_data/S1dataset_rawdata.npz'))
     dT = data['dT'].flatten()
     dF = data['dF'].flatten()
     AM = data['data']
@@ -122,13 +123,14 @@ def apply_masking_to_cqt(cqt_mag, freq_axis, fs, duration, masked_intorno_durati
 
 class PerceptualMetric(object):
 
-    def __init__(self, min_frequency,
-                       max_frequency,
-                       bins_per_octave,
-                       minimum_window,
-                       input_size,
-                       fs,
-                       intorno_length) -> None:
+    def __init__(self, min_frequency: float,
+                       max_frequency: float,
+                       bins_per_octave: int,
+                       minimum_window: int,
+                       input_size: int,
+                       fs: int,
+                       intorno_length: int,
+                       masking: bool = True) -> None:
         self.min_frequency = min_frequency
         self.max_frequency = max_frequency
         self.bins_per_octave = bins_per_octave
@@ -136,6 +138,7 @@ class PerceptualMetric(object):
         self.input_size = input_size
         self.fs = fs
         self.intorno_length = intorno_length
+        self.masking = masking
         self.CQT = NSGConstantQ(minFrequency=self.min_frequency,
                                 maxFrequency=self.max_frequency,
                                 binsPerOctave=self.bins_per_octave,
@@ -152,11 +155,16 @@ class PerceptualMetric(object):
 
         freq_axis = librosa.cqt_frequencies(cqt_original_db.shape[0], fmin=self.min_frequency, bins_per_octave=self.bins_per_octave)
 
-        mask = apply_masking_to_cqt(cqt_original_db, freq_axis, self.fs, self.intorno_length)
+        if self.masking:
+            mask = apply_masking_to_cqt(cqt_original_db, freq_axis, self.fs, self.intorno_length)
 
-        cqt_difference_masked = np.where(cqt_difference_db < mask, 0, cqt['difference'])
-        cqt_difference_masked_mag = np.abs(cqt_difference_masked)
-        cqt_difference_masked_db = librosa.amplitude_to_db(cqt_difference_masked_mag, ref=ref_value)
+            cqt_difference_masked = np.where(cqt_difference_db < mask, 0, cqt['difference'])
+            cqt_difference_masked_mag = np.abs(cqt_difference_masked)
+            cqt_difference_masked_db = librosa.amplitude_to_db(cqt_difference_masked_mag, ref=ref_value)
+        else:
+            cqt_difference_masked = cqt['difference']
+            cqt_difference_masked_mag = np.abs(cqt_difference_masked)
+            cqt_difference_masked_db = librosa.amplitude_to_db(cqt_difference_masked_mag, ref=ref_value)
 
         cqt_original_loss_db = np.where(cqt_difference_masked > 0, cqt_original_db, 0)
         cqt_difference_masked_db_residual = cqt_difference_masked_db - cqt_original_loss_db

@@ -191,6 +191,7 @@ class PerceptualCalculator(OutputAnalyser):
         self.max_frequency = self.settings.get("max_frequency")
         self.bins_per_octave = self.settings.get("bins_per_octave")
         self.minimum_window = self.settings.get("minimum_window")
+        self.masking = self.settings.get("masking")
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data: DataFile = None):
         lost_samples_idxs = lost_samples_idxs_data.get_data()
@@ -198,7 +199,7 @@ class PerceptualCalculator(OutputAnalyser):
         intorni_reconstructed = extract_intorni(reconstructed_track_node, lost_samples_idxs, self.intorno_length, self.fs, self.packet_size)
         intorni_difference = [intorno_reconstructed - intorno_original for intorno_reconstructed, intorno_original in zip(intorni_reconstructed[1], intorni_original[1])]
         
-        pm = PerceptualMetric(self.min_frequency, self.max_frequency, self.bins_per_octave, self.minimum_window, len(intorni_original[1][0][:, 0]), self.fs, self.intorno_length)
+        pm = PerceptualMetric(self.min_frequency, self.max_frequency, self.bins_per_octave, self.minimum_window, len(intorni_original[1][0][:, 0]), self.fs, self.intorno_length, self.masking)
 
         cqt_original = [pm.cqt(intorno[:, 0])[0] for intorno in intorni_original[1]]
         cqt_difference = [pm.cqt(intorno[:, 0])[0] for intorno in intorni_difference]
