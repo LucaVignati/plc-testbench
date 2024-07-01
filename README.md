@@ -6,6 +6,7 @@ It features the implementation of some of the most common packet loss models, PL
 
 **Packet Loss Simulation**
 - **Binomial**: uniform distribution of packet losses, governed by the Packet Error Ratio (PER) parameter.
+- **Metronome**: periodic packet losses governed by the burst period, the burst length, and an offset.
 - **Gilbert-Elliot**: bursty distribution of packet losses, governed by the four probabilities associated to its two states (For each state, the probability of packet loss and the probability of transitioning to the other state) [[1](#1)].
 
 **PLC Algorithms**
@@ -95,6 +96,7 @@ original_audio_tracks = [(OriginalAudio, OriginalAudioSettings('Blues_Drums.wav'
 List the packet loss models you want to test as follows:
 ```python
 packet_loss_simulators = [(GilbertElliotPLS, GilbertElliotPLSSettings()),
+                          (MetronomePLS, MetronomePLSSettings()),
                           (BinomialPLS, BinomialPLSSettings())]
 ```
 
