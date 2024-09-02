@@ -39,7 +39,13 @@ class DatabaseManager(metaclass=Singleton):
         This function is used to add a node to the database.
         '''
         database = self.get_database()
-        database[collection_name].insert_one(entry)
+        try:
+            database[collection_name].insert_one(entry)
+        except pymongo.errors.DuplicateKeyError as e:
+            if entry['persistent']:
+                raise e
+            else:
+                database[collection_name].replace_one({"_id": entry["_id"]}, entry)
 
     def find_node(self, node_id, collection_name):
         '''

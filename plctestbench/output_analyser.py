@@ -1,10 +1,12 @@
 import subprocess
 import numpy as np
+import numpy.random as npr
 from .settings import Settings
 from .worker import Worker
 from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile, DataFile
-from .utils import dummy_progress_bar
+from .utils import dummy_progress_bar, extract_intorni, force_single_loss_per_stimulus, relative_to_root, is_loud_enough
 from .perceptual_metric import *
+from .listening_tests import ListeningTest
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -186,35 +188,120 @@ class PerceptualCalculator(OutputAnalyser):
         super().__init__(settings)
         self.fs = self.settings.get("fs")
         self.packet_size = self.settings.get("packet_size")
-        self.intorno_length = self.settings.get("intorno_length")  
+        self.intorno_length = self.settings.get("intorno_length")
+        self.linear_mag = self.settings.get("linear_mag") 
+        self.transform_type = self.settings.get("transform_type") 
         self.min_frequency = self.settings.get("min_frequency")
         self.max_frequency = self.settings.get("max_frequency")
         self.bins_per_octave = self.settings.get("bins_per_octave")
+        self.n_bins = self.settings.get("n_bins")
         self.minimum_window = self.settings.get("minimum_window")
         self.masking = self.settings.get("masking")
+        self.db_weighting = self.settings.get("db_weighting")
+        self.metric = self.settings.get("metric")
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data: DataFile = None):
         lost_samples_idxs = lost_samples_idxs_data.get_data()
         intorni_original = extract_intorni(original_track_node, lost_samples_idxs, self.intorno_length, self.fs, self.packet_size)
         intorni_reconstructed = extract_intorni(reconstructed_track_node, lost_samples_idxs, self.intorno_length, self.fs, self.packet_size)
-        intorni_difference = [intorno_reconstructed - intorno_original for intorno_reconstructed, intorno_original in zip(intorni_reconstructed[1], intorni_original[1])]
+        # intorni_difference = [intorno_reconstructed - intorno_original for intorno_reconstructed, intorno_original in zip(intorni_reconstructed[1], intorni_original[1])]
         
-        pm = PerceptualMetric(self.min_frequency, self.max_frequency, self.bins_per_octave, self.minimum_window, len(intorni_original[1][0][:, 0]), self.fs, self.intorno_length, self.masking)
+        pm = PerceptualMetric(self.transform_type,
+                              self.min_frequency,
+                              self.max_frequency,
+                              self.bins_per_octave,
+                              self.n_bins,
+                              self.minimum_window,
+                              len(intorni_original[1][0][:, 0]),
+                              self.fs,
+                              self.intorno_length,
+                              self.linear_mag,
+                              self.masking,
+                              self.db_weighting,
+                              self.metric)
 
-        cqt_original = [pm.cqt(intorno[:, 0])[0] for intorno in intorni_original[1]]
-        cqt_difference = [pm.cqt(intorno[:, 0])[0] for intorno in intorni_difference]
-                             
-        cqts = {'original': cqt_original,
-                'difference': cqt_difference,
-                'idx': [int(idx) for idx in intorni_original[0]]}
-        
-        # Convert to list of dictionaries
-        cqts = [dict(zip(cqts.keys(), values)) for values in zip(*cqts.values())]
+        spectrograms = [{'idx': idx, **pm.spectrogram(original[:, 0], reconstructed[:, 0])} for idx, original, reconstructed in self.progress_monitor(zip(intorni_original[0], intorni_original[1], intorni_reconstructed[1]), total=len(intorni_original[1]), desc=str(self))]
+
+        # Save as an audio file the intorni_original[1] associated to intorni_original[0] == 6800
+        # if any([idx == 6800 for idx in intorni_original[0]]):
+        #     idx = intorni_original[0].index(6800)
+        #     intorno = intorni_original[1][idx]
+        #     sf.write(f"intorno_original{intorni_original[0][idx]}.wav", intorno, self.fs)
         
         metric = np.zeros(len(original_track_node.get_data())//self.packet_size)
 
-        for cqt in self.progress_monitor(cqts, desc=str(self)):
-            perc_metric = pm(cqt)
-            metric[cqt['idx']] = perc_metric
+        for spectrogram in spectrograms:
+            print(f'Perceptual metric-{spectrogram["idx"]}: ', end='')
+            perc_metric = pm(spectrogram)
+            metric[spectrogram['idx']] = perc_metric
+        
+        return SimpleCalculatorData(metric)
+
+class HumanCalculator(OutputAnalyser):
+    '''
+    ListeningTest is ...
+    '''
+
+    def __init__(self, settings: Settings) -> None:
+        super().__init__(settings)
+        self.fs = self.settings.get("fs")
+        self.packet_size = self.settings.get("packet_size")
+        self.stimulus_length = self.settings.get("stimulus_length")
+        self.single_loss = self.settings.get("single_loss_per_stimulus")
+        self.stimuli_per_page = self.settings.get("stimuli_per_page")
+        self.pages = self.settings.get("pages")
+        self.stimuli_number = self.stimuli_per_page * self.pages
+        self.choose_seed = self.settings.get("choose_seed")
+        self.persistent = False
+
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data: DataFile = None):
+
+        def transpose(matrix):
+            return [[matrix[j][i] for j in range(len(matrix))] for i in range(len(matrix[0]))]
+
+        self.listening_test = ListeningTest(self.settings)
+
+        if self.single_loss:
+            lost_samples_idxs = force_single_loss_per_stimulus(lost_samples_idxs_data.get_data(), self.fs, self.stimulus_length/2, self.packet_size)
+        else:
+            lost_samples_idxs = lost_samples_idxs_data.get_data()
+        intorni_original = extract_intorni(original_track_node, lost_samples_idxs, self.stimulus_length, self.fs, self.packet_size, unique=True)
+        intorni_reconstructed = extract_intorni(reconstructed_track_node, lost_samples_idxs, self.stimulus_length, self.fs, self.packet_size, unique=True)
+
+        intorni_original_loud = []
+        intorni_reconstructed_loud = []
+        for idx in range(len(intorni_original[1])):
+            if is_loud_enough(intorni_original[1][idx], original_track_node.get_data(), -10):
+                intorni_original_loud.append([intorno[idx] for intorno in intorni_original])
+                intorni_reconstructed_loud.append([intorno[idx] for intorno in intorni_reconstructed])
+
+        intorni_original_loud = transpose(intorni_original_loud)
+        intorni_reconstructed_loud = transpose(intorni_reconstructed_loud)
+
+        if self.stimuli_number > len(intorni_original_loud[1]):
+            error_message = f"The number of stimuli requested ({self.stimuli_number}) is greater than the number of stimuli available ({len(intorni_original_loud)}). Increase the total length of available audio."
+            discarded_packets_close = (len(lost_samples_idxs_data.get_data()) - len(lost_samples_idxs)) // self.packet_size
+            if discarded_packets_close > 0:
+                error_message += f" {discarded_packets_close} stimulus were discarded because too close to each other."
+            discarded_packet_loud = len(intorni_original[1]) - len(intorni_original_loud[1])
+            if discarded_packet_loud > 0:
+                error_message += f" {discarded_packet_loud} stimulus were discarded because too quiet."
+            raise ValueError(error_message)
+        
+
+        npr.seed(self.choose_seed)
+        stimuli_idxs = npr.choice(range(len(intorni_original_loud[1])), self.stimuli_number, replace=False)
+        stimuli_original = transpose([[intorno[idx] for intorno in intorni_original_loud] for idx in stimuli_idxs])
+        stimuli_reconstructed = transpose([[intorno[idx] for intorno in intorni_reconstructed_loud] for idx in stimuli_idxs])
+
+        self.listening_test.set_references(list(zip(stimuli_original[0], stimuli_original[1])), original_track_node)
+        self.listening_test.set_stimuli(list(zip(stimuli_reconstructed[0], stimuli_reconstructed[1])), original_track_node)
+        self.listening_test.set_indexes(stimuli_original[0])
+        self.listening_test.generate_config()
+        results =  self.listening_test.get_results()
+
+        metric = np.zeros(len(original_track_node.get_data())//self.packet_size)
+        for idx, mean, _ in self.progress_monitor(results, desc=str(self)):
+            metric[int(idx.split('-')[-1])] = mean
         
         return SimpleCalculatorData(metric)

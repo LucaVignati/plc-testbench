@@ -11,3 +11,4 @@ dist/
 .*venv
 venv/
 plctestbench-*
+listening_tests/

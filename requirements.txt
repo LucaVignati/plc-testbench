@@ -8,3 +8,4 @@ matplotlib
 tensorflow
 librosa
 typing_inspect
+raumel.yaml

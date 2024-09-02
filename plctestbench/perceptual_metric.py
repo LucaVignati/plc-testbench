@@ -5,38 +5,10 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator as RGI
 from essentia.standard import NSGConstantQ
 import librosa
-
-def extract_intorni(audio_file, lost_samples_idxs, intorno_size, fs, packet_size):
-    def find_boundary_indexes(lost_samples_idxs):
-        boundary_indexes = []
-        start_idx = None
-        end_idx = None
-        for idx in lost_samples_idxs:
-            if start_idx is None:
-                start_idx = idx
-                end_idx = idx
-            elif idx == end_idx + 1:
-                end_idx = idx
-            else:
-                boundary_indexes.append((start_idx, end_idx))
-                start_idx = None
-            if idx == lost_samples_idxs[-1]:
-                boundary_indexes.append((start_idx, end_idx))
-        return boundary_indexes
-
-    intorno_samples = float(intorno_size*fs)/1000
-    audio_data = audio_file.get_data()
-    boundary_indexes = find_boundary_indexes(lost_samples_idxs)
-    intorni = []
-    packet_idxs = []
-    for start_idx, end_idx in boundary_indexes:
-        center_idx = (start_idx + end_idx) // 2
-        start_sample = int(center_idx - intorno_samples // 2)
-        end_sample = int(center_idx + intorno_samples // 2)
-        intorno = audio_data[start_sample:end_sample]
-        intorni.append(intorno)
-        packet_idxs.append(center_idx//packet_size)
-    return packet_idxs, intorni
+from matplotlib import pyplot as plt
+import plotly.graph_objects as go
+from brian2hears import LogGammachirp, RestructureFilterbank, AsymmetricCompensation, asymmetric_compensation_coeffs, ControlFilterbank, erbspace, Sound
+from brian2 import Hz, kHz, ms, log10, mean, diff, asarray, minimum, maximum, arange, exp, log
 
 def S1dataset_generateTFmaskfunc(center_f, f_axis, ERBspac=1, timespac=0.001, varargin=[8]):
     
@@ -121,53 +93,263 @@ def apply_masking_to_cqt(cqt_mag, freq_axis, fs, duration, masked_intorno_durati
     mask[:, int(num_frames/2-masked_intorno_hops[0]):int(num_frames/2+masked_intorno_hops[1])] = masked_cqt
     return mask
 
+class DCGC(object):
+
+    def __init__(self) -> None:
+        pass
+
+    def __call__(self, original_sound, glitch_sound, nbr_cf=100, min_freq=20*Hz, max_freq=20000*Hz) -> dict:
+
+        self.samplerate = original_sound.samplerate
+        self.nbr_cf = nbr_cf # number of centre frequencies
+        # center frequencies with a spacing following an ERB scale
+        self.cf = erbspace(min_freq, max_freq, self.nbr_cf)
+
+        self.c1 = -2.96 #glide slope of the first filterbank
+        self.b1 = 1.81  #factor determining the time constant of the first filterbank
+        self.c2 = 2.2   #glide slope of the second filterbank
+        self.b2 = 2.17  #factor determining the time constant of the second filterbank
+
+        self.order_ERB = 4
+        self.ERBrate = 21.4*log10(4.37*(self.cf/kHz)+1)
+        self.ERBwidth = 24.7*(4.37*(self.cf/kHz) + 1)
+        self.ERBspace = mean(diff(self.ERBrate))
+
+        # the filter coefficients are updated every update_interval (here in samples)
+        self.update_interval = 1
+
+        #bank of passive gammachirp filters. As the control path uses the same passive
+        #filterbank than the signal path (but shifted in frequency)
+        #this filterbank is used by both pathway.
+
+        self.fp1 = asarray(self.cf) + self.c1*self.ERBwidth*self.b1/self.order_ERB #centre frequency of the signal path
+
+        corrupted_sound = original_sound + glitch_sound
+        self.pGc_control = LogGammachirp(corrupted_sound, self.cf, b=self.b1, c=self.c1)
+        self.control_path()
+        self.pGc_signal = LogGammachirp(original_sound, self.cf, b=self.b1, c=self.c1)
+        self.signal_path()
+        self.original_signal = self.signal
+
+        self.pGc_control = LogGammachirp(corrupted_sound, self.cf, b=self.b1, c=self.c1)
+        self.control_path()
+        self.pGc_signal = LogGammachirp(glitch_sound, self.cf, b=self.b1, c=self.c1)
+        self.signal_path()
+        self.glitch_signal = self.signal
+        return {'original': self.original_signal, 'reconstructed': self.glitch_signal}
+
+
+    def control_path(self):
+
+        #### Control Path ####
+
+        #the first filterbank in the control path consists of gammachirp filters
+        #value of the shift in ERB frequencies of the control path with respect to the signal path
+        self.lct_ERB = 1.5
+        self.n_ch_shift = round(self.lct_ERB/self.ERBspace) #value of the shift in channels
+        #index of the channel of the control path taken from pGc
+        self.indch1_control = minimum(maximum(1, arange(1, self.nbr_cf+1)+self.n_ch_shift), self.nbr_cf).astype(int)-1
+        self.fp1_control = self.fp1[self.indch1_control]
+        #the control path bank pass filter uses the channels of pGc indexed by indch1_control
+        self.pGc_control = RestructureFilterbank(self.pGc_control, indexmapping=self.indch1_control)
+
+        #the second filterbank in the control path consists of fixed asymmetric compensation filters
+        self.frat_control = 1.08
+        self.fr2_control = self.frat_control*self.fp1_control
+        self.asym_comp_control = AsymmetricCompensation(self.pGc_control, self.fr2_control, b=self.b2, c=self.c2)
+
+        #definition of the pole of the asymmetric comensation filters
+        self.p0 = 2
+        self.p1 = 1.7818*(1-0.0791*self.b2)*(1-0.1655*abs(self.c2))
+        self.p2 = 0.5689*(1-0.1620*self.b2)*(1-0.0857*abs(self.c2))
+        self.p3 = 0.2523*(1-0.0244*self.b2)*(1+0.0574*abs(self.c2))
+        self.p4 = 1.0724
+
+        #definition of the parameters used in the control path output levels computation
+        #(see IEEE paper for details)
+        self.decay_tcst = .5*ms
+        self.order = 1.
+        self.lev_weight = .5
+        self.level_ref = 50.
+        self.level_pwr1 = 1.5
+        self.level_pwr2 = .5
+        self.RMStoSPL = 30.
+        self.frat0 = .2330
+        self.frat1 = .005
+        self.exp_deca_val = exp(-1/(self.decay_tcst*self.samplerate)*log(2))
+        self.level_min = 10**(-self.RMStoSPL/20)
+
+    #### Signal Path ####
+    #the signal path consists of the passive gammachirp filterbank pGc previously
+    #defined followed by a asymmetric compensation filterbank
+    def signal_path(self):
+
+        #definition of the controller class. What is does it take the outputs of the
+        #first and second fitlerbanks of the control filter as input, compute an overall
+        #intensity level for each frequency channel. It then uses those level to update
+        #the filter coefficient of its target, the asymmetric compensation filterbank of
+        #the signal path.
+        class CompensensationFilterUpdater(object):
+            def __init__(self, target, dcgc):
+                self.target = target
+                self.level1_prev = -100
+                self.level2_prev = -100
+                self.dcgc = dcgc
+
+            def __call__(self, *input):
+                value1 = input[0][-1,:]
+                value2 = input[1][-1,:]
+                #the current level value is chosen as the max between the current
+                #output and the previous one decreased by a decay
+                level1 = maximum(maximum(value1, 0), self.level1_prev*self.dcgc.exp_deca_val)
+                level2 = maximum(maximum(value2, 0), self.level2_prev*self.dcgc.exp_deca_val)
+
+                self.level1_prev = level1 #the value is stored for the next iteration
+                self.level2_prev = level2
+                #the overall intensity is computed between the two filterbank outputs
+                level_total = self.dcgc.lev_weight*self.dcgc.level_ref*(level1/self.dcgc.level_ref)**self.dcgc.level_pwr1+\
+                        (1-self.dcgc.lev_weight)*self.dcgc.level_ref*(level2/self.dcgc.level_ref)**self.dcgc.level_pwr2
+                #then it is converted in dB
+                level_dB = 20*log10(maximum(level_total, self.dcgc.level_min))+self.dcgc.RMStoSPL
+                #the frequency factor is calculated
+                frat = self.dcgc.frat0 + self.dcgc.frat1*level_dB
+                #the centre frequency of the asymmetric compensation filters are updated
+                fr2 = self.dcgc.fp1*frat
+                coeffs = asymmetric_compensation_coeffs(self.dcgc.samplerate, fr2,
+                                self.target.filt_b, self.target.filt_a, self.dcgc.b2, self.dcgc.c2,
+                                self.dcgc.p0, self.dcgc.p1, self.dcgc.p2, self.dcgc.p3, self.dcgc.p4)
+                self.target.filt_b, self.target.filt_a = coeffs
+
+        self.fr1 = self.fp1*self.frat0
+        varyingfilter_signal_path = AsymmetricCompensation(self.pGc_signal, self.fr1, b=self.b2, c=self.c2)
+        updater = CompensensationFilterUpdater(varyingfilter_signal_path, self)
+        #the controler which takes the two filterbanks of the control path as inputs
+        #and the varying filter of the signal path as target is instantiated
+        control = ControlFilterbank(varyingfilter_signal_path,
+                                    [self.pGc_control, self.asym_comp_control],
+                                    varyingfilter_signal_path, updater, self.update_interval)
+
+        #run the simulation
+        #Remember that the controler are at the end of the chain and the output of the
+        #whole path comes from them
+        self.signal = control.process()
+
 class PerceptualMetric(object):
 
-    def __init__(self, min_frequency: float,
+    def __init__(self, transform_type: str,
+                       min_frequency: float,
                        max_frequency: float,
                        bins_per_octave: int,
+                       n_bins: int,
                        minimum_window: int,
                        input_size: int,
                        fs: int,
                        intorno_length: int,
-                       masking: bool = True) -> None:
+                       linear_mag: bool,
+                       masking: bool,
+                       db_weighting: str,
+                       metric: str) -> None:
         self.min_frequency = min_frequency
         self.max_frequency = max_frequency
         self.bins_per_octave = bins_per_octave
+        self.n_bins = n_bins
         self.minimum_window = minimum_window
         self.input_size = input_size
         self.fs = fs
+
+        if transform_type == 'cqt':
+            cqt = NSGConstantQ(minFrequency=min_frequency,
+                               maxFrequency=max_frequency,
+                               binsPerOctave=bins_per_octave,
+                               minimumWindow=minimum_window,
+                               inputSize=input_size)
+            self.transform = lambda original, reconstructed : {'original': cqt(original)[0], 'reconstructed': cqt(reconstructed)[0]}
+            self.frequency_axis = librosa.cqt_frequencies(input_size, fmin=min_frequency, bins_per_octave=bins_per_octave)
+        elif transform_type == 'dcgc':
+            dcgc = DCGC()
+            self.transform = lambda original, reconstructed: dcgc(Sound(original, samplerate=self.fs*Hz), Sound(reconstructed, samplerate=self.fs*Hz), nbr_cf=self.n_bins, min_freq=self.min_frequency*Hz, max_freq=self.max_frequency*Hz)
+            self.frequency_axis = erbspace(self.min_frequency*Hz, self.max_frequency*Hz, self.bins_per_octave)
+
         self.intorno_length = intorno_length
+        self.linear_mag = linear_mag
         self.masking = masking
-        self.CQT = NSGConstantQ(minFrequency=self.min_frequency,
-                                maxFrequency=self.max_frequency,
-                                binsPerOctave=self.bins_per_octave,
-                                minimumWindow=self.minimum_window,
-                                inputSize=self.input_size)
+        self.db_weighting = db_weighting
+        self.metric = metric
+        
 
-    def cqt(self, audio_data):
-        return self.CQT(audio_data)
+    def spectrogram(self, original, reconstructed):
+        return self.transform(original, reconstructed)
 
-    def __call__(self, cqt):
-        ref_value = max(np.max(np.abs(cqt['original'])), np.max(np.abs(cqt['difference'])))
-        cqt_original_db = librosa.amplitude_to_db(np.abs(cqt['original']), ref=ref_value)
-        cqt_difference_db = librosa.amplitude_to_db(np.abs(cqt['difference']), ref=ref_value)
+    def __call__(self, spectrogram):
+        if self.linear_mag:
+            spectrogram_original_mag = np.abs(spectrogram['original'])
+            spectrogram_reconstructed_mag = np.abs(spectrogram['reconstructed'])
 
-        freq_axis = librosa.cqt_frequencies(cqt_original_db.shape[0], fmin=self.min_frequency, bins_per_octave=self.bins_per_octave)
+            spectrogram_reconstructed_residual = spectrogram_reconstructed_mag - spectrogram_original_mag
+            spectrogram_reconstructed_residual = np.where(spectrogram_reconstructed_residual < 0, 0, spectrogram_reconstructed_residual)
+            
+            perc_metric = np.sum(spectrogram_reconstructed_residual) / 10
 
-        if self.masking:
-            mask = apply_masking_to_cqt(cqt_original_db, freq_axis, self.fs, self.intorno_length)
-
-            cqt_difference_masked = np.where(cqt_difference_db < mask, 0, cqt['difference'])
-            cqt_difference_masked_mag = np.abs(cqt_difference_masked)
-            cqt_difference_masked_db = librosa.amplitude_to_db(cqt_difference_masked_mag, ref=ref_value)
         else:
-            cqt_difference_masked = cqt['difference']
-            cqt_difference_masked_mag = np.abs(cqt_difference_masked)
-            cqt_difference_masked_db = librosa.amplitude_to_db(cqt_difference_masked_mag, ref=ref_value)
+            spectrogram_difference = spectrogram['reconstructed'] - spectrogram['original']
+            spectrogram_difference_mag = np.abs(spectrogram_difference)
+            ref_value = max(np.max(np.abs(spectrogram['original'])), np.max(np.abs(spectrogram['reconstructed'])))
+            spectrogram_original_db = librosa.amplitude_to_db(np.abs(spectrogram['original']), ref=ref_value)
+            spectrogram_difference_db = librosa.amplitude_to_db(spectrogram_difference_mag, ref=ref_value)
 
-        cqt_original_loss_db = np.where(cqt_difference_masked > 0, cqt_original_db, 0)
-        cqt_difference_masked_db_residual = cqt_difference_masked_db - cqt_original_loss_db
-        cqt_difference_masked_db_residual = np.where(cqt_difference_masked_db_residual < 0, 0, cqt_difference_masked_db_residual)
-        perc_metric = np.sum(cqt_difference_masked_db_residual) / 10000
+            freq_axis = librosa.cqt_frequencies(spectrogram_original_db.shape[0], fmin=self.min_frequency, bins_per_octave=self.bins_per_octave)
+
+            if self.masking:
+                mask = apply_masking_to_cqt(spectrogram_original_db, freq_axis, self.fs, self.intorno_length)
+
+                spectrogram_difference_masked = np.where(spectrogram_difference_db < mask, 0, spectrogram_difference)
+                spectrogram_difference_masked_mag = np.abs(spectrogram_difference_masked)
+                spectrogram_difference_masked_db = librosa.amplitude_to_db(spectrogram_difference_masked_mag, ref=ref_value)
+            else:
+                spectrogram_difference_masked = spectrogram['reconstructed']
+                spectrogram_difference_masked_db = spectrogram_difference_db
+
+            if self.db_weighting == 'A':
+                a_weigthing = librosa.A_weighting(freq_axis)[:, np.newaxis]
+                spectrogram_difference_masked_db = spectrogram_difference_masked_db + a_weigthing
+                spectrogram_original_db = spectrogram_original_db + a_weigthing
+            if self.db_weighting == 'C':
+                c_weigthing = librosa.C_weighting(freq_axis)[:, np.newaxis]
+                spectrogram_difference_masked_db = spectrogram_difference_masked_db + c_weigthing
+                spectrogram_original_db = spectrogram_original_db + c_weigthing
+
+            spectrogram_original_loss_db = np.where(np.abs(spectrogram_difference_masked) > 0, spectrogram_original_db, 0)
+            spectrogram_reconstructed_masked_residual = spectrogram_difference_masked_db - spectrogram_original_loss_db
+
+            if self.metric == 'weighted_sum':
+                avg = (spectrogram_difference_masked_db + spectrogram_original_loss_db)/2
+                complement = 100 - avg
+                spectrogram_reconstructed_masked_residual = spectrogram_reconstructed_masked_residual * complement
+                
+            spectrogram_reconstructed_masked_residual = np.where(spectrogram_reconstructed_masked_residual < 0, 0, spectrogram_reconstructed_masked_residual)
+            perc_metric = np.sum(spectrogram_reconstructed_masked_residual) / 10000
+
+        print(f"{perc_metric}")
+
+        # time_axis = np.linspace(0, spectrogram_original_db.shape[1] / self.fs, num=spectrogram_original_db.shape[1])
+
+        # plot_idx = 18699
+        # if spectrogram['idx'] == plot_idx + 1:
+        #     # plt.figure(figsize=(12, 4))
+        #     # plt.imshow(cqt_original_db, aspect='auto', origin='lower', cmap='jet')
+        #     # plt.colorbar()
+        #     # plt.title('Original CQT')
+        #     # plt.savefig('original_cqt.png')
+        #     note_axis = [librosa.hz_to_note(f) for f in freq_axis]
+        #     fig = go.Figure()
+        #     fig.add_trace(go.Surface(x=time_axis, y=note_axis, z=spectrogram_difference_masked_db, colorscale='Inferno'))
+        #     fig.add_trace(go.Surface(x=time_axis, y=note_axis, z=spectrogram_original_db, colorscale='Viridis'))
+        #     fig.update_layout(scene = dict(
+        #                 xaxis_title='Time',
+        #                 yaxis_title='CQT bins',
+        #                 zaxis_title='Amplitude (dB)'),
+        #               title="Interactive 3D CQT Plot")
+        #     fig.show()
+
+        
         return perc_metric

@@ -769,6 +769,7 @@ class MSECalculatorSettings(Settings):
 
     def __init__(self,
                  N: int = 1024,
+                 hop = None,
                  amp_scale: float = 1.0,):
         '''
         This class containes the settings for the MSECalculator class.
@@ -781,13 +782,14 @@ class MSECalculatorSettings(Settings):
         '''
         super().__init__()
         self.settings["N"] = N
-        self.settings["hop"] = N//2
+        self.settings["hop"] = N//2 if hop is None else hop
         self.settings["amp_scale"] = amp_scale
 
 class MAECalculatorSettings(Settings):
 
     def __init__(self,
                  N: int = 1024,
+                 hop = None,
                  amp_scale: float = 1.0,):
         '''
         This class containes the settings for the MAECalculator class.
@@ -800,13 +802,14 @@ class MAECalculatorSettings(Settings):
         '''
         super().__init__()
         self.settings["N"] = N
-        self.settings["hop"] = N//2
+        self.settings["hop"] = N//2 if hop is None else hop
         self.settings["amp_scale"] = amp_scale
 
 class SpectralEnergyCalculatorSettings(Settings):
 
     def __init__(self,
                  N: int = 1024,
+                 hop = None,
                  amp_scale: float = 1.0,):
         '''
         This class containes the settings for the SpectralEnergyCalculatorSettings class.
@@ -819,7 +822,7 @@ class SpectralEnergyCalculatorSettings(Settings):
         '''
         super().__init__()
         self.settings["N"] = N
-        self.settings["hop"] = N//2
+        self.settings["hop"] = N//2 if hop is None else hop
         self.settings["amp_scale"] = amp_scale
 
 class PEAQMode(Enum):
@@ -841,18 +844,48 @@ class PEAQCalculatorSettings(Settings):
 class PerceptualCalculatorSettings(Settings):
 
     def __init__(self, intorno_length: int = 300,
+                       linear_mag: bool = False,
+                       transform_type: str = 'cqt',
                        min_frequency: float = 32.7,
                        max_frequency: float = 20000,
                        bins_per_octave: int = 12,
+                       n_bins: int = 100,
                        minimum_window: int = 128,
-                       masking: bool = True) -> None:
+                       masking: bool = True,
+                       db_weighting: str = '',
+                       metric: str = '') -> None:
         super().__init__()
         self.settings["intorno_length"] = intorno_length
+        self.settings["linear_mag"] = linear_mag
+        self.settings["transform_type"] = transform_type
         self.settings["min_frequency"] = min_frequency
         self.settings["max_frequency"] = max_frequency
         self.settings["bins_per_octave"] = bins_per_octave
+        self.settings["n_bins"] = n_bins
         self.settings["minimum_window"] = minimum_window
         self.settings["masking"] = masking
+        self.settings["db_weighting"] = db_weighting
+        self.settings["metric"] = metric
+
+class HumanCalculatorSettings(Settings):
+
+    def __init__(self, stimulus_length: int = 3000,
+                       single_loss_per_stimulus: bool = True,
+                       stimuli_per_page: int = 10,
+                       pages: int = 2,
+                       iterations: int = 1,
+                       choose_seed: int = 1,
+                       reference: str = None,
+                       anchor: str = None) -> None:
+        super().__init__()
+        self.settings["stimulus_length"] = stimulus_length
+        self.settings["single_loss_per_stimulus"] = single_loss_per_stimulus
+        self.settings["stimuli_per_page"] = stimuli_per_page
+        self.settings["pages"] = pages
+        self.settings["iterations"] = iterations
+        self.settings["choose_seed"] = choose_seed
+        self.settings["reference"] = reference
+        self.settings["anchor"] = anchor
 
 class PlotsSettings(Settings):
 

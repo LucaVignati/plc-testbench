@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from .node import ReconstructedTrackNode, Node, OriginalTrackNode, LostSamplesMaskNode, OutputAnalysisNode
-from .output_analyser import SimpleCalculator, MSECalculator, MAECalculator, SpectralEnergyCalculator, PEAQCalculator, PerceptualCalculator
+from .output_analyser import SimpleCalculator, MSECalculator, MAECalculator, SpectralEnergyCalculator, PEAQCalculator, PerceptualCalculator, HumanCalculator
 from .file_wrapper import SimpleCalculatorData
 
 class PlotManager(object):
@@ -98,7 +98,7 @@ class PlotManager(object):
                 name = "Mean Square Error"
             elif worker_class == MAECalculator:
                 name = "Mean Absolute Error"
-            elif worker_class == PerceptualCalculator:
+            elif worker_class == PerceptualCalculator or worker_class == HumanCalculator:
                 name = "Perceived Error"
             else:
                 raise NotImplementedError("Plotting for " + worker_class.__name__ + " not implemented")

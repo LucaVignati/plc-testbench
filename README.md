@@ -21,7 +21,8 @@ It features the implementation of some of the most common packet loss models, PL
 **Metrics**
 - **Mean Square Error**: the mean square error between the original and reconstructed signal.
 - **PEAQ**: the Perceptual Evaluation of Audio Quality (PEAQ) metric, as defined in [[4](#4)].
-## Basic Usage
+- **Human**: this metric produces the config file for a MUSHRA test using as stimuli excerpts of the reconstructed audio tracks. It also gathers the results of the test to be displayed alongside the other metrics.
+## Installation
 
 You will need a mongoDB database to store the results. You can install it locally or use a cloud service like [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
 It is recomended however to use the [Docker image](https://hub.docker.com/_/mongo) provided by MongoDB.
@@ -45,6 +46,7 @@ Clone this repository, install the requirements and the plctestbench package:
     cd plc-testbench
     pip install -r requirements.txt
     pip install .
+    cd ..
 ```
 
 If you want to use it inside Jupyter Notebook you also need to install the ipywidgets package:
@@ -57,6 +59,7 @@ Clone and install the [burg-python-bindings](https://github.com/LucaVignati/burg
     git clone https://github.com/LucaVignati/burg-python-bindings.git
     cd burg-python-bindings
     python setup.py install
+    cd ..
 ```
 
 Clone and install the [cpp_plc_template](https://github.com/LucaVignati/cpp_plc_template):
@@ -64,6 +67,7 @@ Clone and install the [cpp_plc_template](https://github.com/LucaVignati/cpp_plc_
     git clone https://github.com/LucaVignati/cpp_plc_template.git
     cd cpp_plc_template
     python setup.py install
+    cd ..
 ```
 
 If you want to use the PEAQ metric, you also need to install the GSTREAMER library and the PEAQ plugin:
@@ -72,7 +76,20 @@ If you want to use the PEAQ metric, you also need to install the GSTREAMER libra
     mkdir gstpeaq && git clone https://github.com/HSU-ANT/gstpeaq.git gstpeaq
     cd gstpeaq
     aclocal && autoheader && ./autogen.sh && sed -i 's/SUBDIRS = src doc/SUBDIRS = src/' Makefile.am && ./configure --libdir=/usr/lib && automake && make && make install
+    cd ..
 ```
+
+If you want to use the HumanCalculator metric, you also need to install webMUSHRA and pyMUSHRA:
+```bash
+    mkdir listening_tests && cd listening_tests
+    mkdir db
+    git clone https://github.com/audiolabs/webMUSHRA.git webmushra
+    git clone https://github.com/nils-werner/pymushra.git pymushra
+    pip install -e pymushra
+    cd ..
+```
+
+## Basic Usage
 
 The file `plctestbench.ipynb` contains a Jupyter Notebook with a basic example of how to use the tool.
 
