@@ -225,12 +225,12 @@ class PerceptualCalculator(OutputAnalyser):
 
         spectrograms = [{'idx': idx, **pm.spectrogram(original[:, 0], reconstructed[:, 0])} for idx, original, reconstructed in self.progress_monitor(zip(intorni_original[0], intorni_original[1], intorni_reconstructed[1]), total=len(intorni_original[1]), desc=str(self))]
 
-        to_file_idx = 47300
-        # Save as an audio file the intorni_original[1] associated to intorni_original[0] == to_file_idx
-        if any([idx == to_file_idx for idx in intorni_original[0]]):
-            idx = intorni_original[0].index(to_file_idx)
-            intorno = intorni_original[1][idx]
-            sf.write(f"intorno_original{intorni_original[0][idx]}.wav", intorno, self.fs)
+        # to_file_idx = 47300
+        # # Save as an audio file the intorni_original[1] associated to intorni_original[0] == to_file_idx
+        # if any([idx == to_file_idx for idx in intorni_reconstructed[0]]):
+        #     idx = intorni_reconstructed[0].index(to_file_idx)
+        #     intorno = intorni_reconstructed[1][idx]
+        #     sf.write(f"intorno_original{intorni_reconstructed[0][idx]}.wav", intorno, self.fs)
         
         metric = np.zeros(len(original_track_node.get_data())//self.packet_size)
 
