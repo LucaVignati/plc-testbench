@@ -7,6 +7,7 @@ from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile, DataFile
 from .utils import dummy_progress_bar, extract_intorni, force_single_loss_per_stimulus, relative_to_root, is_loud_enough
 from .perceptual_metric import *
 from .listening_tests import ListeningTest
+import soundfile as sf
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -197,6 +198,7 @@ class PerceptualCalculator(OutputAnalyser):
         self.n_bins = self.settings.get("n_bins")
         self.minimum_window = self.settings.get("minimum_window")
         self.masking = self.settings.get("masking")
+        self.masking_offset = self.settings.get("masking_offset")
         self.db_weighting = self.settings.get("db_weighting")
         self.metric = self.settings.get("metric")
 
@@ -217,16 +219,18 @@ class PerceptualCalculator(OutputAnalyser):
                               self.intorno_length,
                               self.linear_mag,
                               self.masking,
+                              self.masking_offset,
                               self.db_weighting,
                               self.metric)
 
         spectrograms = [{'idx': idx, **pm.spectrogram(original[:, 0], reconstructed[:, 0])} for idx, original, reconstructed in self.progress_monitor(zip(intorni_original[0], intorni_original[1], intorni_reconstructed[1]), total=len(intorni_original[1]), desc=str(self))]
 
-        # Save as an audio file the intorni_original[1] associated to intorni_original[0] == 6800
-        # if any([idx == 6800 for idx in intorni_original[0]]):
-        #     idx = intorni_original[0].index(6800)
-        #     intorno = intorni_original[1][idx]
-        #     sf.write(f"intorno_original{intorni_original[0][idx]}.wav", intorno, self.fs)
+        to_file_idx = 47300
+        # Save as an audio file the intorni_original[1] associated to intorni_original[0] == to_file_idx
+        if any([idx == to_file_idx for idx in intorni_original[0]]):
+            idx = intorni_original[0].index(to_file_idx)
+            intorno = intorni_original[1][idx]
+            sf.write(f"intorno_original{intorni_original[0][idx]}.wav", intorno, self.fs)
         
         metric = np.zeros(len(original_track_node.get_data())//self.packet_size)
 

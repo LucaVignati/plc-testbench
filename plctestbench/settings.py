@@ -851,6 +851,7 @@ class PerceptualCalculatorSettings(Settings):
                        n_bins: int = 100,
                        minimum_window: int = 128,
                        masking: bool = True,
+                       masking_offset: int = 0,
                        db_weighting: str = '',
                        metric: str = '') -> None:
         super().__init__()
@@ -863,6 +864,7 @@ class PerceptualCalculatorSettings(Settings):
         self.settings["n_bins"] = n_bins
         self.settings["minimum_window"] = minimum_window
         self.settings["masking"] = masking
+        self.settings["masking_offset"] = masking_offset
         self.settings["db_weighting"] = db_weighting
         self.settings["metric"] = metric
 

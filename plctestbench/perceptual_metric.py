@@ -10,6 +10,10 @@ import plotly.graph_objects as go
 from brian2hears import LogGammachirp, RestructureFilterbank, AsymmetricCompensation, asymmetric_compensation_coeffs, ControlFilterbank, erbspace, Sound
 from brian2 import Hz, kHz, ms, log10, mean, diff, asarray, minimum, maximum, arange, exp, log
 
+import cProfile
+import pstats
+import io
+
 def S1dataset_generateTFmaskfunc(center_f, f_axis, ERBspac=1, timespac=0.001, varargin=[8]):
     
     def freq_to_erb(freq):
@@ -247,6 +251,7 @@ class PerceptualMetric(object):
                        intorno_length: int,
                        linear_mag: bool,
                        masking: bool,
+                       masking_offset: int,
                        db_weighting: str,
                        metric: str) -> None:
         self.min_frequency = min_frequency
@@ -273,6 +278,7 @@ class PerceptualMetric(object):
         self.intorno_length = intorno_length
         self.linear_mag = linear_mag
         self.masking = masking
+        self.masking_offset = masking_offset
         self.db_weighting = db_weighting
         self.metric = metric
         
@@ -300,7 +306,22 @@ class PerceptualMetric(object):
             freq_axis = librosa.cqt_frequencies(spectrogram_original_db.shape[0], fmin=self.min_frequency, bins_per_octave=self.bins_per_octave)
 
             if self.masking:
-                mask = apply_masking_to_cqt(spectrogram_original_db, freq_axis, self.fs, self.intorno_length)
+                # Profile the function
+                # pr = cProfile.Profile()
+                # pr.enable()
+
+                mask = apply_masking_to_cqt(spectrogram_original_db, freq_axis, self.fs, self.intorno_length) + self.masking_offset
+
+                # pr.disable()
+                
+                # Collect profiling results
+                # s = io.StringIO()
+                # sortby = 'cumulative'
+                # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+                # ps.print_stats()
+
+                # Output profiling results
+                # print(s.getvalue())
 
                 spectrogram_difference_masked = np.where(spectrogram_difference_db < mask, 0, spectrogram_difference)
                 spectrogram_difference_masked_mag = np.abs(spectrogram_difference_masked)
