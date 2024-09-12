@@ -98,55 +98,88 @@ class ListeningTest(object):
       "pages": []
     }
 
+    iterations = self.settings.get("iterations")
     # Generate the first page with the examples
     explanation = {
       "type": "generic",
       "id": "Explanation",
       "name": "Instructions",
-      "content": f'The goal of this test is to assess how audible audio glitches are in an audio signal. \
-                You will be presented with two 3-second unlabeled audio tracks in each of the {len(self.references)} listening sessions. \
-                One track is the unaltered audio, and the other contains a glitch. \
-                You need to assign each track one of four scores: "Not at all", "Barely", "A bit", "Much" representing how audible the glitch was. \
+      "content": f'\
+                <h2>Requirements</h2>\
+                <p>For this test you will need a pair of Beyerdynamic DT770 PRO headphones, a good audio interface (avoid Behringer) and a quiet environment.</p>\
+                <h2>Explanation</h2>\
+                The goal of this test is to assess how audible audio glitches are in an audio signal.<br>\
+                You will be presented with {self.settings.get("stimuli_per_page")+2} 3-second unlabeled audio tracks in each of the {self.settings.get("pages")*iterations} listening sessions.<br>\
+                You need to assign each track a score between 0 and 100 representing how audible the glitch was.<br>\
+                The scale is divided into the following five sections: "Not at all", "Barely", "A bit", "Much", and "Very Much".\
+\
                   <h2>Audio Examples</h2>\
-                  <h3>Not at all</h3>\
-                  <audio controls>\
-                      <source src="configs/resources/audio/example_not_at_all_1_stim.wav" type="audio/wav">\
-                      Your browser does not support the audio element.\
-                  </audio>\
-                  <audio controls>\
-                      <source src="configs/resources/audio/example_not_at_all_2_ref.wav" type="audio/wav">\
-                      Your browser does not support the audio element.\
-                  </audio>\
-\
-                  <h3>Barely</h3>\
-                  <audio controls>\
-                      <source src="configs/resources/audio/example_barely_1_stim.wav" type="audio/wav">\
-                      Your browser does not support the audio element.\
-                  </audio>\
-                  <audio controls>\
-                      <source src="configs/resources/audio/example_barely_2_stim.wav" type="audio/wav">\
-                      Your browser does not support the audio element.\
-                  </audio>\
-\
-                  <h3>A bit</h3>\
-                  <audio controls>\
-                      <source src="configs/resources/audio/example_a_bit_1_stim.wav" type="audio/wav">\
-                      Your browser does not support the audio element.\
-                  </audio>\
-                  <audio controls>\
-                      <source src="configs/resources/audio/example_a_bit_2_stim.wav" type="audio/wav">\
-                      Your browser does not support the audio element.\
-                  </audio>\
-\
-                  <h3>Much</h3>\
-                  <audio controls>\
-                      <source src="configs/resources/audio/example_much_1_stim.wav" type="audio/wav">\
-                      Your browser does not support the audio element.\
-                  </audio>\
-                  <audio controls>\
-                      <source src="configs/resources/audio/example_much_2_stim.wav" type="audio/wav">\
-                      Your browser does not support the audio element.\
-                  </audio>'
+                  Below you can find some examples of the audio tracks you will be presented with.<br>\
+                  Listen carefully to the examples to understand the scale.<br>\
+                <table>\
+                  <tr>\
+                    <th></th>\
+                    <th>Cello</th>\
+                    <th>Piano</th>\
+                  </tr>\
+                  <tr>\
+                    <td>Not at all</td>\
+                    <td>\
+                      <audio controls>\
+                          <source src="configs/resources/audio/example_not_at_all_1_stim.wav" type="audio/wav">\
+                          Your browser does not support the audio element.\
+                      </audio>\
+                    </td>\
+                    <td>\
+                      <audio controls>\
+                          <source src="configs/resources/audio/example_not_at_all_2_ref.wav" type="audio/wav">\
+                          Your browser does not support the audio element.\
+                      </audio>\
+                    </td>\
+                  </tr>\
+                  <tr>\
+                    <td>A bit</td>\
+                    <td>\
+                      <audio controls>\
+                          <source src="configs/resources/audio/example_a_bit_1_stim.wav" type="audio/wav">\
+                          Your browser does not support the audio element.\
+                      </audio>\
+                    </td>\
+                    <td>\
+                      <audio controls>\
+                          <source src="configs/resources/audio/example_a_bit_2_stim.wav" type="audio/wav">\
+                          Your browser does not support the audio element.\
+                      </audio>\
+                    </td>\
+                  </tr>\
+                  <tr>\
+                    <td>Very Much</td>\
+                    <td>\
+                      <audio controls>\
+                          <source src="configs/resources/audio/example_very_much_1_stim.wav" type="audio/wav">\
+                          Your browser does not support the audio element.\
+                      </audio>\
+                    </td>\
+                    <td>\
+                      <audio controls>\
+                          <source src="configs/resources/audio/example_very_much_2_stim.wav" type="audio/wav">\
+                          Your browser does not support the audio element.\
+                      </audio>\
+                    </td>\
+                  </tr>\
+                </table>\
+                <style>\
+                    table {{\
+                        margin-left: auto;\
+                        margin-right: auto;\
+                        border-collapse: collapse;\
+                    }}\
+                    th, td {{\
+                        border: 0px solid black;\
+                        padding: 10px;\
+                        text-align: center;\
+                    }}\
+                </style>'
     }
     config["pages"].append(explanation)
 
@@ -191,7 +224,7 @@ class ListeningTest(object):
     reference = self.audio_folder.joinpath(self.settings.get("reference"))
     anchor = self.audio_folder.joinpath(self.settings.get("anchor"))
     randomized_pages = ["random"]
-    page_content = "<p>IMPORTANT: When you press play on a stimulus, let it play till the end or hit pause. If you press play on another stimulus before the first finished, a glitch will be produced and the test will be invalid.</p>Please rate the audibility of the glitch in the following audio pairs. Only one of them contains a glitch. How much can you hear it?"
+    page_content = "<p>IMPORTANT: When you press play on a stimulus, let it play till the end or hit pause. If you press play on another stimulus before the first finished, a glitch will be produced and the test will be invalid.</p>Please rate the audibility of the glitch in the following audio examples. How much can you hear it?"
     s = self.settings.get("stimuli_per_page")
     page_data = [(self.indexes[i:i+s], self.stimuli[i:i+s]) for i in range(0, len(self.references), s)]
     for data in page_data:
@@ -221,7 +254,7 @@ class ListeningTest(object):
       <p>Please take 5 minutes of rest from this trial. Take off your headphones and chill for a while.</p>"
     }
 
-    for _ in range(self.settings.get("iterations")):
+    for _ in range(iterations):
       config["pages"].append(copy.deepcopy(randomized_pages))
       config["pages"].append(copy.deepcopy(pause))
     config["pages"].pop()
