@@ -366,6 +366,7 @@ class ListeningTest(object):
       df = df[~df['id'].str.contains('anchor|reference')]
       df = df.reset_index(drop=True)
       df['id'] = df['id'].str.split('-').str[-1]
+      self.results = df
 
       # Group by id, calculate mean and std
       result = df.groupby('id').agg({
