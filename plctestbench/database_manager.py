@@ -16,6 +16,9 @@ class DatabaseManager(metaclass=Singleton):
     def __init__(self, ip: str = None, port: int = None, username: str = None, password: str = None, user: dict = None, conn_string: str = None) -> None:
         if (ip is None or port is None or username is None or password is None or user is None) and conn_string is None:
             raise Exception("DatabaseManager: missing parameters")
+        self._init_client(ip, port, username, password, user)
+
+    def _init_client(self, ip: str = None, port: int = None, username: str = None, password: str = None, user: dict = None, conn_string: str = None) -> None:
         self.username = username
         self.password = password
         self.email = escape_email(user['email'])
