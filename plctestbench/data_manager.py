@@ -2,7 +2,7 @@ import typing
 import datetime
 from anytree import LevelOrderIter, search
 from .path_manager import PathManager
-from .database_manager import DatabaseManager
+from .database_manager import DatabaseManager, MongoDatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .settings import Settings
 from .utils import get_class, compute_hash, progress_monitor
@@ -29,7 +29,7 @@ class DataManager(object):
         self.progress_monitor = testbench_settings['progress_monitor'] if 'progress_monitor' in testbench_settings.keys() else progress_monitor
         
         self.path_manager = PathManager(root_folder)
-        self.database_manager = DatabaseManager(ip=db_ip, port=db_port, username=db_username, password=db_password, user=self.user, conn_string=db_conn_string)
+        self.database_manager = MongoDatabaseManager(ip=db_ip, port=db_port, username=db_username, password=db_password, user=self.user, conn_string=db_conn_string)
         self.root_nodes = []
         self.worker_classes = []
         self.node_classes = [

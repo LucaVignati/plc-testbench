@@ -1,10 +1,11 @@
 from pathlib import Path
+from abc import ABCMeta, abstractmethod
 import pymongo
 from pymongo import MongoClient
 from plctestbench.node import Node
 from plctestbench.utils import escape_email
 
-class Singleton (type):
+class Singleton (ABCMeta):
     _instances = {}
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
@@ -12,6 +13,69 @@ class Singleton (type):
         return cls._instances[cls]
   
 class DatabaseManager(metaclass=Singleton):
+
+    def __init__(self, ip: str = None, port: int = None, username: str = None, password: str = None, user: dict = None, conn_string: str = None) -> None:
+        if (ip is None or port is None or username is None or password is None or user is None) and conn_string is None:
+            raise Exception("DatabaseManager: missing parameters")
+        self._init_client(ip, port, username, password, user)
+
+    @abstractmethod
+    def _init_client(self, ip: str = None, port: int = None, username: str = None, password: str = None, user: dict = None, conn_string: str = None) -> None:
+        pass
+
+    @abstractmethod
+    def get_database(self):
+        pass
+
+    @abstractmethod
+    def add_node(self, entry, collection_name):
+        pass
+
+    @abstractmethod
+    def find_node(self, node_id, collection_name):
+        pass
+
+    @abstractmethod
+    def delete_node(self, node_id):
+        pass
+
+    @abstractmethod
+    def save_run(self, run):
+        pass
+
+    @abstractmethod
+    def get_run(self, run_id):
+        pass
+
+    @abstractmethod
+    def set_run_status(self, run_id, status):
+        pass
+
+    @abstractmethod
+    def delete_run(self, run_id):
+        pass
+
+    @abstractmethod
+    def save_user(self, user):
+        pass
+
+    @abstractmethod
+    def delete_user(self, email):
+        pass
+
+    @abstractmethod
+    def get_child_collection(self, collection_name):
+        pass
+ 
+    @abstractmethod   
+    def get_collection(self, node_id):
+        pass
+
+    @abstractmethod
+    def _check_if_already_initialized(self) -> None:
+        pass
+  
+class MongoDatabaseManager(DatabaseManager):
 
     def __init__(self, ip: str = None, port: int = None, username: str = None, password: str = None, user: dict = None, conn_string: str = None) -> None:
         if (ip is None or port is None or username is None or password is None or user is None) and conn_string is None:
