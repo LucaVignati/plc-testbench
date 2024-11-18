@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 import pymongo
 from pymongo import MongoClient
 from tinydb import TinyDB, where, operations
+from tempfile import NamedTemporaryFile
 from datetime import datetime
 from plctestbench.node import Node
 from plctestbench.utils import escape_email
@@ -25,59 +26,59 @@ class DatabaseManager(metaclass=Singleton):
 
     @abstractmethod
     def _init_client(self, ip: str = None, port: int = None, username: str = None, password: str = None, user: dict = None, conn_string: str = None) -> None:
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def get_database(self):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def add_node(self, entry, collection_name):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def find_node(self, node_id, collection_name):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def delete_node(self, node_id):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def save_run(self, run):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def get_run(self, run_id):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def set_run_status(self, run_id, status):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def delete_run(self, run_id):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def save_user(self, user):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def delete_user(self, email):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def get_child_collection(self, collection_name):
-        pass
+        raise NotImplementedError('To be overridden!')
  
     @abstractmethod   
     def get_collection(self, node_id):
-        pass
+        raise NotImplementedError('To be overridden!')
 
     @abstractmethod
     def _check_if_already_initialized(self) -> None:
-        pass
+        raise NotImplementedError('To be overridden!')
   
 class MongoDatabaseManager(DatabaseManager):
 
@@ -216,18 +217,15 @@ class MongoDatabaseManager(DatabaseManager):
 class TinyDBDatabaseManager(DatabaseManager):
 
     def _init_client(self, *args) -> None:
-        self._DB_FILE_EXT = ".json"
         self.client: dict[str, TinyDB] = {}
 
-    def _get_db_key(self, key: str) -> str:
-        return f"{key}{self._DB_FILE_EXT}"
-
-    def get_database(self, db: str = None):
-        if db is None:
-            db = self.email
-        if db not in self.client:
-            self.client[db] = TinyDB(self._get_db_key(db))
-        return self.client[db]
+    def get_database(self, db_name: str = None):
+        if db_name is None:
+            db_name = self.email
+        if db_name not in self.client:
+            with NamedTemporaryFile(prefix=f"{db_name}_", suffix=".json", delete=False) as tmp:
+                self.client[db_name] = TinyDB(tmp.name)
+        return self.client[db_name]
 
     def add_node(self, entry, collection_name: str):
         '''
