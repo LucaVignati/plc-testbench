@@ -2,7 +2,7 @@ import typing
 import datetime
 from anytree import LevelOrderIter, search
 from .path_manager import PathManager
-from .database_manager import DatabaseManager, MongoDatabaseManager
+from .database_manager import MongoDatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .settings import Settings
 from .utils import get_class, compute_hash, progress_monitor
