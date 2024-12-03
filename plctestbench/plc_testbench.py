@@ -2,6 +2,10 @@ from anytree import LevelOrderIter
 
 from .data_manager import DataManager
 from .plot_manager import PlotManager
+from .node import OriginalTrackNode
+from .loss_simulator import PacketLossSimulator
+from .settings import Settings
+from .models import TestbenchSettings
 
 
 class PLCTestbench(object):
@@ -10,11 +14,11 @@ class PLCTestbench(object):
     initialising the testing components and running the testbench.
     '''
 
-    def __init__(self, original_audio_tracks: list = None,
-                 packet_loss_simulators: list = None,
-                 plc_algorithms: list = None,
+    def __init__(self, original_audio_tracks: list[tuple[OriginalTrackNode, Settings]] = None,
+                 packet_loss_simulators: list[tuple[PacketLossSimulator, Settings]] = None,
+                 plc_algorithms: list[tuple[PacketLossSimulator, Settings]] = None,
                  output_analysers: list = None,
-                 testbench_settings: dict = None,
+                 testbench_settings: TestbenchSettings = None,
                  user: dict = None,
                  run_id: int = None):
         '''

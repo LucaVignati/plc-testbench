@@ -5,17 +5,10 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator as RGI
 import librosa
 from matplotlib import pyplot as plt
-try:
-    from essentia.standard import NSGConstantQ
-    import plotly.graph_objects as go
-    from brian2hears import LogGammachirp, RestructureFilterbank, AsymmetricCompensation, asymmetric_compensation_coeffs, ControlFilterbank, erbspace, Sound
-    from brian2 import Hz, kHz, ms, log10, mean, diff, asarray, minimum, maximum, arange, exp, log
-except ImportError:
-    print("nope")
-
-import cProfile
-import pstats
-import io
+from essentia.standard import NSGConstantQ
+import plotly.graph_objects as go
+from brian2hears import LogGammachirp, RestructureFilterbank, AsymmetricCompensation, asymmetric_compensation_coeffs, ControlFilterbank, erbspace, Sound
+from brian2 import Hz, kHz, ms, log10, mean, diff, asarray, minimum, maximum, arange, exp, log
 
 def S1dataset_generateTFmaskfunc(center_f, f_axis, ERBspac=1, timespac=0.001, varargin=[8]):
     

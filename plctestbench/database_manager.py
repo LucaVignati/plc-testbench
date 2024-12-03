@@ -5,8 +5,11 @@ from pymongo import MongoClient
 from tinydb import TinyDB, where, operations
 from tempfile import NamedTemporaryFile
 from datetime import datetime
-from plctestbench.node import Node
-from plctestbench.utils import escape_email
+from typing import Any
+
+from .node import Node
+from .models import Run, RunStatus
+from .utils import escape_email
 
 class Singleton (ABCMeta):
     _instances = {}
@@ -45,19 +48,19 @@ class DatabaseManager(metaclass=Singleton):
         raise NotImplementedError('To be overridden!')
 
     @abstractmethod
-    def save_run(self, run):
+    def save_run(self, run: Run) -> None:
         raise NotImplementedError('To be overridden!')
 
     @abstractmethod
-    def get_run(self, run_id):
+    def get_run(self, run_id: str) -> Run:
         raise NotImplementedError('To be overridden!')
 
     @abstractmethod
-    def set_run_status(self, run_id, status):
+    def set_run_status(self, run_id: str, status: RunStatus) -> None:
         raise NotImplementedError('To be overridden!')
 
     @abstractmethod
-    def delete_run(self, run_id):
+    def delete_run(self, run_id: str) -> None:
         raise NotImplementedError('To be overridden!')
 
     @abstractmethod
@@ -139,7 +142,7 @@ class MongoDatabaseManager(DatabaseManager):
         database[collection_name].delete_one({"_id": node_id})
         database['runs'].update_many({}, {"$pull": {'nodes': {"_id": node_id}}})
 
-    def save_run(self, run):
+    def save_run(self, run: Run) -> None:
         '''
         This function is used to save a run to the database.
         '''
@@ -149,21 +152,21 @@ class MongoDatabaseManager(DatabaseManager):
         except pymongo.errors.DuplicateKeyError:
             print("Run already exists in the database.")
 
-    def get_run(self, run_id):
+    def get_run(self, run_id: str) -> Run:
         '''
         This function is used to retrieve a run from the database.
         '''
         database = self.get_database()
         return database["runs"].find_one({"_id": run_id})
 
-    def set_run_status(self, run_id, status):
+    def set_run_status(self, run_id: str, status: RunStatus) -> None:
         '''
         This function is used to set the status of a run in the database.
         '''
         database = self.get_database()
         database["runs"].update_one({"_id": run_id}, {"$set": {"status": status}})
 
-    def delete_run(self, run_id):
+    def delete_run(self, run_id: str) -> None:
         '''
         This function is used to delete a run from the database.
         '''
@@ -264,28 +267,28 @@ class TinyDBDatabaseManager(DatabaseManager):
             updated_nodes = [node for node in doc['nodes'] if node['_id'] != node_id]
             database.table(collection_name).update({'nodes': updated_nodes}, where("_id") == node_id)
 
-    def save_run(self, run):
+    def save_run(self, run: Run) -> None:
         '''
         This function is used to save a run to the database.
         '''
         database = self.get_database()
         database.table("runs").insert(self._serialize_run(run))
 
-    def get_run(self, run_id):
+    def get_run(self, run_id: str) -> Run:
         '''
         This function is used to retrieve a run from the database.
         '''
         database = self.get_database()
         return self._deserialize_run(database.table("runs").get(where("_id") == run_id))
 
-    def set_run_status(self, run_id, status):
+    def set_run_status(self, run_id: str, status: RunStatus) -> None:
         '''
         This function is used to set the status of a run in the database.
         '''
         database = self.get_database()
         database.table("runs").update(operations.set("status", status), where("_id") == run_id)
 
-    def delete_run(self, run_id):
+    def delete_run(self, run_id: str) -> None:
         '''
         This function is used to delete a run from the database.
         '''
@@ -337,10 +340,10 @@ class TinyDBDatabaseManager(DatabaseManager):
             if [doc["child_collection"] for doc in self.get_database().table(collection).all()] != []:
                 self.initialized |= True
     
-    def _serialize_run(self, run):
-        run["created_on"] = run["created_on"].isoformat()
-        return run
+    def _serialize_run(self, run: Run) -> dict[str, Any]:
+        run.created_on = run.created_on.isoformat()
+        return run.asdict()
 
-    def _deserialize_run(self, run):
-        run["created_on"] = datetime.fromisoformat(run["created_on"])
-        return run
+    def _deserialize_run(self, run: dict[str, Any]) -> Run:
+        run.created_on = datetime.fromisoformat(run.created_on)
+        return 

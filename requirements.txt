@@ -1,4 +1,4 @@
-numpy
+numpy<2
 soundfile
 anytree
 pybind11
@@ -8,4 +8,9 @@ matplotlib
 tensorflow
 librosa
 typing_inspect
-raumel.yaml
+ruamel.yaml
+tinydb
+essentia
+brian2
+brian2hears
+plotly

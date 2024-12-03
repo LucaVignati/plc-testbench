@@ -2,15 +2,16 @@ import typing
 import datetime
 from anytree import LevelOrderIter, search
 from .path_manager import PathManager
-from .database_manager import MongoDatabaseManager
+from .database_manager import TinyDBDatabaseManager
 from .node import ReconstructedTrackNode, LostSamplesMaskNode, Node, OriginalTrackNode, OutputAnalysisNode
 from .settings import Settings
 from .utils import get_class, compute_hash, progress_monitor
+from .models import Run, RunStatus, TestbenchSettings
 
 
 class DataManager(object):
 
-    def __init__(self, testbench_settings: dict, user: dict = None) -> None:
+    def __init__(self, testbench_settings: TestbenchSettings, user: dict = None) -> None:
         '''
         This class manages the data flow in and out of the data tree.
 
@@ -20,16 +21,16 @@ class DataManager(object):
                                 folder paths.
         '''
         self.user = user if user is not None else {'email': 'default', 'first_name': 'Mario', 'last_name': 'Rossi', 'locale': 'it_IT', 'image_link': ''}
-        root_folder = testbench_settings['root_folder'] if 'root_folder' in testbench_settings.keys() else None
-        db_ip = testbench_settings['db_ip'] if 'db_ip' in testbench_settings.keys() else None
-        db_port = int(testbench_settings['db_port']) if 'db_port' in testbench_settings.keys() else 27017
-        db_username = testbench_settings['db_username'] if 'db_username' in testbench_settings.keys() else None
-        db_password = testbench_settings['db_password'] if 'db_password' in testbench_settings.keys() else None
-        db_conn_string = testbench_settings['db_conn_string'] if 'db_conn_string' in testbench_settings.keys() else None
-        self.progress_monitor = testbench_settings['progress_monitor'] if 'progress_monitor' in testbench_settings.keys() else progress_monitor
+        root_folder = testbench_settings.root_folder if 'root_folder' in testbench_settings.__dict__.keys() else None
+        db_ip = testbench_settings.db_ip if 'db_ip' in testbench_settings.__dict__.keys() else None
+        db_port = int(testbench_settings.db_port) if 'db_port' in testbench_settings.__dict__.keys() else 27017
+        db_username = testbench_settings.db_username if 'db_username' in testbench_settings.__dict__.keys() else None
+        db_password = testbench_settings.db_password if 'db_password' in testbench_settings.__dict__.keys() else None
+        db_conn_string = testbench_settings.db_conn_string if 'db_conn_string' in testbench_settings.__dict__.keys() else None
+        self.progress_monitor = testbench_settings.progress_monitor if 'progress_monitor' in testbench_settings.__dict__.keys() else progress_monitor
         
         self.path_manager = PathManager(root_folder)
-        self.database_manager = MongoDatabaseManager(ip=db_ip, port=db_port, username=db_username, password=db_password, user=self.user, conn_string=db_conn_string)
+        self.database_manager = TinyDBDatabaseManager(ip=db_ip, port=db_port, username=db_username, password=db_password, user=self.user, conn_string=db_conn_string)
         self.root_nodes = []
         self.worker_classes = []
         self.node_classes = [
@@ -46,7 +47,7 @@ class DataManager(object):
         '''
         Run the testbench.
         '''
-        self._set_run_status('RUNNING')
+        self._set_run_status(RunStatus.RUNNNING)
         try:
             for root_node in self.progress_monitor(self)(self.root_nodes, desc="Audio Tracks"):
                 for node in LevelOrderIter(root_node):
@@ -55,8 +56,8 @@ class DataManager(object):
             print("Simulation interrupted by user.")
             return
         finally:
-            self._set_run_status('FAILED')
-        self._set_run_status('COMPLETED')
+            self._set_run_status(RunStatus.FAILED)
+        self._set_run_status(RunStatus.COMPLETED)
 
     def set_workers(self, original_audio_tracks: list,
                           packet_loss_simulators: list,
@@ -96,7 +97,7 @@ class DataManager(object):
         '''
         self._recursive_tree_init()
         self._save_run_to_database()
-        return self.run['_id']
+        return self.run._id
 
     def _recursive_tree_init(self, parent: Node = None, idx: int = 0):
         '''
@@ -117,7 +118,6 @@ class DataManager(object):
         worker_class = self.worker_classes[idx]
         node_class = self.node_classes[idx]
         for worker, settings in worker_class:
-            # if isinstance(settings, tuple):
                 
             settings.set_progress_monitor(self.progress_monitor)
             folder_name, absolute_path = self.path_manager.get_node_paths(worker, settings, parent)
@@ -131,36 +131,36 @@ class DataManager(object):
     def _save_run_to_database(self):
         '''
         This function is used to save the run as a document in the database.
-        '''
-        self.run = {}
-        run_id = ''
-        self.run['workers'] = []
+        ''' 
+        self.run: Run = Run()
+        run_id: str = ''
+        self.run.workers = []
         for worker_class in self.worker_classes:
             workers = []
             for worker, settings in worker_class:
                 workers.append({"name": worker.__name__, "settings": settings.to_dict()})
-            self.run['workers'].append(workers)
+            self.run.workers.append(workers)
 
-        self.run['nodes'] = []
+        self.run.nodes = []
         for root_node in self.root_nodes:
-            self.run['nodes'].extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
+            self.run.nodes.extend([{"_id": node.get_id()} for node in list(LevelOrderIter(root_node))])
 
-        for node in self.run['nodes']:
+        for node in self.run.nodes:
             run_id += str(node['_id'])
 
-        self.run['_id'] = str(compute_hash(run_id))
-        self.run['creator'] = self.user['email']
-        self.run['created_on'] = datetime.datetime.now()
-        self.run['status'] = 'CREATED'
+        self.run._id = str(compute_hash(run_id))
+        self.run.creator = self.user['email']
+        self.run.created_on = datetime.datetime.now()
+        self.run.status = RunStatus.CREATED
         self.database_manager.save_run(self.run)
 
     def load_workers_from_database(self, run_id: int):
         '''
         This function is used to load the workers from the database.
         '''
-        run = self.database_manager.get_run(run_id)
+        run: Run = self.database_manager.get_run(run_id)
         self.worker_classes = []
-        for worker_type in run['workers']:
+        for worker_type in run.workers:
             workers = []
             for worker in worker_type:
                 settings = Settings(worker['settings'])
@@ -172,7 +172,7 @@ class DataManager(object):
         '''
         This function is used to set the state of the run in the database.
         '''
-        self.database_manager.set_run_status(self.run['_id'], state)
+        self.database_manager.set_run_status(self.run._id, state)
 
     def get_nodes_by_depth(self, depth: int) -> typing.Tuple:
         '''
