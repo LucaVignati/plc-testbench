@@ -1,9 +1,18 @@
 from math import ceil
 import librosa
 import numpy as np
-from burg_plc import BurgBasic
-from cpp_plc_template import BasePlcTemplate
-import tensorflow as tf
+try:
+    from burg_plc import BurgBasic
+except ImportError:
+    print("Burg PLC unavailable")
+try:
+    from cpp_plc_template import BasePlcTemplate
+except ImportError:
+    print("External PLC unavailable")
+try:
+    import tensorflow as tf
+except ImportError:
+    print("Deep learning features unavailable")
 from plctestbench.worker import Worker
 from .settings import Settings, StereoImageType
 from .low_cost_concealment import LowCostConcealment
@@ -349,8 +358,6 @@ class DeepLearningPLC(PLCAlgorithm):
         context = librosa.resample(self.context.T, orig_sr=self.sample_rate, target_sr=self.fs_dl).T
         for channel_index in range(np.shape(buffer)[1]):
             spectrogram_2s = self._compute_spectrogram(context[-round(self.context_length_samples/4):, channel_index], self.fs_dl)
-            #spectrogram_4s = self._compute_spectrogram(librosa.resample(context[-round(self.context_length_samples/2):, channel_index], orig_sr=self.fs_dl, target_sr=self.fs_dl/2), self.fs_dl/2)
-            #spectrogram_8s = self._compute_spectrogram(librosa.resample(context[:, channel_index], orig_sr=self.fs_dl, target_sr=self.fs_dl/4), self.fs_dl/4)
             spectrograms = np.expand_dims(spectrogram_2s, axis=0)
             last_packet = np.expand_dims(context[-self.packet_size:, channel_index], axis=0)
             reconstructed_buffer[channel_index, :] = self.model((spectrograms, last_packet))

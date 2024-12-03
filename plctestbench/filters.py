@@ -1,8 +1,9 @@
 from scipy.signal import iirfilter, sosfilt
 from .utils import force_2d
 
+
 class LinkwitzRileyFilter:
-    def __init__(self, order, cutoff_frequency, sampling_rate, type='low'):
+    def __init__(self, order, cutoff_frequency, sampling_rate, type="low"):
         self.order = order
         self.cutoff_frequency = cutoff_frequency
         self.sampling_rate = sampling_rate
@@ -11,20 +12,33 @@ class LinkwitzRileyFilter:
 
     def _design_filter(self):
         nyquist_frequency = 0.5 * float(self.sampling_rate)
-        normalized_cutoff_frequency = float(self.cutoff_frequency) / float(nyquist_frequency)
-        sos = iirfilter(N=self.order, Wn=normalized_cutoff_frequency, btype=self.type, ftype='butter', output='sos')
+        normalized_cutoff_frequency = float(self.cutoff_frequency) / float(
+            nyquist_frequency
+        )
+        sos = iirfilter(
+            N=self.order,
+            Wn=normalized_cutoff_frequency,
+            btype=self.type,
+            ftype="butter",
+            output="sos",
+        )
         return sos
 
     def filter(self, data):
         return force_2d(sosfilt(self.sos, data))
-    
+
+
 class LinkwitzRileyCrossover:
     def __init__(self, order, cutoff_frequency, sampling_rate):
         self.order = order
         self.cutoff_frequency = cutoff_frequency
         self.sampling_rate = sampling_rate
-        self.hp_filter = LinkwitzRileyFilter(self.order, self.cutoff_frequency, self.sampling_rate, type='high')
-        self.lp_filter = LinkwitzRileyFilter(self.order, self.cutoff_frequency, self.sampling_rate, type='low')
+        self.hp_filter = LinkwitzRileyFilter(
+            self.order, self.cutoff_frequency, self.sampling_rate, type="high"
+        )
+        self.lp_filter = LinkwitzRileyFilter(
+            self.order, self.cutoff_frequency, self.sampling_rate, type="low"
+        )
 
     def split(self, data):
         hp_data = self.hp_filter.filter(data)

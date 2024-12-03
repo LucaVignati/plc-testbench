@@ -9,19 +9,22 @@ from .models import TestbenchSettings
 
 
 class PLCTestbench(object):
-    '''
+    """
     This class is the main class of the testbench. It is responsible for
     initialising the testing components and running the testbench.
-    '''
+    """
 
-    def __init__(self, original_audio_tracks: list[tuple[OriginalTrackNode, Settings]] = None,
-                 packet_loss_simulators: list[tuple[PacketLossSimulator, Settings]] = None,
-                 plc_algorithms: list[tuple[PacketLossSimulator, Settings]] = None,
-                 output_analysers: list = None,
-                 testbench_settings: TestbenchSettings = None,
-                 user: dict = None,
-                 run_id: int = None):
-        '''
+    def __init__(
+        self,
+        original_audio_tracks: list[tuple[OriginalTrackNode, Settings]] = None,
+        packet_loss_simulators: list[tuple[PacketLossSimulator, Settings]] = None,
+        plc_algorithms: list[tuple[PacketLossSimulator, Settings]] = None,
+        output_analysers: list = None,
+        testbench_settings: TestbenchSettings = None,
+        user: dict = None,
+        run_id: int = None,
+    ):
+        """
         Initialise the parameters and testing components.
 
             Input:
@@ -31,43 +34,60 @@ class PLCTestbench(object):
                 necessary.
                 fs: Sample Rate. Argument can be overriden if necessary.
                 chans: Number of Channels
-        '''
+        """
         if testbench_settings is None:
             raise ValueError("testbench_settings must be provided")
         self.data_manager = DataManager(testbench_settings, user)
 
         if run_id:
             self.data_manager.load_workers_from_database(run_id)
-        elif packet_loss_simulators is None \
-             or plc_algorithms is None \
-             or output_analysers is None:
-            raise ValueError("packet_loss_simulators, \
+        elif (
+            packet_loss_simulators is None
+            or plc_algorithms is None
+            or output_analysers is None
+        ):
+            raise ValueError(
+                "packet_loss_simulators, \
                               plc_algorithms and output_analysers \
-                              must be provided if no run_id is provided")
+                              must be provided if no run_id is provided"
+            )
         else:
-            self.data_manager.set_workers(original_audio_tracks,
-                                          packet_loss_simulators,
-                                          plc_algorithms,
-                                          output_analysers)
+            self.data_manager.set_workers(
+                original_audio_tracks,
+                packet_loss_simulators,
+                plc_algorithms,
+                output_analysers,
+            )
 
         self.run_id = self.data_manager.initialize_tree()
 
     def run(self) -> None:
-        '''
+        """
         Run the testbench.
-        '''
+        """
         self.data_manager.run_testbench()
 
-    def plot(self, plot_settings={}, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, reconstructed_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
-        '''
+    def plot(
+        self,
+        plot_settings={},
+        show=True,
+        to_file=False,
+        original_tracks=False,
+        lost_samples_masks=False,
+        reconstructed_tracks=False,
+        output_analyses=False,
+        group=False,
+        peaq_summary=False,
+    ) -> None:
+        """
         Plot all the results
-        '''
+        """
         if original_tracks:
             plot_manager = PlotManager(plot_settings)
             original_track_nodes = self.data_manager.get_nodes_by_depth(0)
             for original_audio_node in original_track_nodes:
                 plot_manager.plot_audio_track(original_audio_node, to_file)
-        
+
         if lost_samples_masks:
             plot_manager = PlotManager(plot_settings)
             lost_samples_mask_nodes = self.data_manager.get_nodes_by_depth(1)
@@ -103,4 +123,3 @@ class PLCTestbench(object):
 
         if show:
             PlotManager.show()
-        
