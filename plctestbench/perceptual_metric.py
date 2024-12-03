@@ -3,12 +3,15 @@ from .utils import relative_to_root
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator as RGI
-from essentia.standard import NSGConstantQ
 import librosa
 from matplotlib import pyplot as plt
-import plotly.graph_objects as go
-from brian2hears import LogGammachirp, RestructureFilterbank, AsymmetricCompensation, asymmetric_compensation_coeffs, ControlFilterbank, erbspace, Sound
-from brian2 import Hz, kHz, ms, log10, mean, diff, asarray, minimum, maximum, arange, exp, log
+try:
+    from essentia.standard import NSGConstantQ
+    import plotly.graph_objects as go
+    from brian2hears import LogGammachirp, RestructureFilterbank, AsymmetricCompensation, asymmetric_compensation_coeffs, ControlFilterbank, erbspace, Sound
+    from brian2 import Hz, kHz, ms, log10, mean, diff, asarray, minimum, maximum, arange, exp, log
+except ImportError:
+    print("nope")
 
 import cProfile
 import pstats
@@ -306,22 +309,9 @@ class PerceptualMetric(object):
             freq_axis = librosa.cqt_frequencies(spectrogram_original_db.shape[0], fmin=self.min_frequency, bins_per_octave=self.bins_per_octave)
 
             if self.masking:
-                # Profile the function
-                # pr = cProfile.Profile()
-                # pr.enable()
-
+                # lentissimoooo
                 mask = apply_masking_to_cqt(spectrogram_original_db, freq_axis, self.fs, self.intorno_length) + self.masking_offset
 
-                # pr.disable()
-                
-                # Collect profiling results
-                # s = io.StringIO()
-                # sortby = 'cumulative'
-                # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-                # ps.print_stats()
-
-                # Output profiling results
-                # print(s.getvalue())
 
                 spectrogram_difference_masked = np.where(spectrogram_difference_db < mask, 0, spectrogram_difference)
                 spectrogram_difference_masked_mag = np.abs(spectrogram_difference_masked)
@@ -352,25 +342,4 @@ class PerceptualMetric(object):
 
         print(f"{perc_metric}")
 
-        # time_axis = np.linspace(0, spectrogram_original_db.shape[1] / self.fs, num=spectrogram_original_db.shape[1])
-
-        # plot_idx = 18699
-        # if spectrogram['idx'] == plot_idx + 1:
-        #     # plt.figure(figsize=(12, 4))
-        #     # plt.imshow(cqt_original_db, aspect='auto', origin='lower', cmap='jet')
-        #     # plt.colorbar()
-        #     # plt.title('Original CQT')
-        #     # plt.savefig('original_cqt.png')
-        #     note_axis = [librosa.hz_to_note(f) for f in freq_axis]
-        #     fig = go.Figure()
-        #     fig.add_trace(go.Surface(x=time_axis, y=note_axis, z=spectrogram_difference_masked_db, colorscale='Inferno'))
-        #     fig.add_trace(go.Surface(x=time_axis, y=note_axis, z=spectrogram_original_db, colorscale='Viridis'))
-        #     fig.update_layout(scene = dict(
-        #                 xaxis_title='Time',
-        #                 yaxis_title='CQT bins',
-        #                 zaxis_title='Amplitude (dB)'),
-        #               title="Interactive 3D CQT Plot")
-        #     fig.show()
-
-        
         return perc_metric
