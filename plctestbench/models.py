@@ -1,6 +1,6 @@
-from dataclasses import dataclass, asdict
-from typing import Any
+from dataclasses import asdict, dataclass
 from enum import Enum
+from typing import Any
 
 
 class RunStatus(str, Enum):
@@ -35,7 +35,7 @@ class Run:
 
 
 @dataclass
-class TestbenchSettings:
+class TestbenchConfiguration:
 
     root_folder: str = None
 
@@ -48,3 +48,21 @@ class TestbenchSettings:
     db_username: str = None
 
     db_password: str = None
+
+
+@dataclass
+class User:
+
+    email: str
+
+    first_name: str
+
+    last_name: str
+
+    locale: str
+
+    image_url: str
+
+    @classmethod
+    def get_default_user(self) -> "User":
+        return User("default@default.com", "default", "default", "it_IT", "")

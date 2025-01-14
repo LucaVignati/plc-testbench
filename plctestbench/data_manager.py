@@ -1,24 +1,25 @@
-import typing
 import datetime
+
 from anytree import LevelOrderIter, search
-from .path_manager import PathManager
-from .database_manager import TinyDBDatabaseManager
+
+from .database_manager import database_manager_factory
+from .models import Run, RunStatus, TestbenchConfiguration, User
 from .node import (
-    ReconstructedTrackNode,
     LostSamplesMaskNode,
     Node,
     OriginalTrackNode,
     OutputAnalysisNode,
+    ReconstructedTrackNode,
 )
+from .path_manager import PathManager
 from .settings import Settings
-from .utils import get_class, compute_hash, progress_monitor
-from .models import Run, RunStatus, TestbenchSettings
+from .utils import compute_hash, get_class, progress_monitor
 
 
 class DataManager(object):
 
     def __init__(
-        self, testbench_settings: TestbenchSettings, user: dict = None
+        self, testbench_settings: TestbenchConfiguration, user: User = None
     ) -> None:
         """
         This class manages the data flow in and out of the data tree.
@@ -28,17 +29,7 @@ class DataManager(object):
                                 and used to set and retrieved file and
                                 folder paths.
         """
-        self.user = (
-            user
-            if user is not None
-            else {
-                "email": "default",
-                "first_name": "Mario",
-                "last_name": "Rossi",
-                "locale": "it_IT",
-                "image_link": "",
-            }
-        )
+        self.user = user if user is not None else User.get_default_user()
         root_folder = (
             testbench_settings.root_folder
             if "root_folder" in testbench_settings.__dict__.keys()
@@ -76,13 +67,10 @@ class DataManager(object):
         )
 
         self.path_manager = PathManager(root_folder)
-        self.database_manager = TinyDBDatabaseManager(
-            ip=db_ip,
-            port=db_port,
-            username=db_username,
-            password=db_password,
-            user=self.user,
-            conn_string=db_conn_string,
+        self.database_manager = database_manager_factory.create(
+            testbench_settings.db_platform,
+            self.user,
+            **testbench_settings.__dataclass_fields__
         )
         self.root_nodes = []
         self.worker_classes = []
@@ -162,7 +150,7 @@ class DataManager(object):
         self._save_run_to_database()
         return self.run._id
 
-    def _recursive_tree_init(self, parent: Node = None, idx: int = 0):
+    def _recursive_tree_init(self, parent: Node = None, idx: int = 0) -> None:
         """
         This function recursively instanciates all the nodes in the tree.
 
@@ -200,7 +188,7 @@ class DataManager(object):
                 self.root_nodes.append(child)
             self._recursive_tree_init(child, idx + 1)
 
-    def _save_run_to_database(self):
+    def _save_run_to_database(self) -> None:
         """
         This function is used to save the run as a document in the database.
         """
@@ -225,12 +213,12 @@ class DataManager(object):
             run_id += str(node["_id"])
 
         self.run._id = str(compute_hash(run_id))
-        self.run.creator = self.user["email"]
+        self.run.creator = self.user.email
         self.run.created_on = datetime.datetime.now()
         self.run.status = RunStatus.CREATED
         self.database_manager.save_run(self.run)
 
-    def load_workers_from_database(self, run_id: int):
+    def load_workers_from_database(self, run_id: int) -> None:
         """
         This function is used to load the workers from the database.
         """
@@ -244,13 +232,13 @@ class DataManager(object):
                 workers.append((get_class(worker["name"]), settings))
             self.worker_classes.append(workers)
 
-    def _set_run_status(self, state: str):
+    def _set_run_status(self, state: str) -> None:
         """
         This function is used to set the state of the run in the database.
         """
         self.database_manager.set_run_status(self.run._id, state)
 
-    def get_nodes_by_depth(self, depth: int) -> typing.Tuple:
+    def get_nodes_by_depth(self, depth: int) -> tuple:
         """
         This function searches all the stored trees and returnes all the nodes at the specified
         depth.
@@ -267,7 +255,7 @@ class DataManager(object):
 
         return same_depth_nodes
 
-    def get_leaf_nodes(self) -> typing.Tuple:
+    def get_leaf_nodes(self) -> tuple:
         """
         This function is a wrapper for the get_nodes_by_depth function.
         It returns the nodes at level 4, which are leaf nodes.

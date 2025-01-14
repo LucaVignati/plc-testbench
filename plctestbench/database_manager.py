@@ -1,15 +1,16 @@
-from pathlib import Path
 from abc import ABCMeta, abstractmethod
-import pymongo
-from pymongo import MongoClient
-from tinydb import TinyDB, where, operations
-from tempfile import NamedTemporaryFile
 from datetime import datetime
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any
 
+import pymongo
+from pymongo import MongoClient
+from tinydb import TinyDB, operations, where
+
+from .models import DBPlatform, Run, RunStatus, User
 from .node import Node
-from .models import Run, RunStatus
-from .utils import escape_email
+from .utils import ObjectFactory, escape_email
 
 
 class Singleton(ABCMeta):
@@ -23,37 +24,14 @@ class Singleton(ABCMeta):
 
 class DatabaseManager(metaclass=Singleton):
 
-    def __init__(
-        self,
-        ip: str = None,
-        port: int = None,
-        username: str = None,
-        password: str = None,
-        user: dict = None,
-        conn_string: str = None,
-    ) -> None:
-        if (
-            ip is None
-            or port is None
-            or username is None
-            or password is None
-            or user is None
-        ) and conn_string is None:
-            raise Exception("DatabaseManager: missing parameters")
+    def __init__(self, user: User = None, *args, **kwargs) -> None:
+
         self.initialized = False
-        self.email = escape_email(user["email"])
-        self._init_client(ip, port, username, password, user)
+        self.email = escape_email(user.email)
+        self._init_client(user, *args, **kwargs)
 
     @abstractmethod
-    def _init_client(
-        self,
-        ip: str = None,
-        port: int = None,
-        username: str = None,
-        password: str = None,
-        user: dict = None,
-        conn_string: str = None,
-    ) -> None:
+    def _init_client(self, user: User = None, *args, **kwargs) -> None:
         raise NotImplementedError("To be overridden!")
 
     @abstractmethod
@@ -89,7 +67,7 @@ class DatabaseManager(metaclass=Singleton):
         raise NotImplementedError("To be overridden!")
 
     @abstractmethod
-    def save_user(self, user):
+    def save_user(self, user: User):
         raise NotImplementedError("To be overridden!")
 
     @abstractmethod
@@ -117,9 +95,19 @@ class MongoDatabaseManager(DatabaseManager):
         port: int = None,
         username: str = None,
         password: str = None,
-        user: dict = None,
+        user: User = None,
         conn_string: str = None,
+        *args,
+        **kwargs,
     ) -> None:
+        if (
+            ip is None
+            or port is None
+            or username is None
+            or password is None
+            or user is None
+        ) and conn_string is None:
+            raise Exception("DatabaseManager: missing parameters")
         self.username = username
         self.password = password
         if conn_string:
@@ -209,12 +197,12 @@ class MongoDatabaseManager(DatabaseManager):
         database = self.get_database()
         database["runs"].delete_one({"_id": run_id})
 
-    def save_user(self, user):
+    def save_user(self, user: User):
         """
         This function is used to save a user to the database.
         """
         database = self.client["global"]
-        if database["users"].find_one({"email": user["email"]}) is None:
+        if database["users"].find_one({"email": user.email}) is None:
             database["users"].insert_one(user)
         else:
             print("User already exists in the database.")
@@ -266,7 +254,7 @@ class MongoDatabaseManager(DatabaseManager):
 
 class TinyDBDatabaseManager(DatabaseManager):
 
-    def _init_client(self, *args) -> None:
+    def _init_client(self, *args, **kwargs) -> None:
         self.client: dict[str, TinyDB] = {}
 
     def get_database(self, db_name: str = None):
@@ -352,12 +340,12 @@ class TinyDBDatabaseManager(DatabaseManager):
         database: TinyDB = self.get_database()
         database.table("runs").remove(where("_id") == run_id)
 
-    def save_user(self, user):
+    def save_user(self, user: User):
         """
         This function is used to save a user to the database.
         """
         database = self.get_database("global")
-        if database.table("users").search(where("email") == user["email"]) is None:
+        if database.table("users").search(where("email") == user.email) is None:
             database.table("users").insert(user)
         else:
             print("User already exists in the database.")
@@ -417,3 +405,8 @@ class TinyDBDatabaseManager(DatabaseManager):
     def _deserialize_run(self, run: dict[str, Any]) -> Run:
         run.created_on = datetime.fromisoformat(run.created_on)
         return
+
+
+database_manager_factory = ObjectFactory()
+database_manager_factory.register_builder(DBPlatform.MONGODB, MongoDatabaseManager)
+database_manager_factory.register_builder(DBPlatform.TINYDB, TinyDBDatabaseManager)

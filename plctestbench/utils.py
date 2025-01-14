@@ -213,3 +213,17 @@ def is_loud_enough(audio_data, audio_reference, threshold=-30):
 
     # Compare the average loudness to the threshold
     return loud_enough
+
+
+class ObjectFactory:
+    def __init__(self):
+        self._builders = {}
+
+    def register_builder(self, key: str, builder: object):
+        self._builders[key] = builder
+
+    def create(self, key: str, *args, **kwargs):
+        builder = self._builders.get(key)
+        if not builder:
+            raise ValueError(key)
+        return builder(*args, **kwargs)

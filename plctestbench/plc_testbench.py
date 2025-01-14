@@ -5,7 +5,7 @@ from .plot_manager import PlotManager
 from .node import OriginalTrackNode
 from .loss_simulator import PacketLossSimulator
 from .settings import Settings
-from .models import TestbenchSettings
+from .models import TestbenchConfiguration
 
 
 class PLCTestbench(object):
@@ -20,7 +20,7 @@ class PLCTestbench(object):
         packet_loss_simulators: list[tuple[PacketLossSimulator, Settings]] = None,
         plc_algorithms: list[tuple[PacketLossSimulator, Settings]] = None,
         output_analysers: list = None,
-        testbench_settings: TestbenchSettings = None,
+        testbench_settings: TestbenchConfiguration = None,
         user: dict = None,
         run_id: int = None,
     ):
