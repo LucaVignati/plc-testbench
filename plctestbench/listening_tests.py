@@ -1,18 +1,20 @@
+import copy
+import json
+from os import path
+from pathlib import Path
+
+import pandas as pd
+from ruamel.yaml import YAML
+
+from .file_wrapper import AudioFile
 from .settings import Settings
 from .utils import (
-    relative_to_root,
     fade_in,
     fade_out,
     leading_silence,
+    relative_to_root,
     trailing_silence,
 )
-from .file_wrapper import AudioFile
-from os import path
-from pathlib import Path
-from ruamel.yaml import YAML
-import json
-import pandas as pd
-import copy
 
 
 class ListeningTest(object):

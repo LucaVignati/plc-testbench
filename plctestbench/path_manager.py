@@ -1,6 +1,7 @@
+import glob as gb
 import os
 from os import path
-import glob as gb
+
 from plctestbench.node import Node
 
 folder_suffixes = ["lost_samples_masks", "reconstructed_tracks", "output_analyses"]

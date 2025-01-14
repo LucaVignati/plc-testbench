@@ -1,21 +1,31 @@
 import numpy as np
-from plctestbench.settings import Settings, CrossfadeFunction, CrossfadeType
+
+from plctestbench.settings import (
+    CrossfadeFunction,
+    CrossfadeSettings,
+    CrossfadeType,
+    Settings,
+)
+
 from .filters import LinkwitzRileyCrossover
-from .utils import recursive_split_audio
 from .settings import CrossfadeFunction, CrossfadeType
+from .utils import recursive_split_audio
 
 
-def power_crossfade(settings: Settings) -> np.array:
+def power_crossfade(settings: CrossfadeSettings, length_in_samples: int) -> np.array:
     return np.array(
-        [
-            x ** settings.get("exponent")
-            for x in np.linspace(0, 1, settings.length_in_samples)
-        ]
+        [x ** settings.get("exponent") for x in np.linspace(0, 1, length_in_samples)]
     )
 
 
-def sinusoidal_crossfade(settings: Settings) -> np.array:
-    return np.sin(np.linspace(0, np.pi / 2, settings.length_in_samples))
+def sinusoidal_crossfade(
+    settings: CrossfadeSettings, length_in_samples: int
+) -> np.array:
+    return np.sin(np.linspace(0, np.pi / 2, length_in_samples))
+
+
+def hann_crossfade(settings: CrossfadeSettings, length_in_samples: int) -> np.array:
+    return np.hanning(length_in_samples * 2)[settings.length_in_samples]
 
 
 class Crossfade(object):
@@ -24,15 +34,19 @@ class Crossfade(object):
         self.crossfade_settings = crossfade_settings
         self.fs = settings.get("fs")
         self.length = self.crossfade_settings.get("length")
-        self.crossfade_settings.length_in_samples = round(self.length * self.fs * 0.001)
+        self.length_in_samples = round(self.length * self.fs * 0.001)
         self._ongoing = False
         self.idx = 0
 
         self.function = self.crossfade_settings.get("function")
         if self.function == CrossfadeFunction.power:
-            self.crossfade_buffer_a = power_crossfade(self.crossfade_settings)
+            self.crossfade_buffer_a = power_crossfade(
+                self.crossfade_settings, self.length_in_samples
+            )
         elif self.function == CrossfadeFunction.sinusoidal:
-            self.crossfade_buffer_a = sinusoidal_crossfade(self.crossfade_settings)
+            self.crossfade_buffer_a = sinusoidal_crossfade(
+                self.crossfade_settings, self.length_in_samples
+            )
 
         self.type = self.crossfade_settings.get("type")
         if self.type == CrossfadeType.power:
@@ -82,7 +96,7 @@ class Crossfade(object):
         self.idx = 0
 
     def ongoing(self) -> bool:
-        if self.idx >= self.crossfade_settings.length_in_samples:
+        if self.idx >= self.length_in_samples:
             self._ongoing = False
         return self._ongoing
 

@@ -1,8 +1,9 @@
-import sys
 import hashlib
-from time import sleep
-import numpy as np
+import sys
 from pathlib import Path
+from time import sleep
+
+import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 

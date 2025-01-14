@@ -1,11 +1,11 @@
 from anytree import LevelOrderIter
 
 from .data_manager import DataManager
-from .plot_manager import PlotManager
-from .node import OriginalTrackNode
 from .loss_simulator import PacketLossSimulator
-from .settings import Settings
 from .models import TestbenchConfiguration
+from .node import OriginalTrackNode
+from .plot_manager import PlotManager
+from .settings import Settings
 
 
 class PLCTestbench(object):

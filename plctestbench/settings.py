@@ -1,7 +1,7 @@
+from copy import deepcopy
 from enum import Enum
 from inspect import isclass
-from typing import List, Dict
-from copy import deepcopy
+from typing import Dict, List
 
 from plctestbench.utils import compute_hash, get_class, relative_to_root
 
@@ -381,6 +381,7 @@ class StereoImageType(Enum):
 class CrossfadeFunction(Enum):
     power = "power"
     sinusoidal = "sinusoidal"
+    hann = "hann"
 
     def toJson(self):
         return self.value

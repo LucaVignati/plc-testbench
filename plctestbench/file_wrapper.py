@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 import os
 import pickle
 from pathlib import Path
-from numpy import ndarray
-import soundfile as sf
+from typing import Any, Iterator
+
 import numpy as np
+import soundfile as sf
+from numpy import ndarray
+
 from plctestbench.utils import compute_hash
 
 DEFAULT_DTYPE = "float32"
@@ -58,7 +62,7 @@ class FileWrapper(object):
     def get_path(self) -> str:
         return self.path
 
-    def set_path(self, path) -> None:
+    def set_path(self, path: str) -> None:
         self.path = path
 
     def save(self) -> None:
@@ -185,17 +189,17 @@ class SimpleCalculatorData(OutputAnalysis):
     def get_error(self) -> ndarray:
         return self._error
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._error)
 
-    def __iter__(self):
-        return self._error.__iter__()
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self._error)
 
-    def __next__(self):
-        return self._error.__next__()
+    def __next__(self) -> Any:
+        return next(self._error)
 
-    def __getitem__(self, key):
-        return self._error.__getitem__(key)
+    def __getitem__(self, key: int) -> Any:
+        return self._error[key]
 
     def __hash__(self) -> int:
         return calculate_hash(self._error.tobytes())

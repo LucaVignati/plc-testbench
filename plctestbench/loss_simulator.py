@@ -1,11 +1,13 @@
 import numpy as np
 import numpy.random as npr
+
 from plctestbench.worker import Worker
+
 from .settings import (
-    Settings,
     BinomialPLSSettings,
     GilbertElliotPLSSettings,
     MetronomePLSSettings,
+    Settings,
 )
 
 

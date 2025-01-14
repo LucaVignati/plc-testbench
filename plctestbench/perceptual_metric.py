@@ -1,35 +1,35 @@
-from .settings import Settings
-from .utils import relative_to_root
-
-import numpy as np
-from scipy.interpolate import RegularGridInterpolator as RGI
 import librosa
-from matplotlib import pyplot as plt
-from essentia.standard import NSGConstantQ
+import numpy as np
 import plotly.graph_objects as go
-from brian2hears import (
-    LogGammachirp,
-    RestructureFilterbank,
-    AsymmetricCompensation,
-    asymmetric_compensation_coeffs,
-    ControlFilterbank,
-    erbspace,
-    Sound,
-)
 from brian2 import (
     Hz,
-    kHz,
-    ms,
-    log10,
-    mean,
-    diff,
-    asarray,
-    minimum,
-    maximum,
     arange,
+    asarray,
+    diff,
     exp,
+    kHz,
     log,
+    log10,
+    maximum,
+    mean,
+    minimum,
+    ms,
 )
+from brian2hears import (
+    AsymmetricCompensation,
+    ControlFilterbank,
+    LogGammachirp,
+    RestructureFilterbank,
+    Sound,
+    asymmetric_compensation_coeffs,
+    erbspace,
+)
+from essentia.standard import NSGConstantQ
+from matplotlib import pyplot as plt
+from scipy.interpolate import RegularGridInterpolator as RGI
+
+from .settings import Settings
+from .utils import relative_to_root
 
 
 def S1dataset_generateTFmaskfunc(

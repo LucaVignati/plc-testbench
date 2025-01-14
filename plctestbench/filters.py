@@ -1,9 +1,12 @@
 from scipy.signal import iirfilter, sosfilt
+
 from .utils import force_2d
 
 
 class LinkwitzRileyFilter:
-    def __init__(self, order, cutoff_frequency, sampling_rate, type="low"):
+    def __init__(
+        self, order: int, cutoff_frequency: int, sampling_rate: int, type: str = "low"
+    ):
         self.order = order
         self.cutoff_frequency = cutoff_frequency
         self.sampling_rate = sampling_rate
@@ -29,7 +32,7 @@ class LinkwitzRileyFilter:
 
 
 class LinkwitzRileyCrossover:
-    def __init__(self, order, cutoff_frequency, sampling_rate):
+    def __init__(self, order: int, cutoff_frequency: int, sampling_rate: int):
         self.order = order
         self.cutoff_frequency = cutoff_frequency
         self.sampling_rate = sampling_rate

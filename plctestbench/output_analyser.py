@@ -1,19 +1,21 @@
 import subprocess
+
 import numpy as np
 import numpy.random as npr
-from .settings import Settings, PEAQMode
-from .worker import Worker
-from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile, DataFile
+import soundfile as sf
+
+from .file_wrapper import AudioFile, DataFile, PEAQData, SimpleCalculatorData
+from .listening_tests import ListeningTest
+from .perceptual_metric import *
+from .settings import PEAQMode, Settings
 from .utils import (
     dummy_progress_bar,
     extract_intorni,
     force_single_loss_per_stimulus,
-    relative_to_root,
     is_loud_enough,
+    relative_to_root,
 )
-from .perceptual_metric import *
-from .listening_tests import ListeningTest
-import soundfile as sf
+from .worker import Worker
 
 
 def normalise(x, amp_scale=1.0):

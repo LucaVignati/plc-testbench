@@ -1,11 +1,12 @@
 from copy import deepcopy
-from anytree import NodeMixin
-import numpy as np
 
-from plctestbench.worker import Worker
-from plctestbench.file_wrapper import FileWrapper, AudioFile, DataFile
+import numpy as np
+from anytree import NodeMixin
+
+from plctestbench.file_wrapper import AudioFile, DataFile, FileWrapper
 from plctestbench.settings import Settings
 from plctestbench.utils import dummy_progress_bar
+from plctestbench.worker import Worker
 
 
 class BaseNode(object):

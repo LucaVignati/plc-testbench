@@ -1,26 +1,27 @@
 from math import floor
 from typing import Tuple
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .file_wrapper import SimpleCalculatorData
 from .node import (
-    ReconstructedTrackNode,
+    LostSamplesMaskNode,
     Node,
     OriginalTrackNode,
-    LostSamplesMaskNode,
     OutputAnalysisNode,
+    ReconstructedTrackNode,
 )
 from .output_analyser import (
-    SimpleCalculator,
-    MSECalculator,
+    HumanCalculator,
     MAECalculator,
-    SpectralEnergyCalculator,
+    MSECalculator,
     PEAQCalculator,
     PerceptualCalculator,
-    HumanCalculator,
+    SimpleCalculator,
+    SpectralEnergyCalculator,
 )
-from .file_wrapper import SimpleCalculatorData
 
 
 class PlotManager(object):
