@@ -1,3 +1,4 @@
+import logging
 from math import ceil
 
 import librosa
@@ -6,21 +7,30 @@ import numpy as np
 try:
     from burg_plc import BurgBasic
 except ImportError:
-    print("Burg PLC unavailable")
+    logging.warn("Burg PLC unavailable")
 try:
     from cpp_plc_template import BasePlcTemplate
 except ImportError:
-    print("External PLC unavailable")
+    logging.warn("External PLC unavailable")
 try:
     import tensorflow as tf
 except ImportError:
-    print("Deep learning features unavailable")
+    logging.warn("Deep learning features unavailable")
 from plctestbench.worker import Worker
 
 from .crossfade import Crossfade, MultibandCrossfade
 from .filters import LinkwitzRileyCrossover
 from .low_cost_concealment import LowCostConcealment
-from .settings import Settings, StereoImageType
+from .settings import (
+    BurgPLCSettings,
+    DeepLearningPLCSettings,
+    ExternalPLCSettings,
+    LastPacketPLCSettings,
+    LowCostPLCSettings,
+    Settings,
+    StereoImageType,
+    ZerosPLCSettings,
+)
 from .spatial import CodecMode, MidSideCodec
 from .utils import force_2d, get_class, prepare_progress_monitor, recursive_split_audio
 
@@ -242,6 +252,9 @@ class ZerosPLC(PLCAlgorithm):
     ZerosPLC is ...
     """
 
+    def __init__(settings: ZerosPLCSettings):
+        super().__init__(settings)
+
     def _predict(self, buffer: np.ndarray):
         """ """
         return np.zeros(np.shape(buffer))
@@ -252,7 +265,7 @@ class LastPacketPLC(PLCAlgorithm):
     LastPacketPLC is ...
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: LastPacketPLCSettings) -> None:
         super().__init__(settings)
         self.mirror_x = settings.get("mirror_x")
         self.mirror_y = settings.get("mirror_y")
@@ -294,7 +307,7 @@ class LowCostPLC(PLCAlgorithm):
     for audio over ip applications" by Marco Fink and Udo Zölzer
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: LowCostPLCSettings) -> None:
         super().__init__(settings)
         self.lcc = LowCostConcealment(
             settings.get("max_frequency"),
@@ -321,7 +334,7 @@ class BurgPLC(PLCAlgorithm):
     BurgPLC is ...
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: BurgPLCSettings) -> None:
         super().__init__(settings)
         self.order = settings.get("order")
         self.previous_valid = False
@@ -356,7 +369,7 @@ class ExternalPLC(PLCAlgorithm):
     ExternalPLC is ...
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: ExternalPLCSettings) -> None:
         super().__init__(settings)
         self.bpt = BasePlcTemplate()
         self.bpt.prepare_to_play(self.settings.get("fs"), self.packet_size)
@@ -375,7 +388,7 @@ class DeepLearningPLC(PLCAlgorithm):
     DeepLearningPLC is ...
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: DeepLearningPLCSettings) -> None:
         super().__init__(settings)
         self.model = tf.keras.models.load_model(
             settings.get("model_path"), compile=False

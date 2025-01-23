@@ -7,7 +7,17 @@ import soundfile as sf
 from .file_wrapper import AudioFile, DataFile, PEAQData, SimpleCalculatorData
 from .listening_tests import ListeningTest
 from .perceptual_metric import *
-from .settings import PEAQMode, Settings
+from .settings import (
+    HumanCalculatorSettings,
+    MAECalculatorSettings,
+    MSECalculatorSettings,
+    PEAQCalculatorSettings,
+    PEAQMode,
+    PerceptualCalculatorSettings,
+    Settings,
+    SpectralEnergyCalculatorSettings,
+    WindowedPEAQCalculatorSettings,
+)
 from .utils import (
     dummy_progress_bar,
     extract_intorni,
@@ -75,6 +85,9 @@ class MSECalculator(SimpleCalculator):
     MSECalculator is ...
     """
 
+    def __init__(self, settings: MSECalculatorSettings):
+        super().__init__(settings)
+
     def run(
         self,
         original_track_node: AudioFile,
@@ -105,6 +118,9 @@ class MAECalculator(SimpleCalculator):
     MAECalculator is ...
     """
 
+    def __init__(self, settings: MAECalculatorSettings):
+        super().__init__(settings)
+
     def run(
         self,
         original_track_node: AudioFile,
@@ -134,6 +150,9 @@ class SpectralEnergyCalculator(OutputAnalyser):
     """
     SpectralEnergyCalculator is ...
     """
+
+    def __init__(self, settings: SpectralEnergyCalculatorSettings):
+        super().__init__(settings)
 
     def run(
         self,
@@ -184,6 +203,9 @@ class PEAQCalculator(OutputAnalyser):
     """
     PEAQCalculator is ...
     """
+
+    def __init__(self, settings: PEAQCalculatorSettings) -> None:
+        super().__init__(settings)
 
     def run(
         self,
@@ -250,7 +272,7 @@ class WindowedPEAQCalculator(OutputAnalyser):
     WindowedPEAQCalculator is ...
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: WindowedPEAQCalculatorSettings) -> None:
         super().__init__(settings)
         self.fs = self.settings.get("fs")
         self.packet_size = self.settings.get("packet_size")
@@ -360,7 +382,7 @@ class PerceptualCalculator(OutputAnalyser):
     PerceptualCalculator is ...
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: PerceptualCalculatorSettings) -> None:
         super().__init__(settings)
         self.fs = self.settings.get("fs")
         self.packet_size = self.settings.get("packet_size")
@@ -440,7 +462,7 @@ class HumanCalculator(OutputAnalyser):
     ListeningTest is ...
     """
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: HumanCalculatorSettings) -> None:
         super().__init__(settings)
         self.fs = self.settings.get("fs")
         self.packet_size = self.settings.get("packet_size")
