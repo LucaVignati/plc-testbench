@@ -989,7 +989,7 @@ class MAECalculatorSettings(Settings):
     def __init__(
         self,
         N: int = 1024,
-        hop=None,
+        hop: int = None,
         amp_scale: float = 1.0,
     ):
         """
@@ -1012,7 +1012,7 @@ class SpectralEnergyCalculatorSettings(Settings):
     def __init__(
         self,
         N: int = 1024,
-        hop=None,
+        hop: int = None,
         amp_scale: float = 1.0,
     ):
         """
@@ -1056,13 +1056,24 @@ class WindowedPEAQCalculatorSettings(Settings):
         self.settings["intorno_length"] = intorno_length
 
 
+class TransformEnum(Enum):
+    CQT = "cqt"
+    DCGC = "dcgc"
+
+
+class DBWeightingEnum(Enum):
+    A_WEIGHTING = "A"
+    C_WEIGHTING = "C"
+    NONE = ""
+
+
 class PerceptualCalculatorSettings(Settings):
 
     def __init__(
         self,
         intorno_length: int = 300,
         linear_mag: bool = False,
-        transform_type: str = "cqt",
+        transform_type: TransformEnum = TransformEnum.CQT,
         min_frequency: float = 32.7,
         max_frequency: float = 20000,
         bins_per_octave: int = 12,
@@ -1070,7 +1081,7 @@ class PerceptualCalculatorSettings(Settings):
         minimum_window: int = 128,
         masking: bool = True,
         masking_offset: int = 0,
-        db_weighting: str = "",
+        db_weighting: DBWeightingEnum = DBWeightingEnum.NONE,
         metric: str = "",
     ) -> None:
         super().__init__()

@@ -28,7 +28,7 @@ from essentia.standard import NSGConstantQ
 from matplotlib import pyplot as plt
 from scipy.interpolate import RegularGridInterpolator as RGI
 
-from .settings import Settings
+from .settings import DBWeightingEnum, TransformEnum
 from .utils import relative_to_root
 
 
@@ -346,7 +346,7 @@ class PerceptualMetric(object):
 
     def __init__(
         self,
-        transform_type: str,
+        transform_type: TransformEnum,
         min_frequency: float,
         max_frequency: float,
         bins_per_octave: int,
@@ -358,7 +358,7 @@ class PerceptualMetric(object):
         linear_mag: bool,
         masking: bool,
         masking_offset: int,
-        db_weighting: str,
+        db_weighting: DBWeightingEnum,
         metric: str,
     ) -> None:
         self.min_frequency = min_frequency
@@ -369,7 +369,7 @@ class PerceptualMetric(object):
         self.input_size = input_size
         self.fs = fs
 
-        if transform_type == "cqt":
+        if transform_type == TransformEnum.CQT:
             cqt = NSGConstantQ(
                 minFrequency=min_frequency,
                 maxFrequency=max_frequency,
@@ -384,7 +384,7 @@ class PerceptualMetric(object):
             self.frequency_axis = librosa.cqt_frequencies(
                 input_size, fmin=min_frequency, bins_per_octave=bins_per_octave
             )
-        elif transform_type == "dcgc":
+        elif transform_type == TransformEnum.DCGC:
             dcgc = DCGC()
             self.transform = lambda original, reconstructed: dcgc(
                 Sound(original, samplerate=self.fs * Hz),
@@ -467,13 +467,13 @@ class PerceptualMetric(object):
                 spectrogram_difference_masked = spectrogram["reconstructed"]
                 spectrogram_difference_masked_db = spectrogram_difference_db
 
-            if self.db_weighting == "A":
+            if self.db_weighting == DBWeightingEnum.A_WEIGHTING:
                 a_weigthing = librosa.A_weighting(freq_axis)[:, np.newaxis]
                 spectrogram_difference_masked_db = (
                     spectrogram_difference_masked_db + a_weigthing
                 )
                 spectrogram_original_db = spectrogram_original_db + a_weigthing
-            if self.db_weighting == "C":
+            if self.db_weighting == DBWeightingEnum.C_WEIGHTING:
                 c_weigthing = librosa.C_weighting(freq_axis)[:, np.newaxis]
                 spectrogram_difference_masked_db = (
                     spectrogram_difference_masked_db + c_weigthing
