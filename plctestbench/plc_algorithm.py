@@ -22,11 +22,13 @@ from .crossfade import Crossfade, MultibandCrossfade
 from .filters import LinkwitzRileyCrossover
 from .low_cost_concealment import LowCostConcealment
 from .settings import (
+    AdvancedPLCSettings,
     BurgPLCSettings,
     DeepLearningPLCSettings,
     ExternalPLCSettings,
     LastPacketPLCSettings,
     LowCostPLCSettings,
+    PLCSettings,
     Settings,
     StereoImageType,
     ZerosPLCSettings,
@@ -37,7 +39,7 @@ from .utils import force_2d, get_class, prepare_progress_monitor, recursive_spli
 
 class PLCAlgorithm(Worker):
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: PLCSettings):
         super().__init__(settings)
         self.packet_size = self.settings.get("packet_size")
         self.crossfade_settings = self.settings.get("crossfade")
@@ -154,6 +156,9 @@ class PLCAlgorithm(Worker):
 
 class AdvancedPLC(PLCAlgorithm):
     """ """
+
+    def __init__(self, settings: AdvancedPLCSettings):
+        super().__init__(settings)
 
     def get_worker(self, worker_settings, settings):
         class_name = type(worker_settings).__name__.replace("Settings", "")

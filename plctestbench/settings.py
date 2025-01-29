@@ -1,7 +1,6 @@
 from copy import deepcopy
 from enum import Enum
 from inspect import isclass
-from typing import Dict, List
 
 from plctestbench.utils import compute_hash, get_class, relative_to_root
 
@@ -437,10 +436,10 @@ class ManualCrossfadeSettings(CrossfadeSettings):
 
     def __init__(
         self,
-        length: int = None,
-        function: CrossfadeFunction = None,
-        exponent: float = None,
-        type: CrossfadeType = None,
+        length: int = 10,
+        function: CrossfadeFunction = CrossfadeFunction.power,
+        exponent: float = 1.0,
+        type: CrossfadeType = CrossfadeType.power,
     ):
         """
         This class containes the settings for the PowerCrossfade class.
@@ -456,7 +455,7 @@ class ManualCrossfadeSettings(CrossfadeSettings):
 
 class LinearCrossfadeSettings(CrossfadeSettings):
 
-    def __init__(self, length: int = None, type: CrossfadeType = None):
+    def __init__(self, length: int = 10, type: CrossfadeType = CrossfadeType.power):
         """
         This class containes the settings for the LinearCrossfade class.
 
@@ -470,7 +469,7 @@ class LinearCrossfadeSettings(CrossfadeSettings):
 
 class QuadraticCrossfadeSettings(CrossfadeSettings):
 
-    def __init__(self, length: int = None, type: CrossfadeType = None):
+    def __init__(self, length: int = 10, type: CrossfadeType = CrossfadeType.power):
         """
         This class containes the settings for the QuadraticCrossfade class.
 
@@ -484,7 +483,7 @@ class QuadraticCrossfadeSettings(CrossfadeSettings):
 
 class CubicCrossfadeSettings(CrossfadeSettings):
 
-    def __init__(self, length: int = None, type: CrossfadeType = None):
+    def __init__(self, length: int = 10, type: CrossfadeType = CrossfadeType.power):
         """
         This class containes the settings for the CubicCrossfade class.
 
@@ -498,7 +497,7 @@ class CubicCrossfadeSettings(CrossfadeSettings):
 
 class SinusoidalCrossfadeSettings(CrossfadeSettings):
 
-    def __init__(self, length: int = None, type: CrossfadeType = None):
+    def __init__(self, length: int = 10, type: CrossfadeType = CrossfadeType.power):
         """
         This class containes the settings for the SinusoidalCrossfade class.
 
@@ -517,16 +516,12 @@ class PLCSettings(Settings):
 
     def __init__(
         self,
-        crossfade: List[CrossfadeSettings] = None,
-        fade_in: List[CrossfadeSettings] = None,
-        crossfade_frequencies: List[int] = None,
+        crossfade: list[CrossfadeSettings] = None,
+        fade_in: list[CrossfadeSettings] = None,
+        crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
     ) -> None:
         super().__init__()
-        crossfade = (
-            [crossfade] if crossfade and not isinstance(crossfade, list) else crossfade
-        )
-        fade_in = [fade_in] if fade_in and not isinstance(fade_in, list) else fade_in
         self.settings["crossfade_frequencies"] = (
             crossfade_frequencies if crossfade_frequencies is not None else []
         )
@@ -566,7 +561,7 @@ class PLCSettings(Settings):
         ), "The number of crossfade settings must be one more than the number of crossfade frequencies."
         self.assert_setting_is_number_in_range("crossover_order", min_value=1)
 
-    def set_crossfade_frequencies(self, crossfade_frequencies: List[int]) -> Settings:
+    def set_crossfade_frequencies(self, crossfade_frequencies: list[int]) -> Settings:
         def change_callback(cloned_settings):
             crossfade_frequencies = cloned_settings.get("crossfade_frequencies")
             crossfade_bands = cloned_settings.get("crossfade")
@@ -589,9 +584,9 @@ class ZerosPLCSettings(PLCSettings):
 
     def __init__(
         self,
-        crossfade: List[CrossfadeSettings] = None,
-        fade_in: List[CrossfadeSettings] = None,
-        crossfade_frequencies: List[int] = None,
+        crossfade: list[CrossfadeSettings] = None,
+        fade_in: list[CrossfadeSettings] = None,
+        crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
     ) -> None:
         """
@@ -611,9 +606,9 @@ class LastPacketPLCSettings(PLCSettings):
 
     def __init__(
         self,
-        crossfade: List[CrossfadeSettings] = None,
-        fade_in: List[CrossfadeSettings] = None,
-        crossfade_frequencies: List[int] = None,
+        crossfade: list[CrossfadeSettings] = None,
+        fade_in: list[CrossfadeSettings] = None,
+        crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
         mirror_x: bool = False,
         mirror_y: bool = False,
@@ -634,9 +629,9 @@ class LowCostPLCSettings(PLCSettings):
 
     def __init__(
         self,
-        crossfade: List[CrossfadeSettings] = None,
-        fade_in: List[CrossfadeSettings] = None,
-        crossfade_frequencies: List[int] = None,
+        crossfade: list[CrossfadeSettings] = None,
+        fade_in: list[CrossfadeSettings] = None,
+        crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
         max_frequency: float = 4800,
         f_min: int = 80,
@@ -697,9 +692,9 @@ class BurgPLCSettings(PLCSettings):
 
     def __init__(
         self,
-        crossfade: List[CrossfadeSettings] = None,
-        fade_in: List[CrossfadeSettings] = None,
-        crossfade_frequencies: List[int] = None,
+        crossfade: list[CrossfadeSettings] = None,
+        fade_in: list[CrossfadeSettings] = None,
+        crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
         context_length: int = 100,
         order: int = 1,
@@ -727,9 +722,9 @@ class ExternalPLCSettings(PLCSettings):
 
     def __init__(
         self,
-        crossfade: List[CrossfadeSettings] = None,
-        fade_in: List[CrossfadeSettings] = None,
-        crossfade_frequencies: List[int] = None,
+        crossfade: list[CrossfadeSettings] = None,
+        fade_in: list[CrossfadeSettings] = None,
+        crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
     ):
         """
@@ -742,9 +737,9 @@ class DeepLearningPLCSettings(PLCSettings):
 
     def __init__(
         self,
-        crossfade: List[CrossfadeSettings] = None,
-        fade_in: List[CrossfadeSettings] = None,
-        crossfade_frequencies: List[int] = None,
+        crossfade: list[CrossfadeSettings] = None,
+        fade_in: list[CrossfadeSettings] = None,
+        crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
         model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
         fs_dl: int = 16000,
@@ -803,7 +798,7 @@ class AdvancedPLCSettings(PLCSettings):
         settings: "dict[str, list[PLCSettings]]" = {
             "linked": [LastPacketPLCSettings(crossfade_frequencies=[3000])]
         },
-        frequencies: Dict[str, List[int]] = {"linked": []},
+        frequencies: dict[str, list[int]] = {"linked": []},
         order: int = 4,
         stereo_image_processing: StereoImageType = StereoImageType.dual_mono,
         channel_link: bool = True,
@@ -966,7 +961,7 @@ class MSECalculatorSettings(Settings):
     def __init__(
         self,
         N: int = 1024,
-        hop=None,
+        hop: int = None,
         amp_scale: float = 1.0,
     ):
         """
@@ -1064,7 +1059,7 @@ class TransformEnum(Enum):
 class DBWeightingEnum(Enum):
     A_WEIGHTING = "A"
     C_WEIGHTING = "C"
-    NONE = ""
+    NONE = "None"
 
 
 class PerceptualCalculatorSettings(Settings):
