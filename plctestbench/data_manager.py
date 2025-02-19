@@ -35,31 +35,6 @@ class DataManager(object):
             if "root_folder" in testbench_settings.__dict__.keys()
             else None
         )
-        db_ip = (
-            testbench_settings.db_ip
-            if "db_ip" in testbench_settings.__dict__.keys()
-            else None
-        )
-        db_port = (
-            int(testbench_settings.db_port)
-            if "db_port" in testbench_settings.__dict__.keys()
-            else 27017
-        )
-        db_username = (
-            testbench_settings.db_username
-            if "db_username" in testbench_settings.__dict__.keys()
-            else None
-        )
-        db_password = (
-            testbench_settings.db_password
-            if "db_password" in testbench_settings.__dict__.keys()
-            else None
-        )
-        db_conn_string = (
-            testbench_settings.db_conn_string
-            if "db_conn_string" in testbench_settings.__dict__.keys()
-            else None
-        )
         self.progress_monitor = (
             testbench_settings.progress_monitor
             if "progress_monitor" in testbench_settings.__dict__.keys()

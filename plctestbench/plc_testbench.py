@@ -69,15 +69,15 @@ class PLCTestbench(object):
 
     def plot(
         self,
-        plot_settings={},
-        show=True,
-        to_file=False,
-        original_tracks=False,
-        lost_samples_masks=False,
-        reconstructed_tracks=False,
-        output_analyses=False,
-        group=False,
-        peaq_summary=False,
+        plot_settings: dict = {},
+        show: bool = True,
+        to_file: bool = False,
+        original_tracks: bool = False,
+        lost_samples_masks: bool = False,
+        reconstructed_tracks: bool = False,
+        output_analyses: bool = False,
+        group: bool = False,
+        peaq_summary: bool = False,
     ) -> None:
         """
         Plot all the results

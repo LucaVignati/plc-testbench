@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from copy import deepcopy
 from enum import Enum
 from inspect import isclass
@@ -795,7 +797,7 @@ class AdvancedPLCSettings(PLCSettings):
 
     def __init__(
         self,
-        settings: "dict[str, list[PLCSettings]]" = {
+        band_settings: dict[str, list[PLCSettings]] = {
             "linked": [LastPacketPLCSettings(crossfade_frequencies=[3000])]
         },
         frequencies: dict[str, list[int]] = {"linked": []},
@@ -805,17 +807,9 @@ class AdvancedPLCSettings(PLCSettings):
     ):
         """
         This class containes the settings for the AdvancedPLC class.
-
-            Input:
-                band_settings:              list of settings for each frequency band.
-                frequencies:                list of frequencies used for the crossover (Full band or L/Mid).
-                frequencies_b:              list of frequencies used for the crossover (R/Side if unlinked).
-                order:                      order of the crossover.
-                stereo_image_processing:    type of stereo image processing.
-                channel_link:               flag for channel link.
         """
         Settings.__init__(self)
-        self.settings["settings"] = settings
+        self.settings["settings"] = band_settings
         self.settings["frequencies"] = frequencies
         self.settings["order"] = order
         self.settings["stereo_image_processing"] = stereo_image_processing
@@ -851,7 +845,7 @@ class AdvancedPLCSettings(PLCSettings):
             for settings in band_settings:
                 settings.inherit_from(parent_settings)
 
-    def set_frequencies(self, frequencies: "dict[str, list[int]]") -> Settings:
+    def set_frequencies(self, frequencies: dict[str, list[int]]) -> Settings:
         def change_callback(cloned_settings):
             channel_settings = cloned_settings.get("settings")
             new_channel_settings = {
