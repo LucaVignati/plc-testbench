@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from copy import deepcopy
 from enum import Enum
 from inspect import isclass
