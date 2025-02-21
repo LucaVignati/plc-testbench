@@ -1,1 +1,17 @@
+from functools import lru_cache
+
+import pkg_resources
+import yaml
+
 name = "ecc-testbench"
+
+MODULES_MANIFEST_PATH = pkg_resources.resource_filename(
+    __name__, "modules_manifest.yaml"
+)
+
+
+@lru_cache
+def get_available_modules():
+    with open(MODULES_MANIFEST_PATH, "r") as file:
+        modules = yaml.safe_load(file)
+    return modules
