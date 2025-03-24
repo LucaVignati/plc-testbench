@@ -257,7 +257,7 @@ class ZerosPLC(PLCAlgorithm):
     ZerosPLC is ...
     """
 
-    def __init__(settings: ZerosPLCSettings):
+    def __init__(self, settings: ZerosPLCSettings):
         super().__init__(settings)
 
     def _predict(self, buffer: np.ndarray):
