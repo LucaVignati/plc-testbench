@@ -24,7 +24,12 @@ from brian2hears import (
     asymmetric_compensation_coeffs,
     erbspace,
 )
-from essentia.standard import NSGConstantQ
+
+try:
+    from essentia.standard import NSGConstantQ
+except ImportError as ex:
+    print("Essentia not available")
+
 from matplotlib import pyplot as plt
 from scipy.interpolate import RegularGridInterpolator as RGI
 
