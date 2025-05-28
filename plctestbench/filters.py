@@ -46,4 +46,4 @@ class LinkwitzRileyCrossover:
     def split(self, data):
         hp_data = self.hp_filter.filter(data)
         lp_data = self.lp_filter.filter(data)
-        return hp_data, lp_data
+        return lp_data, hp_data

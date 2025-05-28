@@ -72,7 +72,7 @@ def dummy_progress_bar(worker):
 
 
 def recursive_split_audio(audio: np.ndarray, xovers: list, bands: list = []) -> list:
-    lp_audio, hp_audio = xovers[0].split(audio)
+    lp_audio, hp_audio = xovers[0].split(audio.squeeze())
     bands.append(lp_audio)
     if len(xovers) == 1:
         bands.append(hp_audio)
