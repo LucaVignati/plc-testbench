@@ -528,18 +528,14 @@ class PLCSettings(Settings):
         self.__validate_frequencies__()
         self.settings["crossfade"] = (
             crossfade
-            if crossfade is not None
+            if crossfade
             else [
                 NoCrossfadeSettings()
                 for _ in range(0, len(self.get("crossfade_frequencies")) + 1)
             ]
         )
-        self.settings["fade_in"] = (
-            fade_in if fade_in is not None else [NoCrossfadeSettings()]
-        )
-        self.settings["crossover_order"] = (
-            crossover_order if crossover_order is not None else 4
-        )
+        self.settings["fade_in"] = fade_in if fade_in else [NoCrossfadeSettings()]
+        self.settings["crossover_order"] = crossover_order if crossover_order else 4
 
     def __validate_frequencies__(self):
         crossfade_frequencies = self.get("crossfade_frequencies")
