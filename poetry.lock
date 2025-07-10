@@ -576,28 +576,18 @@ wmi = ["wmi (>=1.5.1)"]
 
 [[package]]
 name = "essentia"
-version = "2.1b6.dev1110"
+version = "2.1b6.dev1177"
 description = "Library for audio and music analysis, description and synthesis"
 optional = false
 python-versions = "*"
 groups = ["main"]
 markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
 files = [
-    {file = "essentia-2.1b6.dev1110-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:503a371ffc3a1d6eae04bfef902d4b7c938ffd18e35b341f27ed949b0503e910"},
-    {file = "essentia-2.1b6.dev1110-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:167c4bc460b54c2bdcf4518cd988618cc6ffb43fcbc324a3cec9534b012e3930"},
-    {file = "essentia-2.1b6.dev1110-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f0c6bcd509ae7420d96fcaaeb7a8b5e4c161aeac1db502b1704d6a214253b599"},
-    {file = "essentia-2.1b6.dev1110-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:76d8d6f51907d752073fb77bf21308b070eeeffc25a56da4beea13f6694587f8"},
-    {file = "essentia-2.1b6.dev1110-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:90bcb105ec7b42d51e16bc1b0b342b727589ffa91901c94490ab0043bdaa3b8e"},
-    {file = "essentia-2.1b6.dev1110-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d230055ded80e93e57faf7ebc41fbcfd24bddf9f838de8fe3af9604e977a2d57"},
-    {file = "essentia-2.1b6.dev1110-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:b9428198ed95c7859f84217553b9ffe70918fe9d8081512ca3326b68f435758b"},
-    {file = "essentia-2.1b6.dev1110-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5711f8b73594ee73951cdf92b5388a3fb756494aaa1c9540a34820db2f8f90d9"},
-    {file = "essentia-2.1b6.dev1110-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:02fc5450d7da1cc52599efaef8044c679162ad046f46a0bffd946546304031e5"},
-    {file = "essentia-2.1b6.dev1110-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1674487272100c5794697a97e39a7360dadeb7986c48015c5283d82b727c083f"},
-    {file = "essentia-2.1b6.dev1110-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:a41c5dc34dd0d0c8773011a0e2a5269cbd9742661ae47dacde71c715524f4479"},
-    {file = "essentia-2.1b6.dev1110-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:514c70f85928da62f899a643ac7dfe49a785e83fc26423e8ebb897282baea35f"},
-    {file = "essentia-2.1b6.dev1110-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:9bef599fbe1f2f17bf9f81ecf87b692a884cb6d8c605b17a09e296584e79b002"},
-    {file = "essentia-2.1b6.dev1110-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:78e9a2f171f5af238c04815db66b18420c7038d1e7d9027c7b77c8ee366523d7"},
-    {file = "essentia-2.1b6.dev1110-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6671cce04c681f4869d29aa890039fb8517d3d0a7401d099f9de07b70be259ff"},
+    {file = "essentia-2.1b6.dev1177-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:17ee944ef5db155441ca2fbd0e14a1796214d6b1bdc148edcd487c3d14497a9d"},
+    {file = "essentia-2.1b6.dev1177-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:03d827fccf03a259327e646d4c0a2f6b648279d2a00fa7723a2fdc066ffe67b3"},
+    {file = "essentia-2.1b6.dev1177-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5fcef3750ee5880ad91945c517576a9352e8fc8d447cd6c9b3d08648d2a78d1b"},
+    {file = "essentia-2.1b6.dev1177-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:aed076a3890a0463ea497c9dd545340f41c9e03db7ce9ff64caf0f98e8d3e1c2"},
+    {file = "essentia-2.1b6.dev1177-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:116bb3c8f97772eef16b02de867209d983243cdf7b5c26aad2edac6ec6aa58ac"},
 ]
 
 [package.dependencies]
@@ -3193,4 +3183,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "5a9dc70394675a988214a15efa273b280cd5fec4a6f088fd8efaa19165d1a4fc"
+content-hash = "656540e4f8d2040c2886fe0fb4bdcfa911370b1bbba69684412908efc7d80e2b"
