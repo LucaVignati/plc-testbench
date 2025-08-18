@@ -2,7 +2,7 @@ from math import ceil
 import librosa
 import numpy as np
 from burg_plc import BurgBasic # type: ignore
-from cpp_plc_template import BasePlcTemplate
+from cpp_plc_template import BasePlcTemplate # type: ignore
 import tensorflow as tf
 from plctestbench.worker import Worker
 from .settings import Settings, StereoImageType
@@ -77,6 +77,7 @@ class PLCAlgorithm(Worker):
         this function does nothing.
         '''
         self.context = np.zeros((self.context_length, self.n_channels))
+        self.context_fade_in = np.zeros((self.context_length, self.n_channels))
 
     def _tick(self, buffer: np.ndarray, is_valid: bool) -> np.ndarray:
         '''
@@ -104,15 +105,17 @@ class PLCAlgorithm(Worker):
         This function is called for every buffer.
         '''
         self.context = np.roll(self.context, -self.packet_size, axis=1)
+        self.context_fade_in = np.roll(self.context_fade_in, -self.packet_size, axis=1)
         if self.packet_type == 'last sample' and is_valid == True:
             if buffer.shape[1] == 2:
-                self.context = np.full_like(buffer, [buffer[-1, 0], buffer[-1, 1]])
+                self.context_fade_in = np.full_like(buffer, [buffer[-1, 0], buffer[-1, 1]])
             else:
-                self.context = np.full_like(buffer, buffer[-1, :])
+                self.context_fade_in = np.full_like(buffer, buffer[-1, :])
         elif self.packet_type == 'last packet' and is_valid == True:
-            self.context[-self.packet_size:, :] = buffer[::-1]
+            self.context_fade_in[-self.packet_size:, :] = buffer[::-1]
         else:
-            self.context[-self.packet_size:, :] = buffer
+            self.context_fade_in[-self.packet_size:, :] = buffer
+        self.context[-self.packet_size:, :] = buffer
         return buffer
 
     def _fade_in(self, buffer: np.ndarray) -> np.ndarray:
@@ -120,7 +123,7 @@ class PLCAlgorithm(Worker):
         This function is called for every buffer.
         '''
         self.fade_in.start()
-        output_buffer = self.fade_in(self.context[-self.packet_size:], buffer)
+        output_buffer = self.fade_in(self.context_fade_in[-self.packet_size:], buffer)
         return output_buffer
     
     def _predict(self, buffer: np.ndarray) -> np.ndarray:
@@ -228,16 +231,16 @@ class LastPacketPLC(PLCAlgorithm):
         self.mirror_x = settings.get("mirror_x")
         self.mirror_y = settings.get("mirror_y")
         self.clip_strategy = settings.get("clip_strategy")
-
     def _predict(self, buffer: np.ndarray) -> np.ndarray:
         '''
         
         '''
+        _ = buffer
         def _flip_in_place(buffer: np.ndarray):
             '''
+            Flips the array in place.
             '''
             return -(buffer - buffer[0]) + buffer[0]
-
         reconstructed_buffer = self.context[-self.packet_size:]
         if self.mirror_x:
             reconstructed_buffer = np.flip(reconstructed_buffer, axis=0)
@@ -245,7 +248,7 @@ class LastPacketPLC(PLCAlgorithm):
                 for channel in range(self.n_channels):
                     reconstructed_buffer[:, channel] = _flip_in_place(reconstructed_buffer[:, channel])
                     for sample in range(np.shape(reconstructed_buffer)[0]):
-                        if abs(sample) > 1:
+                        if abs(sample) > 1 and self.clip_strategy is not None:
                             if self.clip_strategy == "subtract":
                                 reconstructed_buffer[sample:, channel] = reconstructed_buffer[sample:, channel] - (sample - np.sign(sample))
                             elif self.clip_strategy == "flip":
@@ -292,7 +295,6 @@ class BurgPLC(PLCAlgorithm):
         self.coefficients = np.zeros(self.order)
         context_length_samples = round(self.context_length/1000*self.settings.get("fs"))
         self.burg = BurgBasic(context_length_samples)
-        self.context_burg = np.empty((0, 0), np.float32)
 
     def _predict(self, buffer: np.ndarray):
         '''
@@ -300,16 +302,15 @@ class BurgPLC(PLCAlgorithm):
         reconstructed_buffer = np.zeros(np.shape(buffer), np.float32)
         n_channels = np.shape(buffer)[1]
         for n_channel in range(n_channels):
-            context_burg = self.context_burg[:, n_channel]
+            context = self.context[:, n_channel]
             if self.previous_valid:
-                self.coefficients, _ = self.burg.fit(context_burg, self.order)
-            reconstructed_buffer[:, n_channel] = self.burg.predict(context_burg, self.coefficients, self.packet_size)
+                self.coefficients, _ = self.burg.fit(context, self.order)
+            reconstructed_buffer[:, n_channel] = self.burg.predict(context, self.coefficients, self.packet_size)
         return reconstructed_buffer
 
     def _a_posteriori(self, buffer: np.ndarray, is_valid: bool) -> np.ndarray:
         '''
         '''
-        self.context_burg = buffer
         super()._a_posteriori(buffer, is_valid)
         self.previous_valid = is_valid
         return buffer
@@ -326,7 +327,7 @@ class ExternalPLC(PLCAlgorithm):
 
     def _tick(self, buffer: np.ndarray, is_valid: bool):
         '''
-        
+        This function is called for every buffer. Buffer shape is (samples, channels), process expects (channels, samples).
         '''
         buffer = np.transpose(buffer)
         reconstructed_buffer = np.zeros(np.shape(buffer), np.float32)
