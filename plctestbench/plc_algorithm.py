@@ -211,7 +211,7 @@ class AdvancedPLC(PLCAlgorithm):
 
 class ZerosPLC(PLCAlgorithm):
     '''
-    ZerosPLC inserts Zero Samples in a Lost Packet.
+    ZerosPLC inserts Zero Samples in a lost packet.
     '''
     
     def _predict(self, buffer: np.ndarray):
@@ -223,7 +223,7 @@ class ZerosPLC(PLCAlgorithm):
 
 class LastPacketPLC(PLCAlgorithm):
     '''
-    LastPacketPLC uses the Last Packet before a lost packet to reconstruct the lost packet.
+    LastPacketPLC uses the last packet before a lost packet to reconstruct it.
     '''
 
     def __init__(self, settings: Settings) -> None:
