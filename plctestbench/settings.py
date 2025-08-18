@@ -548,9 +548,9 @@ class LastPacketPLCSettings(PLCSettings):
             fade_in:                list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
             crossfade_frequencies:  list of frequencies for each crossfade band.
             crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
-            mirror_x:               mirrors the last packet on the x-axis (time-axis).
-            mirror_y:               mirrors the last packet on the y-axis (frequency-axis).
-            clip_strategy:          strategy to handle clipping; 'flip' mirrors last packet on first value or 'substract' .
+            mirror_x:               mirrors the x-values of last packet.
+            mirror_y:               mirrors the y-values of last packet. (not correctly implemented yet)
+            clip_strategy:          strategy to handle clipping; 'flip' mirrors last packet on first value or 'substract'. (not correctly implemented yet)
     '''
     def __init__(self, crossfade: List[CrossfadeSettings] | None = None,
                        fade_in: List[CrossfadeSettings] | None = None,
@@ -829,8 +829,9 @@ class AdvancedPLCSettings(PLCSettings):
 class MSECalculatorSettings(Settings):
     '''
     This class containes the settings for the MSECalculator class.
-    Input:
-            N:              size of the windows used for computing the output measurements.
+        Input:
+            N:              size of the window used for computing the output measurements.
+            hop size:       how far the window is shifted at each step (if None, N/2 is used).
             amp_scale:      scale factor for the amplitude of the tracks.
     '''
     def __init__(self,
@@ -847,8 +848,9 @@ class MSECalculatorSettings(Settings):
 class MAECalculatorSettings(Settings):
     '''
     This class containes the settings for the MAECalculator class.
-    Input:
-            N:              size of the windows used for computing the output measurements.
+        Input:
+            N:              size of the window used for computing the output measurements.
+            hop size:       how far the window is shifted at each step (if None, N/2 is used).
             amp_scale:      scale factor for the amplitude of the tracks.
     '''
     def __init__(self,
@@ -863,17 +865,17 @@ class MAECalculatorSettings(Settings):
 
 
 class SpectralEnergyCalculatorSettings(Settings):
-
+    '''
+    This class containes the settings for the SpectralEnergyCalculatorSettings class.
+        Input:
+            N:              size of the window used for computing the output measurements.
+            hop size:       how far the window is shifted at each step (if None, N/2 is used).
+            amp_scale:      scale factor for the amplitude of the tracks.
+    '''
     def __init__(self,
                  N: int = 1024,
                  hop = None,
                  amp_scale: float = 1.0):
-        '''
-        This class containes the settings for the SpectralEnergyCalculatorSettings class.
-        Input:
-                N:              size of the windows used for computing the output measurements.
-                amp_scale:      scale factor for the amplitude of the tracks.
-        '''
         super().__init__()
         self.settings["N"] = N
         self.settings["hop"] = N//2 if hop is None else hop
@@ -889,7 +891,7 @@ class PEAQCalculatorSettings(Settings):
     '''
     This class containes the settings for the PEAQCalculator class.
         Input:
-            peaq_mode:      mode of the PEAQ algorithm.
+            peaq_mode:      mode of the PEAQ algorithm ('basic' or 'advanced').
     '''
     def __init__(self, peaq_mode: str = PEAQMode.basic.value):
         super().__init__()
@@ -897,7 +899,12 @@ class PEAQCalculatorSettings(Settings):
 
 
 class WindowedPEAQCalculatorSettings(Settings):
-
+    '''
+    This class containes the settings for the WindowedPEAQCalculator class.
+        Input:
+            peaq_mode:          mode of the PEAQ algorithm ('basic' or 'advanced').
+            intorno_length:     window length in ms.
+    '''
     def __init__(self, peaq_mode: str = PEAQMode.basic.value,
                        intorno_length: int = 300):
         super().__init__()
@@ -906,7 +913,22 @@ class WindowedPEAQCalculatorSettings(Settings):
 
 
 class PerceptualCalculatorSettings(Settings):
-
+    '''
+    This class containes the settings for the PerceptualCalculator class.
+        Input:
+            intorno_length:             window length around the lost packet in ms.
+            linear_mag:                 magnitudes linear or logarithmic.
+            transform_type:             Constant-Q Transformation 'cqt' or Dynamic Compressive Gammachirp 'dcgc'.
+            min_frequency:              minimum frequency for spectrum analysis in Hz.
+            max_frequency_perceptual:   maximum frequency for spectrum analysis in Hz.
+            bins_per_octave:            number of frequency bins per octave.
+            n_bins:                     total number of frequency bins for Dynamic Compressive Gammachirp.
+            minimum_window:             minimum number of window size for Constant-Q Transformation: int in samples.
+            masking:                    masking effects taken into account for Constant-Q Transformation (plc-testbench/masking_data/S1dataset_rawdata.npz).
+            masking_offset:             masking offset for masking effects if masking is True.
+            db_weighting:               None (''), A- ('A') or C-dB-Weighting ('C') taken into account for logarithmic magnitudes.
+            metric:                     enable weighted sum ('weighted_sum') of spectral data or not ('').
+    '''
     def __init__(self, intorno_length: int = 300,
                        linear_mag: bool = False,
                        transform_type: str = 'cqt',
@@ -935,7 +957,19 @@ class PerceptualCalculatorSettings(Settings):
 
 
 class HumanCalculatorSettings(Settings):
-
+    '''
+    This class containes the settings for the HumanCalculator class.
+        Input:
+            stimulus_length:            length of extracted stimuli from audio file in ms.
+            single_loss_per_stimulus:   enables one packet loss per stimuli.
+            stimuli_per_page:           number of stimuli per page.
+            pages:                      number of testpages.
+            iterations:                 repetitions of the stimuli test.
+            choose_seed:                for comparing results: leave at 1
+            reference:                  path to reference audio file relative to webmushra folder (high quality audio).
+            anchor:                     path to anchor audio file relative to webmushra folder (bad quality audio).
+    )),
+    '''
     def __init__(self, stimulus_length: int = 3000,
                        single_loss_per_stimulus: bool = True,
                        stimuli_per_page: int = 10,

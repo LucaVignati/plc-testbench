@@ -3,12 +3,10 @@ import numpy as np
 import numpy.random as npr
 from .settings import Settings, PEAQMode
 from .worker import Worker
-from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile, DataFile
-from .utils import dummy_progress_bar, extract_intorni, force_single_loss_per_stimulus, relative_to_root, is_loud_enough
+from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile
+from .utils import dummy_progress_bar, extract_intorni, force_single_loss_per_stimulus, is_loud_enough
 from .perceptual_metric import *
 from .listening_tests import ListeningTest
-import soundfile as sf
-import sys
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -18,6 +16,7 @@ class OutputAnalyser(Worker):
 
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
+
 
 class SimpleCalculator(OutputAnalyser):
 
@@ -54,13 +53,14 @@ class SimpleCalculator(OutputAnalyser):
         x_ew = np.array([np.multiply(w, x_e[i:i+N]) for i in
                         range(0, num_samples-N, hop)])
 
-        return x_rw, x_ew
+        return SimpleCalculatorData(np.array([x_rw, x_ew]))
+
 
 class MSECalculator(SimpleCalculator):
     '''
     MSECalculator is ...
     '''
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs: DataFile = None):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs = None):
         '''
         Calculation of Mean Square Error between the reference and signal
         under test.
@@ -74,14 +74,15 @@ class MSECalculator(SimpleCalculator):
         '''
         x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
         error = [np.mean((x_rw[n] - x_ew[n])**2, 0) for n in self.progress_monitor(range(len(x_rw)), desc=str(self))]
-        return SimpleCalculatorData(error)
+        return SimpleCalculatorData(np.array(error))
+
 
 class MAECalculator(SimpleCalculator):
     '''
     MAECalculator is ...
     '''
     
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs: DataFile = None):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs = None) -> SimpleCalculatorData:
         '''
         Calculation of Mean Absolute Error between the reference and signal
         under test.
@@ -95,14 +96,15 @@ class MAECalculator(SimpleCalculator):
         '''
         x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
         error = [np.mean(np.abs((x_rw[n] - x_ew[n])), 0) for n in self.progress_monitor(range(len(x_rw)), desc=str(self))]
-        return SimpleCalculatorData(error)
+        return SimpleCalculatorData(np.array(error))
+
 
 class SpectralEnergyCalculator(OutputAnalyser):
     '''
     SpectralEnergyCalculator is ...
     '''
     
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs: DataFile = None):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs = None) -> SimpleCalculatorData:
         '''
         Calculate a difference magnitude signal from the DFT energies of the
         reference and signal under test.
@@ -139,16 +141,17 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
         return SimpleCalculatorData(se)
 
+
 class PEAQCalculator(OutputAnalyser):
     '''
     PEAQCalculator is ...
     '''
     
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs: DataFile = None) -> PEAQData:
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs = None) -> PEAQData:
         peaq_mode = self.settings.get("peaq_mode")
-        if peaq_mode == PEAQMode.basic:
+        if peaq_mode == PEAQMode.basic.value:
             mode_flag = '--basic'
-        elif peaq_mode == PEAQMode.advanced:
+        elif peaq_mode == PEAQMode.advanced.value:
             mode_flag = '--advanced'
         else:
             mode_flag = ''
@@ -189,6 +192,8 @@ class PEAQCalculator(OutputAnalyser):
         else:
             print("The peaq program exited with the following errors:")
             print(completed_process.stdout)
+            # Return a default PEAQData object in case of error
+            return PEAQData(float('nan'), float('nan'))
 
 class WindowedPEAQCalculator(OutputAnalyser):
     '''
@@ -203,13 +208,13 @@ class WindowedPEAQCalculator(OutputAnalyser):
         self.mode_flag = ''
         self.sign = 1
         peaq_mode = self.settings.get("peaq_mode")
-        if peaq_mode == PEAQMode.basic:
+        if peaq_mode == PEAQMode.basic.value:
             self.mode_flag = '--basic'
             self.sign = -1
-        elif peaq_mode == PEAQMode.advanced:
+        elif peaq_mode == PEAQMode.advanced.value:
             self.mode_flag = '--advanced'
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data: DataFile = None) -> SimpleCalculatorData:
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data) -> SimpleCalculatorData:
         path = original_track_node.get_path()
         new_path = path[:-4] + "_norm" + path[-4:]
         new_data = normalise(original_track_node.get_data())
@@ -229,7 +234,10 @@ class WindowedPEAQCalculator(OutputAnalyser):
         original_path = path[:-4] + "_chunk" + path[-4:]
         path = reconstructed_track_node.get_path()
         reconstructed_path = path[:-4] + "_chunk" + path[-4:]
-        metric = np.zeros(len(original_track_node.get_data()) // self.packet_size)
+        original_data = original_track_node.get_data()
+        if original_data is None:
+            raise ValueError("original_track_node.get_data() returned None.")
+        metric = np.zeros(len(original_data) // self.packet_size)
 
         for idx, (intorno_original, intorno_reconstructed) in enumerate(zip(intorni_original[1], intorni_reconstructed[1])):
             # Prüfe Chunk-Länge
@@ -296,7 +304,7 @@ class PerceptualCalculator(OutputAnalyser):
         self.db_weighting = self.settings.get("db_weighting")
         self.metric = self.settings.get("metric")
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data: DataFile = None):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data):
         lost_samples_idxs = lost_samples_idxs_data.get_data()
         intorni_original = extract_intorni(original_track_node, lost_samples_idxs, self.intorno_length, self.fs, self.packet_size)
         intorni_reconstructed = extract_intorni(reconstructed_track_node, lost_samples_idxs, self.intorno_length, self.fs, self.packet_size)
@@ -329,7 +337,7 @@ class PerceptualCalculator(OutputAnalyser):
             else:
                 for channel in range(original.shape[1]):
                     spectrograms.append({'idx': (idx, channel), **pm.spectrogram(original[:, channel], reconstructed[:, channel])})
-
+                    
         if intorni_original[1][0].ndim == 1:
             metric = np.zeros(len(original_track_node.get_data()) // self.packet_size)
         else:
@@ -362,7 +370,7 @@ class HumanCalculator(OutputAnalyser):
         self.choose_seed = self.settings.get("choose_seed")
         self.persistent = False
 
-    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data: DataFile = None):
+    def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data):
 
         def transpose(matrix):
             return [[matrix[j][i] for j in range(len(matrix))] for i in range(len(matrix[0]))]

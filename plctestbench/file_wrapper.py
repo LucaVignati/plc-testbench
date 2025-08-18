@@ -18,7 +18,7 @@ def calculate_hash(*args) -> int:
 
 class FileWrapper(object):
     def __init__(self, data = None,
-                 path: str | None = None,
+                 path: str = None, # type: ignore
                  persist = True) -> None:
         self.data = np.ascontiguousarray(data.astype(DEFAULT_DTYPE)) if isinstance(data, np.ndarray) else data
         self.path = path
@@ -45,10 +45,10 @@ class FileWrapper(object):
             file = DataFile(path=path)
         return file
 
-    def get_data(self) -> ndarray | None:
-        return self.data
+    def get_data(self) -> ndarray:
+        return self.data # type: ignore
 
-    def get_path(self) -> str | None:
+    def get_path(self) -> str:
         return self.path
 
     def set_path(self, path) -> None:
@@ -68,14 +68,14 @@ class FileWrapper(object):
         return self.hash
 
 class AudioFile(FileWrapper):
-    def __init__(self, data: ndarray|None=None,
-                       path: str|None=None,
-                       samplerate: float|None=None,
-                       channels: int|None=None,
-                       subtype: str|None=None,
-                       endian: str|None=None,
-                       audio_format: str|None=None,
-                       persist=True) -> None:
+    def __init__(self, data: ndarray | None = None,
+                       path: str = None,  # type: ignore
+                       samplerate: float | None = None,
+                       channels: int | None = None,
+                       subtype: str | None = None,
+                       endian: str | None = None,
+                       audio_format: str | None = None,
+                       persist = True) -> None:
 
         self.samplerate = samplerate
         self.channels = channels
@@ -146,8 +146,13 @@ class AudioFile(FileWrapper):
 
 
 class DataFile(FileWrapper):
-    def __init__(self, data=None, path: str|None=None, persist=True) -> None:
-        super().__init__(data, path, persist)
+    def __init__(self, 
+                 data = None,
+                 path: str = None, # type: ignore
+                 persist = True) -> None:
+        super().__init__(data,
+                         path,
+                         persist)
 
     def save(self) -> None:
         if self.path is not None:
@@ -168,7 +173,8 @@ class OutputAnalysis():
 
 
 class SimpleCalculatorData(OutputAnalysis):
-    def __init__(self, error: ndarray) -> None:
+    def __init__(self,
+                 error: ndarray) -> None:
         self._error = np.ascontiguousarray(np.array(error).astype(DEFAULT_DTYPE))
 
     def get_error(self) -> ndarray:
@@ -192,7 +198,9 @@ class SimpleCalculatorData(OutputAnalysis):
 
 
 class PEAQData(OutputAnalysis):
-    def __init__(self, peaq_odg: float, peaq_di: float) -> None:
+    def __init__(self,
+                 peaq_odg: float,
+                 peaq_di: float) -> None:
         self._peaq_odg = peaq_odg
         self._peaq_di = peaq_di
 

@@ -55,6 +55,16 @@ class PLCTestbench(object):
     def plot(self, plot_settings={}, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, reconstructed_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
         '''
         Plot all the results
+
+            Inputs:
+                show:                   shows plots in Jupyter Notebook
+                to_file:                plots will be saved as files
+                original_tracks:        plots audio track in Jupyter Notebook
+                lost_samples_masks:     plots a diagram of the lost samples in Jupyter Notebook
+                reconstructed_tracks:   plots audio signals after reconstruction in Jupyter Notebook
+                output_analyses:        plots the results of the metrics in Jupyter Notebook
+                group:                  combined setting for the 4 parameters above
+                peaq_summary:           plots the peaq results (currently not usable, implementation incomplete)
         '''
         if original_tracks:
             plot_manager = PlotManager(plot_settings)

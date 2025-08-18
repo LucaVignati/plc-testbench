@@ -95,10 +95,10 @@ def extract_intorni(audio_file, lost_samples_idxs, intorno_size, fs, packet_size
         start_idx = None
         end_idx = None
         for idx in lost_samples_idxs:
-            end_idx = idx
             if start_idx is None:
                 start_idx = idx
-            elif idx == end_idx + 1:
+                end_idx = idx
+            elif idx == end_idx + 1: #type: ignore
                 end_idx = idx
             else:
                 boundary_indexes.append((start_idx, end_idx))
@@ -154,14 +154,12 @@ def fade_out(audio, fs, fade_out_time) -> None:
         fade_out_window = fade_out_window[:, np.newaxis]
     audio[-fade_out_samples:] *= fade_out_window
 
-def leading_silence(audio, fs, silence_time) -> np.ndarray | None:
+def leading_silence(audio, fs, silence_time) -> np.ndarray:
     silence_samples = int(silence_time * fs / 1000)
-    if audio.ndim == 1:
-        audio = np.expand_dims(audio, axis=1)
     silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
     return np.concatenate((silence, audio), axis=0)
 
-def trailing_silence(audio, fs, silence_time) -> np.ndarray | None:
+def trailing_silence(audio, fs, silence_time) -> np.ndarray:
     silence_samples = int(silence_time * fs / 1000)
     silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
     return np.concatenate((audio, silence), axis=0)
