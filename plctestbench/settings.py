@@ -289,13 +289,12 @@ class BinomialPLSSettings(Settings):
 class MetronomePLSSettings(Settings):
     '''
     This class containes the settings for the MetronomePLS class.
-
         Input:
             seed:           value used as seed for random generator functions.
             packet_size:    size of each packet in samples.
-            period:         number of packets between the occurence of the first lost packet of each burst.
+            period:         number of packets before the first lost packet in each burst.
             duration:       number of consecutive lost packets in each burst.
-            offset:         number of packets between the start of the track and the occurence of the first lost packet.
+            offset:         number of packets between the start of the track and the occurence of a burst.
     '''
     def __init__(self, seed: int = 1,
                        packet_size: int = 32,
@@ -313,9 +312,8 @@ class MetronomePLSSettings(Settings):
 class GilbertElliotPLSSettings(Settings):
     '''
     This class containes the settings for the GilbertElliotPLS class.
-
         Input:
-            seed:           value used as seed for random generator functions
+            seed:           value used as seed for random generator functions.
             packet_size:    size of each packet in samples.
             p:              p parameter of the Gilbert-Elliot model.
             r:              r parameter of the Gilbert-Elliot model.
@@ -371,7 +369,6 @@ class CrossfadeType(Enum):
 class CrossfadeSettings(Settings):
     '''
     This class containes the settings for the Crossfade class.
-
         Input:
             length:         length of the crossfade in ms.
             function:       function used for the crossfade ('power' or 'sinusoidal').
@@ -413,13 +410,12 @@ class NoCrossfadeSettings(CrossfadeSettings):
 class LinearCrossfadeSettings(CrossfadeSettings):
     '''
     This class containes the settings for the LinearCrossfade class.
-
         Input:
             length:                         length of the crossfade in ms.
             function = 'power':             function used for the crossfade ('power' or 'sinusoidal').
             exponent = 1:                   exponent of the crossfade.
             type = 'power':                 equal power ('power') or amplitude ('amplitude') of sum of original and reconstructed signal.
-            packet_type = 'last sample':    type of packet for fade_in only ('last sample': packet with all samples like the last one or 'last packet': inverted last packet).
+            packet_type = 'last sample':    type of packet for fade_in only ('last sample': packet with all samples like the last one or 'last packet': last packet).
     '''
     def __init__(self, length: int):
         super().__init__(length=length,
@@ -432,13 +428,12 @@ class LinearCrossfadeSettings(CrossfadeSettings):
 class QuadraticCrossfadeSettings(CrossfadeSettings):
     '''
     This class containes the settings for the QuadraticCrossfade class.
-
         Input:
             length:                         length of the crossfade in ms.
             function = 'power':             function used for the crossfade ('power' or 'sinusoidal').
             exponent = 2.0:                 exponent of the crossfade.
             type = 'power':                 equal power ('power') or amplitude ('amplitude') of sum of original and reconstructed signal.
-            packet_type = 'last sample':    type of packet for fade_in only ('last sample': packet with all samples like the last one or 'last packet': inverted last packet).
+            packet_type = 'last sample':    type of packet for fade_in only ('last sample': packet with all samples like the last one or 'last packet': last packet).
     '''
     def __init__(self, length: int):
         super().__init__(length=length,
@@ -451,13 +446,12 @@ class QuadraticCrossfadeSettings(CrossfadeSettings):
 class CubicCrossfadeSettings(CrossfadeSettings):
     '''
     This class containes the settings for the CubicCrossfade class.
-
         Input:
             length:                         length of the crossfade in ms.
             function = 'power':             function used for the crossfade ('power' or 'sinusoidal').
             exponent = 3.0:                 exponent of the crossfade.
             type = 'power':                 equal power ('power') or amplitude ('amplitude') of sum of original and reconstructed signal.
-            packet_type = 'last sample':    type of packet for fade_in only ('last sample': packet with all samples like the last one or 'last packet': inverted last packet).
+            packet_type = 'last sample':    type of packet for fade_in only ('last sample': packet with all samples like the last one or 'last packet': last packet).
     '''
     def __init__(self, length: int):
         super().__init__(length=length,
@@ -470,16 +464,14 @@ class CubicCrossfadeSettings(CrossfadeSettings):
 class SinusoidalCrossfadeSettings(CrossfadeSettings):
     '''
     This class containes the settings for the SinusoidalCrossfade class.
-
         Input:
             length:                         length of the crossfade in ms.
             function = 'sinusoidal':        function used for the crossfade ('power' or 'sinusoidal').
             exponent = 1.0:                 exponent of the crossfade.
             type = 'power':                 equal power ('power') or amplitude ('amplitude') of sum of original and reconstructed signal.
-            packet_type = 'last sample':    type of packet for fade_in only ('last sample': packet with all samples like the last one or 'last packet': inverted last packet).
+            packet_type = 'last sample':    type of packet for fade_in only ('last sample': packet with all samples like the last one or 'last packet': last packet).
     '''
     def __init__(self, length: int):
-
         super().__init__(length=length,
                          function=CrossfadeFunction.sinusoidal.value,
                          exponent=1.0,
@@ -527,12 +519,11 @@ class PLCSettings(Settings):
 class ZerosPLCSettings(PLCSettings):              
     '''
     This class containes the settings for the ZeroPLC class.
-    
         Input:
             crossfade:              list of CrossfadeSettings for each crossfade (for right part of lost samples): multiband_crossfade_settings, crossfade_settings or None.
             fade_in:                list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
             crossfade_frequencies:  list of frequencies for each crossfade band.
-            crossover_order:        Slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
+            crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
     '''
     def __init__(self, crossfade: List[CrossfadeSettings] | None = None,
                       fade_in: List[CrossfadeSettings] | None = None,
@@ -550,7 +541,17 @@ class ClipStrategy(Enum):
 
 
 class LastPacketPLCSettings(PLCSettings):
-
+    '''
+    This class containes the settings for the LastPacketPLC class.
+        Input:
+            crossfade:              list of CrossfadeSettings for each crossfade (for right part of lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            fade_in:                list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            crossfade_frequencies:  list of frequencies for each crossfade band.
+            crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
+            mirror_x:               mirrors the last packet on the x-axis (time-axis).
+            mirror_y:               mirrors the last packet on the y-axis (frequency-axis).
+            clip_strategy:          strategy to handle clipping; 'flip' mirrors last packet on first value or 'substract' .
+    '''
     def __init__(self, crossfade: List[CrossfadeSettings] | None = None,
                        fade_in: List[CrossfadeSettings] | None = None,
                        crossfade_frequencies: List[int] | None = None,
@@ -558,17 +559,6 @@ class LastPacketPLCSettings(PLCSettings):
                        mirror_x: bool = False,
                        mirror_y: bool = False,
                        clip_strategy: str = ClipStrategy.subtract.value):
-        '''
-        This class containes the settings for the LastPacketPLC class.
-            Input:
-                crossfade:              list of CrossfadeSettings for each crossfade (for right part of lost samples): multiband_crossfade_settings, crossfade_settings or None.
-                fade_in:                list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
-                crossfade_frequencies:  list of frequencies for each crossfade band.
-                crossover_order:        Slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
-                mirror_x:               mirrors the last packet on the x-axis (time-axis).
-                mirror_y:               mirrors the last packet on the y-axis (frequency-axis).
-                clip_strategy:          strategy to handle clipping; 'flip' mirrors last packet on first value or 'substract' .
-        '''
         super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
         self.settings["mirror_x"] = mirror_x
         self.settings["mirror_y"] = mirror_y
@@ -578,7 +568,21 @@ class LastPacketPLCSettings(PLCSettings):
 
 
 class LowCostPLCSettings(PLCSettings):
-
+    '''
+    This class containes the settings for the LowCostPLC class.
+        Input:
+            crossfade:              list of CrossfadeSettings for each crossfade (for right part of lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            fade_in:                list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            crossfade_frequencies:  list of frequencies for each crossfade band.
+            crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
+            max_frequency:          maximum frequency of the tracks.
+            f_min:                  minimum frequency of the tracks.
+            beta:                   beta parameter of the LowCostPLC algorithm.
+            n_m:                    n_m parameter of the LowCostPLC algorithm.
+            fade_in_length:         fade_in_length parameter of the LowCostPLC algorithm.
+            fade_out_length:        fade_out_length parameter of the LowCostPLC algorithm.
+            extraction_length:      extraction_length parameter of the LowCostPLC algorithm.
+    '''
     def __init__(self, crossfade: list[CrossfadeSettings] | None = None,
                        fade_in: list[CrossfadeSettings] | None = None,
                        crossfade_frequencies: list[int] | None = None,
@@ -590,18 +594,6 @@ class LowCostPLCSettings(PLCSettings):
                        fade_in_length: int = 10,
                        fade_out_length: float = 0.5,
                        extraction_length: int = 2):
-        '''
-        This class containes the settings for the LowCostPLC class.
-
-            Input:
-                max_frequency:  maximum frequency of the tracks.
-                f_min:          minimum frequency of the tracks.
-                beta:           beta parameter of the LowCostPLC algorithm.
-                n_m:            n_m parameter of the LowCostPLC algorithm.
-                fade_in_length: fade_in_length parameter of the LowCostPLC algorithm.
-                fade_out_length: fade_out_length parameter of the LowCostPLC algorithm.
-                extraction_length: extraction_length parameter of the LowCostPLC algorithm.
-        '''
         super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
         self.settings["max_frequency"] = max_frequency
         self.settings["f_min"] = f_min
@@ -629,20 +621,23 @@ class LowCostPLCSettings(PLCSettings):
 
 
 class BurgPLCSettings(PLCSettings):
-
+    '''
+    This class containes the settings for the BurgPLC class.
+        Input:
+            crossfade:              list of CrossfadeSettings for each crossfade (for right part of lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            fade_in:                list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            crossfade_frequencies:  list of frequencies for each crossfade band.
+            crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
+            context_length:         size of the training set.
+            order:                  order of the Burg algorithm.
+    '''
     def __init__(self, crossfade: list[CrossfadeSettings] | None = None,
                        fade_in: list[CrossfadeSettings] | None = None,
                        crossfade_frequencies: list[int] | None = None,
                        crossover_order: int | None = None,
                        context_length: int = 100,
                        order: int = 1):
-        '''
-        This class containes the settings for the BurgPLC class.
 
-            Input:
-                context_length: size of the training set.
-                order:          order of the Burg algorithm.
-        '''
         super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
         self.settings["context_length"] = context_length
         self.settings["order"] = order
@@ -668,7 +663,22 @@ class ExternalPLCSettings(PLCSettings):
 
 
 class DeepLearningPLCSettings(PLCSettings):
-
+    '''
+    This class containes the settings for the DeepLearningPLC class.
+        Input:
+            crossfade:              list of CrossfadeSettings for each crossfade (for right part of lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            fade_in:                list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            crossfade_frequencies:  list of frequencies for each crossfade band.
+            crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
+            model_path:             path to the model used for PLC.
+            fs_dl:                  sampling frequency of the tracks.
+            context_length:         context length of the tracks.
+            hop_size:               hop size of the tracks.
+            window_length:          window length of the tracks.
+            lower_edge_hertz:       lower edge of the tracks.
+            upper_edge_hertz:       upper edge of the tracks.
+            num_mel_bins:           number of mel bins of the tracks.
+    '''
     def __init__(self, crossfade: List[CrossfadeSettings] | None = None,
                        fade_in: List[CrossfadeSettings] | None = None,
                        crossfade_frequencies: List[int] | None = None,
@@ -681,19 +691,7 @@ class DeepLearningPLCSettings(PLCSettings):
                        lower_edge_hertz: float = 40.0,
                        upper_edge_hertz: float = 7600.0,
                        num_mel_bins: int = 100):
-        '''
-        This class containes the settings for the DeepLearningPLC class.
-
-            Input:
-                model_path:         path to the model used for PLC.
-                fs_dl:              sampling frequency of the tracks.
-                context_length:     context length of the tracks.
-                hop_size:           hop size of the tracks.
-                window_length:      window length of the tracks.
-                lower_edge_hertz:   lower edge of the tracks.
-                upper_edge_hertz:   upper edge of the tracks.
-                num_mel_bins:       number of mel bins of the tracks.
-        '''
+        
         super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
         self.settings["model_path"] = str(relative_to_root(model_path))
         self.settings["fs_dl"] = fs_dl
@@ -719,22 +717,25 @@ class DeepLearningPLCSettings(PLCSettings):
 
 
 class AdvancedPLCSettings(PLCSettings):
-
+    '''
+    This class containes the settings for the AdvancedPLC class.
+        Input:
+            crossfade:                  list of CrossfadeSettings for each crossfade (for right part of lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            fade_in:                    list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
+            crossfade_frequencies:      list of frequencies for each crossfade band.
+            crossover_order:            slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
+            settings:                   list of settings for each frequency band.
+            frequencies:                list of frequencies used for the crossover (Full band or L/Mid).
+            order:                      order of the crossover.
+            stereo_image_processing:    type of stereo image processing.
+            channel_link:               flag for channel link.
+    '''
     def __init__(self, settings: "dict[str, list[PLCSettings]]" = {'linked': [LastPacketPLCSettings(crossfade_frequencies=[3000])]},
                        frequencies: Dict[str, List[int]] | None = {'linked': []},
                        order: int | None = 4,
                        stereo_image_processing: str | None = StereoImageType.dual_mono.value,
                        channel_link: bool | None = True):
-        '''
-        This class containes the settings for the AdvancedPLC class.
 
-            Input:
-                settings:                   list of settings for each frequency band.
-                frequencies:                list of frequencies used for the crossover (Full band or L/Mid).
-                order:                      order of the crossover.
-                stereo_image_processing:    type of stereo image processing.
-                channel_link:               flag for channel link.
-        '''
         Settings.__init__(self)
         self.settings["settings"] = settings
         self.settings["frequencies"] = frequencies
@@ -826,20 +827,17 @@ class AdvancedPLCSettings(PLCSettings):
 
 
 class MSECalculatorSettings(Settings):
-
+    '''
+    This class containes the settings for the MSECalculator class.
+    Input:
+            N:              size of the windows used for computing the output measurements.
+            amp_scale:      scale factor for the amplitude of the tracks.
+    '''
     def __init__(self,
                  N: int = 1024,
                  hop = None,
                  amp_scale: float = 1.0):
-        '''
-        This class containes the settings for the MSECalculator class.
 
-        Input:
-                N:              size of the windows used for computing
-                                the output measurements.
-                amp_scale:      scale factor for the amplitude of the
-                                tracks.
-        '''
         super().__init__()
         self.settings["N"] = N
         self.settings["hop"] = N//2 if hop is None else hop
@@ -847,20 +845,17 @@ class MSECalculatorSettings(Settings):
 
 
 class MAECalculatorSettings(Settings):
-
+    '''
+    This class containes the settings for the MAECalculator class.
+    Input:
+            N:              size of the windows used for computing the output measurements.
+            amp_scale:      scale factor for the amplitude of the tracks.
+    '''
     def __init__(self,
                  N: int = 1024,
                  hop = None,
                  amp_scale: float = 1.0):
-        '''
-        This class containes the settings for the MAECalculator class.
 
-        Input:
-                N:              size of the windows used for computing
-                                the output measurements.
-                amp_scale:      scale factor for the amplitude of the
-                                tracks.
-        '''
         super().__init__()
         self.settings["N"] = N
         self.settings["hop"] = N//2 if hop is None else hop
@@ -875,12 +870,9 @@ class SpectralEnergyCalculatorSettings(Settings):
                  amp_scale: float = 1.0):
         '''
         This class containes the settings for the SpectralEnergyCalculatorSettings class.
-
         Input:
-                N:              size of the windows used for computing
-                                the output measurements.
-                amp_scale:      scale factor for the amplitude of the
-                                tracks.
+                N:              size of the windows used for computing the output measurements.
+                amp_scale:      scale factor for the amplitude of the tracks.
         '''
         super().__init__()
         self.settings["N"] = N
@@ -894,21 +886,19 @@ class PEAQMode(Enum):
 
 
 class PEAQCalculatorSettings(Settings):
-
-    def __init__(self, peaq_mode: PEAQMode = PEAQMode.basic):
-        '''
-        This class containes the settings for the PEAQCalculator class.
-
-            Input:
-                peaq_mode:      mode of the PEAQ algorithm.
-        '''
+    '''
+    This class containes the settings for the PEAQCalculator class.
+        Input:
+            peaq_mode:      mode of the PEAQ algorithm.
+    '''
+    def __init__(self, peaq_mode: str = PEAQMode.basic.value):
         super().__init__()
         self.settings["peaq_mode"] = peaq_mode
 
 
 class WindowedPEAQCalculatorSettings(Settings):
 
-    def __init__(self, peaq_mode: PEAQMode = PEAQMode.basic,
+    def __init__(self, peaq_mode: str = PEAQMode.basic.value,
                        intorno_length: int = 300):
         super().__init__()
         self.settings["peaq_mode"] = peaq_mode
@@ -972,7 +962,6 @@ class PlotsSettings(Settings):
                        figsize: tuple[int, int] = (12, 6)):
         '''
         This class containes the settings for the Plots classes.
-
             Input:
                 figsize:        size of the figures.
         '''
