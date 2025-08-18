@@ -143,20 +143,20 @@ class OriginalTrackNode(Node):
         self.persistent = self.get_worker().is_persistent() #type: ignore
 
 class LostSamplesMaskNode(Node):
-    def __init__(self, file=None,
-                 worker=None,
-                 settings=None,
-                 absolute_path=None,
-                 parent=None,
-                 database=None,
-                 folder_name=None) -> None:
-        super().__init__(file=file,
-                         worker=worker,
-                         settings=settings,
-                         absolute_path=absolute_path,
-                         parent=parent,
-                         database=database,
-                         folder_name=folder_name)
+    def __init__(self, file = None,
+                 worker = None,
+                 settings = None,
+                 absolute_path = None,
+                 parent = None,
+                 database = None,
+                 folder_name = None) -> None:
+        super().__init__(file = file,
+                         worker = worker,
+                         settings = settings,
+                         absolute_path = absolute_path,
+                         parent = parent,
+                         database = database,
+                         folder_name = folder_name)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data() #type: ignore
@@ -172,19 +172,19 @@ class LostSamplesMaskNode(Node):
         self.file = DataFile(lost_samples_idx, self.absolute_path + '.npy') #type: ignore
 
 class ReconstructedTrackNode(Node):
-    def __init__(self, file=None,
-                 worker=None,
-                 settings=None,
-                 absolute_path=None,
-                 parent=None, database=None,
-                 folder_name=None) -> None:
-        super().__init__(file=file,
-                         worker=worker,
-                         settings=settings,
-                         absolute_path=absolute_path,
-                         parent=parent,
-                         database=database,
-                         folder_name=folder_name)
+    def __init__(self, file = None,
+                 worker = None,
+                 settings = None,
+                 absolute_path = None,
+                 parent = None, database = None,
+                 folder_name = None) -> None:
+        super().__init__(file = file,
+                         worker = worker,
+                         settings = settings,
+                         absolute_path = absolute_path,
+                         parent = parent,
+                         database = database,
+                         folder_name = folder_name)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data() #type: ignore
@@ -204,8 +204,21 @@ class ReconstructedTrackNode(Node):
         self.file = AudioFile.from_audio_file(original_track, reconstructed_track, self.absolute_path + '.wav') #type: ignore
 
 class OutputAnalysisNode(Node):
-    def __init__(self, file=None, worker=None, settings=None, absolute_path=None, parent=None, database=None, folder_name=None) -> None:
-        super().__init__(file=file, worker=worker, settings=settings, absolute_path=absolute_path, parent=parent, database=database, folder_name=folder_name)
+    def __init__(self,
+                 file = None,
+                 worker = None,
+                 settings = None,
+                 absolute_path = None,
+                 parent = None,
+                 database = None,
+                 folder_name = None) -> None:
+        super().__init__(file = file,
+                         worker = worker,
+                         settings = settings,
+                         absolute_path = absolute_path,
+                         parent = parent,
+                         database = database,
+                         folder_name = folder_name)
 
     def get_data(self) -> np.ndarray:
         return self.file.get_data() #type: ignore
