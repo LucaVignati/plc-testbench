@@ -968,7 +968,6 @@ class HumanCalculatorSettings(Settings):
             choose_seed:                for comparing results: leave at 1
             reference:                  path to reference audio file relative to webmushra folder (high quality audio).
             anchor:                     path to anchor audio file relative to webmushra folder (bad quality audio).
-    )),
     '''
     def __init__(self, stimulus_length: int = 3000,
                        single_loss_per_stimulus: bool = True,
