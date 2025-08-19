@@ -156,12 +156,18 @@ def fade_out(audio, fs, fade_out_time) -> None:
 
 def leading_silence(audio, fs, silence_time) -> np.ndarray:
     silence_samples = int(silence_time * fs / 1000)
-    silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
+    if audio.ndim == 1:  # Mono
+        silence = np.zeros(silence_samples, dtype=audio.dtype)
+    else:  # Stereo oder Multichannel
+        silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
     return np.concatenate((silence, audio), axis=0)
 
 def trailing_silence(audio, fs, silence_time) -> np.ndarray:
     silence_samples = int(silence_time * fs / 1000)
-    silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
+    if audio.ndim == 1:  # Mono
+        silence = np.zeros(silence_samples, dtype=audio.dtype)
+    else:  # Stereo oder Multichannel
+        silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
     return np.concatenate((audio, silence), axis=0)
 
 def is_loud_enough(audio_data, audio_reference, threshold=-30):
