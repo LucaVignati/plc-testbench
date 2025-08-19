@@ -415,6 +415,14 @@ class HumanCalculator(OutputAnalyser):
         self.listening_test.set_stimuli(list(zip(stimuli_reconstructed[0], stimuli_reconstructed[1])), original_track_node)
         self.listening_test.set_indexes(stimuli_original[0])
         self.listening_test.generate_config()
+        try:
+            results = self.listening_test.get_results()
+        except FileNotFoundError as e:
+            print(f"[WARN] {e}")
+            choice = input("Human-Calculator Results are missing. Skip? (y=yes / n=no) ").strip().lower()
+            if choice == 'y':
+                return np.full(len(original_track_node.get_data())//self.packet_size, np.nan, dtype=float)
+            raise
         results =  self.listening_test.get_results()
 
         metric = np.zeros(len(original_track_node.get_data())//self.packet_size)
