@@ -549,8 +549,8 @@ class LastPacketPLCSettings(PLCSettings):
             crossfade_frequencies:  list of frequencies for each crossfade band.
             crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
             mirror_x:               mirrors the x-values of last packet.
-            mirror_y:               mirrors the y-values of last packet. (not correctly implemented yet)
-            clip_strategy:          strategy to handle clipping; 'flip' mirrors last packet on first value or 'substract'. (not correctly implemented yet)
+            mirror_y:               if mirror_x is True mirrors the y-values of last packet. (not correctly implemented yet)
+            clip_strategy:          strategy to handle clipping caused by mirror_y: 'flip' mirrors last packet on first value, 'substract' or 'None'. (not correctly implemented yet)
     '''
     def __init__(self, crossfade: List[CrossfadeSettings] | None = None,
                        fade_in: List[CrossfadeSettings] | None = None,
@@ -575,13 +575,13 @@ class LowCostPLCSettings(PLCSettings):
             fade_in:                list of CrossfadeSettings for each fade-in (for left part lost samples): multiband_crossfade_settings, crossfade_settings or None.
             crossfade_frequencies:  list of frequencies for each crossfade band.
             crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
-            max_frequency:          maximum frequency of the tracks.
-            f_min:                  minimum frequency of the tracks.
-            beta:                   beta parameter of the LowCostPLC algorithm.
-            n_m:                    n_m parameter of the LowCostPLC algorithm.
-            fade_in_length:         fade_in_length parameter of the LowCostPLC algorithm.
-            fade_out_length:        fade_out_length parameter of the LowCostPLC algorithm.
-            extraction_length:      extraction_length parameter of the LowCostPLC algorithm.
+            max_frequency:          maximal expected fundamental frequency in Hz (serves as a reference for the minimum permissible zero-crossing distance)
+            f_min:                  minimal frequency in Hz for extraction length N_p = beta * f_s / f_min.
+            beta:                   optional safety margin for extraction length N_p = beta * f_s / f_min.
+            n_m:                    number of samples that are linearly replaced at the beginning and end of an extracted period sequence.
+            fade_in_length:         number of samples for extrapolation at the beginning of a lost packet in samples
+            fade_out_length:        number of packet sizes for crossfade after the lost packet in the next received packet.
+            extraction_length:      number of packet sizes that are used for extraction context.
     '''
     def __init__(self, crossfade: list[CrossfadeSettings] | None = None,
                        fade_in: list[CrossfadeSettings] | None = None,
@@ -986,6 +986,41 @@ class HumanCalculatorSettings(Settings):
         self.settings["choose_seed"] = choose_seed
         self.settings["reference"] = reference
         self.settings["anchor"] = anchor
+
+
+class MultiHumanCalculatorSettings(Settings):
+    '''
+    Diese Klasse enthält die Settings für MultiHumanCalculator.
+        Input:
+            stimulus_length:            Länge der extrahierten Stimuli in ms.
+            single_loss_per_stimulus:   Nur ein Paketverlust pro Stimulus.
+            stimuli_per_page:           Anzahl Stimuli pro Seite.
+            pages:                      Anzahl Testseiten.
+            iterations:                 Wiederholungen des Tests.
+            choose_seed:                Seed für Stimuli-Auswahl.
+            reference:                  Pfad zur Referenz-Audiodatei.
+            anchor:                     Pfad zur Anchor-Audiodatei.
+            plc_algorithm_count:        Anzahl der PLC-Algorithmen (wichtig für dynamische Erkennung).
+    '''
+    def __init__(self, stimulus_length: int = 3000,
+                       single_loss_per_stimulus: bool = True,
+                       stimuli_per_page: int = 10,
+                       pages: int = 2,
+                       iterations: int = 1,
+                       choose_seed: int = 1,
+                       reference: str | None = None,
+                       anchor: str | None = None,
+                       plc_algorithm_count: int | None = None) -> None:
+        super().__init__()
+        self.settings["stimulus_length"] = stimulus_length
+        self.settings["single_loss_per_stimulus"] = single_loss_per_stimulus
+        self.settings["stimuli_per_page"] = stimuli_per_page
+        self.settings["pages"] = pages
+        self.settings["iterations"] = iterations
+        self.settings["choose_seed"] = choose_seed
+        self.settings["reference"] = reference
+        self.settings["anchor"] = anchor
+        self.settings["plc_algorithm_count"] = plc_algorithm_count
 
 
 class PlotsSettings(Settings):
