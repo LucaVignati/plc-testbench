@@ -247,12 +247,12 @@ class LastPacketPLC(PLCAlgorithm):
             if self.mirror_y:
                 for channel in range(self.n_channels):
                     reconstructed_buffer[:, channel] = _flip_in_place(reconstructed_buffer[:, channel])
-                    for sample in range(np.shape(reconstructed_buffer)[0]):
-                        if abs(sample) > 1 and self.clip_strategy is not None:
+                    for sample_idx in range(np.shape(reconstructed_buffer)[0]):
+                        if abs(reconstructed_buffer[0, channel]) > 1 and self.clip_strategy is not None:
                             if self.clip_strategy == "subtract":
-                                reconstructed_buffer[sample:, channel] = reconstructed_buffer[sample:, channel] - (sample - np.sign(sample))
+                                reconstructed_buffer[sample_idx:, channel] = reconstructed_buffer[sample_idx:, channel] - (reconstructed_buffer[sample_idx:, channel] - np.sign(sample_idx))
                             elif self.clip_strategy == "flip":
-                                reconstructed_buffer[sample:, channel] = _flip_in_place(reconstructed_buffer[sample:, channel])
+                                reconstructed_buffer[sample_idx:, channel] = _flip_in_place(reconstructed_buffer[sample_idx:, channel])
         return reconstructed_buffer
 
 
