@@ -276,24 +276,3 @@ def test_process(lcc: LowCostConcealment, file: sf.SoundFile):
         for n in range(lcc._n_channels):
             ax[n].plot(np.arange(start_idx, end_idx), buffer[:, n], color)
     fig.savefig("original_tracks/Process.png", bbox_inches='tight')
-
-
-# with sf.SoundFile("original_tracks/Chonks_stereo_2s.wav", "r") as file:
-#     samplerate = file.samplerate
-#     max_frequency = 4800
-#     f_min = 80
-#     beta = 1
-#     n_m = 2
-#     fade_in_length = 10
-#     fade_out_length = 0.5
-#     extraction_length = 2
-#     packet_size = 64
-#     n_channels = 2
-#     lcc = LowCostConcealment(max_frequency, f_min, beta, n_m, fade_in_length, fade_out_length, extraction_length)
-#     lcc.prepare_to_play(samplerate, packet_size, n_channels)
-#     #test_zero_crossing_detection(lcc, file, plot=True)
-#     #test_extraction(lcc, file)
-#     #test_alignment(lcc, file)
-#     #test_extrapolation_and_fade_in(lcc, file)
-#     #test_fade_out(lcc, file)
-#     test_process(lcc, file)
