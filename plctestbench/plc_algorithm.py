@@ -377,8 +377,5 @@ class DeepLearningPLC(PLCAlgorithm):
             #spectrogram_8s = self._compute_spectrogram(librosa.resample(context[:, channel_index], orig_sr=self.fs_dl, target_sr=self.fs_dl/4), self.fs_dl/4)
             spectrograms = np.expand_dims(spectrogram_2s, axis=0)
             last_packet = np.expand_dims(context[-self.packet_size:, channel_index], axis=0)
-            # print(f"self.model: {self.model}")
-            # print(f"model.summary(): {self.model.summary()}")
-            # print(type(self.model), np.shape(self.model), type(spectrograms), np.shape(spectrograms), type(last_packet), np.shape(last_packet))
             reconstructed_buffer[channel_index, :] = self.model([spectrograms, last_packet]) # type: ignore
         return reconstructed_buffer.T
