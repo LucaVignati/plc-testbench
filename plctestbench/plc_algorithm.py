@@ -236,11 +236,11 @@ class LastPacketPLC(PLCAlgorithm):
         
         '''
         _ = buffer
-        def _flip_in_place(buffer: np.ndarray):
+        def _flip_in_place(buffer: np.ndarray, start_value = buffer[0]):
             '''
             Flips the array in place.
             '''
-            return -(buffer - buffer[0]) + buffer[0]
+            return -(buffer - start_value) + start_value
         reconstructed_buffer = self.context[-self.packet_size:]
         if self.mirror_x:
             reconstructed_buffer = np.flip(reconstructed_buffer, axis=0)
@@ -248,11 +248,18 @@ class LastPacketPLC(PLCAlgorithm):
                 for channel in range(self.n_channels):
                     reconstructed_buffer[:, channel] = _flip_in_place(reconstructed_buffer[:, channel])
                     for sample_idx in range(np.shape(reconstructed_buffer)[0]):
-                        if abs(reconstructed_buffer[0, channel]) > 1 and self.clip_strategy is not None:
+                        if abs(reconstructed_buffer[sample_idx, channel]) > 1 and self.clip_strategy is not None:
                             if self.clip_strategy == "subtract":
-                                reconstructed_buffer[sample_idx:, channel] = reconstructed_buffer[sample_idx:, channel] - (reconstructed_buffer[sample_idx:, channel] - np.sign(sample_idx))
+                                if reconstructed_buffer[sample_idx, channel] > 1:
+                                    reconstructed_buffer[sample_idx, channel] -= reconstructed_buffer[sample_idx, channel]
+                                    reconstructed_buffer[sample_idx, channel] += np.sign(sample_idx)
+                                else:
+                                    reconstructed_buffer[sample_idx, channel] += abs(reconstructed_buffer[sample_idx, channel])
+                                    reconstructed_buffer[sample_idx, channel] -= np.sign(sample_idx)
                             elif self.clip_strategy == "flip":
-                                reconstructed_buffer[sample_idx:, channel] = _flip_in_place(reconstructed_buffer[sample_idx:, channel])
+                                start_value = 1 if reconstructed_buffer[sample_idx, channel] > 1 else -1
+                                reconstructed_buffer[sample_idx, channel] = _flip_in_place(reconstructed_buffer[sample_idx, channel], start_value)
+            print(reconstructed_buffer)
         return reconstructed_buffer
 
 
