@@ -8,6 +8,7 @@ import numpy as np
 from plctestbench.utils import compute_hash
 
 DEFAULT_DTYPE = 'float32'
+DEFAULT_SUBTYPE = 'FLOAT'
 
 def calculate_hash(*args) -> int:
     data = ''
@@ -86,13 +87,13 @@ class AudioFile(FileWrapper):
 
     @classmethod
     def from_audio_file(cls, audio_file: AudioFile,
-                             new_data: ndarray|None=None,
-                             new_path: str|None=None,
-                             new_samplerate: float|None=None,
-                             new_channels: int|None=None,
-                             new_subtype: str|None=None,
-                             new_endian: str|None=None,
-                             new_audio_format: str|None=None) -> AudioFile:
+                             new_data: ndarray | None = None,
+                             new_path: str | None = None,
+                             new_samplerate: float | None = None,
+                             new_channels: int | None = None,
+                             new_subtype: str | None = None,
+                             new_endian: str | None = None,
+                             new_audio_format: str | None = None) -> AudioFile:
         data = audio_file.data if new_data is None else new_data
         path = audio_file.path if new_path is None else new_path
         samplerate = audio_file.samplerate if new_samplerate is None else new_samplerate
@@ -128,9 +129,9 @@ class AudioFile(FileWrapper):
         sf.write(self.path,
                  self.data,
                  self.samplerate,
-                 self.subtype,
-                 self.endian,
-                 self.audio_format)
+                 subtype = DEFAULT_SUBTYPE,
+                 endian = self.endian,
+                 format = self.audio_format)
 
     def load(self) -> ndarray:
         with sf.SoundFile(self.path, 'r') as file:
