@@ -550,7 +550,7 @@ class LastPacketPLCSettings(PLCSettings):
             crossover_order:        slope of the filters of the frequency bands (crossover_order * 6 dB/Oktave).
             mirror_x:               mirrors the x-values of last packet.
             mirror_y:               if mirror_x is true mirrors the y-values of last packet.
-            clip_strategy:          strategy to handle clipping caused by mirror_y: 'flip' mirrors clipping values inside range, 'substract' limits clipping values and 'None'.
+            clip_strategy:          strategy to handle clipping caused by mirror_y: 'flip' mirrors clipping values inside value range, 'substract' limits clipping values and 'None'.
     '''
     def __init__(self, crossfade: List[CrossfadeSettings] | None = None,
                        fade_in: List[CrossfadeSettings] | None = None,
