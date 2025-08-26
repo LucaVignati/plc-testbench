@@ -65,11 +65,14 @@ class LowCostConcealment:
         self._window[-buffer_size:] = buffer_out
         return buffer_out
 
-    def pre_process(self, buffer: np.ndarray | tuple[np.ndarray, np.ndarray]) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
-        buffer = np.multiply(np.sqrt(np.abs(buffer)), np.sign(buffer))
-        buffer = signal.filtfilt(self._lp_filter, [1], buffer, axis=0, padlen=self._packet_size - 1)
-        buffer = signal.lfilter(self._hp_filter_b, self._hp_filter_a, buffer, axis=0)
-        return buffer
+    def pre_process(self, window_size: np.ndarray | tuple[np.ndarray, np.ndarray]) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+        buf_shape = window_size[0].shape if isinstance(window_size, tuple) else window_size.shape
+        if buf_shape[0] < self._packet_size - 1:
+            raise ValueError("Choose greater extraction length N_p for LowCostPLC: Increase beta (or lower f_min).")
+        window_size = np.multiply(np.sqrt(np.abs(window_size)), np.sign(window_size))
+        window_size = signal.filtfilt(self._lp_filter, [1], window_size, axis=0, padlen=self._packet_size - 1)
+        window_size = signal.lfilter(self._hp_filter_b, self._hp_filter_a, window_size, axis=0)
+        return window_size
 
     def zero_crossing_detect(self, buffer: np.ndarray) -> np.ndarray:
         zero_crossings = np.zeros(np.shape(buffer))
@@ -117,6 +120,8 @@ class LowCostConcealment:
 
     def fade_out(self, buffer: np.ndarray, concealment: np.ndarray):
         fade_out_length = int(self._fade_out_length * self._packet_size)
+        if len(buffer) > len(concealment):
+            raise ValueError("Increase extraction_length for LowCostPLC or decrease packet_size")
         window = np.arange(0, 1, 1/fade_out_length)[1:]
         buffer[:fade_out_length - 1] = np.multiply(buffer[:fade_out_length - 1], window) + np.multiply(concealment[:fade_out_length - 1], 1 - window)
         return buffer
