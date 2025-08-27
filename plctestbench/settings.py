@@ -990,17 +990,18 @@ class HumanCalculatorSettings(Settings):
 
 class MultiHumanCalculatorSettings(Settings):
     '''
-    Diese Klasse enthält die Settings für MultiHumanCalculator.
+    This class contains the settings for the MultiHumanCalculator.
         Input:
-            stimulus_length:            Länge der extrahierten Stimuli in ms.
-            single_loss_per_stimulus:   Nur ein Paketverlust pro Stimulus.
-            stimuli_per_page:           Anzahl Stimuli pro Seite.
-            pages:                      Anzahl Testseiten.
-            iterations:                 Wiederholungen des Tests.
-            choose_seed:                Seed für Stimuli-Auswahl.
-            reference:                  Pfad zur Referenz-Audiodatei.
-            anchor:                     Pfad zur Anchor-Audiodatei.
-            plc_algorithm_count:        Anzahl der PLC-Algorithmen (wichtig für dynamische Erkennung).
+            stimulus_length:            length of extracted stimuli from audio file in ms.
+            single_loss_per_stimulus:   enables one packet loss per stimuli.
+            stimuli_per_page:           number of stimuli per page.
+            pages:                      number of testpages.
+            iterations:                 repetitions of the stimuli test.
+            choose_seed:                for comparing results: leave at 1
+            reference:                  path to reference audio file relative to webmushra folder (high quality audio).
+            anchor:                     path to anchor audio file relative to webmushra folder (bad quality audio).
+            packet_loss_simulators:     list of packet loss simulators to test.
+            plc_algorithms:             list of PLC algorithms to test.
     '''
     def __init__(self, stimulus_length: int = 3000,
                        single_loss_per_stimulus: bool = True,
@@ -1010,7 +1011,8 @@ class MultiHumanCalculatorSettings(Settings):
                        choose_seed: int = 1,
                        reference: str | None = None,
                        anchor: str | None = None,
-                       plc_algorithm_count: int | None = None) -> None:
+                       packet_loss_simulators: list[tuple] | None = None,
+                       plc_algorithms: list[tuple] | None = None) -> None:
         super().__init__()
         self.settings["stimulus_length"] = stimulus_length
         self.settings["single_loss_per_stimulus"] = single_loss_per_stimulus
@@ -1020,7 +1022,8 @@ class MultiHumanCalculatorSettings(Settings):
         self.settings["choose_seed"] = choose_seed
         self.settings["reference"] = reference
         self.settings["anchor"] = anchor
-        self.settings["plc_algorithm_count"] = plc_algorithm_count
+        self.settings["packet_loss_simulators"] = packet_loss_simulators
+        self.settings["plc_algorithms"] = plc_algorithms
 
 
 class PlotsSettings(Settings):

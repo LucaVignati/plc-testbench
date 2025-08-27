@@ -8,6 +8,7 @@ import json
 import pandas as pd
 import copy
 from io import StringIO
+import numpy as np
 
 class ListeningTest(object):
 
@@ -344,6 +345,46 @@ class ListeningTest(object):
         yaml.dump(config, stream)
         config_string = stream.getvalue().replace('- -', '-\n  -')
         file.write(config_string)
+
+  def prepare_multi_stimuli(self, original_file: AudioFile, variants: list[tuple[str, np.ndarray]], fs: int):
+      """
+      variants: List of tuples (label, mono/stereo np.ndarray)
+      Saves WAV files under resources/audio and builds internal structure.
+      """
+      from .file_wrapper import AudioFile as AF
+      self.multi_labels = []
+      self.multi_paths = []
+      audio_dir = self.resources_folder.joinpath("audio")
+      audio_dir.mkdir(parents=True, exist_ok=True)
+      for label, data in variants:
+          out_path = audio_dir.joinpath(f"{label}.wav")
+          af = AF.from_audio_file(original_file, new_data=data, new_path=str(out_path))
+          self.multi_labels.append(label)
+          self.multi_paths.append(str(out_path))
+
+  def generate_multi_config(self):
+      """
+      Create YAML config for multiple variants.
+      """
+      yaml = YAML()
+      self.configs_folder.mkdir(parents=True, exist_ok=True)
+      # Dateiname
+      cfg_name = f"{self.run_name}-multi.yaml"
+      cfg_path = self.configs_folder.joinpath(cfg_name)
+
+      config = {
+          "testId": self.run_name,
+          "type": "multi-plc",
+          "reference": self.multi_paths[0] if self.multi_paths else "",
+          "stimuli": [
+        {"id": label, "file": path}
+        for label, path in zip(self.multi_labels, self.multi_paths)
+          ],
+          "pages": 1,
+          "instructions": "Please rate the quality of the variants.",
+      }
+      with open(cfg_path, "w") as f:
+          yaml.dump(config, f) 
 
   def get_results(self) -> list:
 
