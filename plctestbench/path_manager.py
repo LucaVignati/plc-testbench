@@ -23,15 +23,15 @@ def compute_absolute_folder_path(parent: Node) -> str:
     return folder_path
 
 def _format_pls_settings(settings) -> str:
-    d = getattr(settings, "settings", None)
-    if not isinstance(d, dict):
+    settings_dict = getattr(settings, "settings", None)
+    if not isinstance(settings_dict, dict):
         return ""
     parts = []
-    for k, v in d.items():
-        v_str = str(v)
-        if '.' in v_str:
-            v_str = v_str.replace('.', 'p')
-        parts.append(f"{k}={v_str}")
+    for key, value in settings_dict.items():
+        value_str = str(value)
+        if '.' in value_str:
+            value_str = value_str.replace('.', 'p')
+        parts.append(f"{key}={value_str}")
     return "-".join(parts)
 
 
