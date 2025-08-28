@@ -17,8 +17,23 @@ def compute_absolute_folder_path(parent: Node) -> str:
     folder_path = ""
     for ancestor in parent.ancestors:
         folder_path = path.join(folder_path, ancestor.get_folder_name())
-    folder_path = path.join(folder_path, parent.get_folder_name())
+    folder_name = parent.get_folder_name()
+    if folder_name is not None:
+        folder_path = path.join(folder_path, folder_name)
     return folder_path
+
+def _format_pls_settings(settings) -> str:
+    d = getattr(settings, "settings", None)
+    if not isinstance(d, dict):
+        return ""
+    parts = []
+    for k, v in d.items():
+        v_str = str(v)
+        if '.' in v_str:
+            v_str = v_str.replace('.', 'p')
+        parts.append(f"{k}={v_str}")
+    return "-".join(parts)
+
 
 class PathManager(object):
 
@@ -70,7 +85,10 @@ class PathManager(object):
         folder_name = None
         index = parent.depth + 1
         node_path = compute_absolute_folder_path(parent)
-        worker_name = worker.__name__ + '-' + str(hash(settings))
+        if worker.__module__.endswith("loss_simulator"):
+            worker_name = f"{worker.__name__}-{_format_pls_settings(settings)}"
+        else:
+            worker_name = worker.__name__ + '-' + str(hash(settings))
         absolute_path = path.join(node_path, worker_name)
         if index < len(folder_suffixes):
             folder_name = worker_name + '-' + folder_suffixes[index]
