@@ -994,34 +994,22 @@ class MultiHumanCalculatorSettings(Settings):
         Input:
             stimulus_length:            length of extracted stimuli from audio file in ms.
             single_loss_per_stimulus:   enables one packet loss per stimuli.
-            stimuli_per_page:           number of stimuli per page.
-            pages:                      number of testpages.
-            iterations:                 repetitions of the stimuli test.
+            pages_per_PLS:              number of testpages per packet loss simulator.
             choose_seed:                for comparing results: leave at 1
-            reference:                  path to reference audio file relative to webmushra folder (high quality audio).
-            anchor:                     path to anchor audio file relative to webmushra folder (bad quality audio).
             packet_loss_simulators:     list of packet loss simulators to test.
             plc_algorithms:             list of PLC algorithms to test.
     '''
     def __init__(self, stimulus_length: int = 3000,
                        single_loss_per_stimulus: bool = True,
-                       stimuli_per_page: int = 10,
-                       pages: int = 2,
-                       iterations: int = 1,
+                       pages_per_PLS: int = 3,
                        choose_seed: int = 1,
-                       reference: str | None = None,
-                       anchor: str | None = None,
                        packet_loss_simulators: list[tuple] | None = None,
                        plc_algorithms: list[tuple] | None = None) -> None:
         super().__init__()
         self.settings["stimulus_length"] = stimulus_length
         self.settings["single_loss_per_stimulus"] = single_loss_per_stimulus
-        self.settings["stimuli_per_page"] = stimuli_per_page
-        self.settings["pages"] = pages
-        self.settings["iterations"] = iterations
+        self.settings["pages_per_PLS"] = pages_per_PLS
         self.settings["choose_seed"] = choose_seed
-        self.settings["reference"] = reference
-        self.settings["anchor"] = anchor
         self.settings["packet_loss_simulators"] = packet_loss_simulators
         self.settings["plc_algorithms"] = plc_algorithms
 

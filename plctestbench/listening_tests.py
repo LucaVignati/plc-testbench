@@ -346,46 +346,6 @@ class ListeningTest(object):
         config_string = stream.getvalue().replace('- -', '-\n  -')
         file.write(config_string)
 
-  def prepare_multi_stimuli(self, original_file: AudioFile, variants: list[tuple[str, np.ndarray]], fs: int):
-      """
-      variants: List of tuples (label, mono/stereo np.ndarray)
-      Saves WAV files under resources/audio and builds internal structure.
-      """
-      from .file_wrapper import AudioFile as AF
-      self.multi_labels = []
-      self.multi_paths = []
-      audio_dir = self.resources_folder.joinpath("audio")
-      audio_dir.mkdir(parents=True, exist_ok=True)
-      for label, data in variants:
-          out_path = audio_dir.joinpath(f"{label}.wav")
-          af = AF.from_audio_file(original_file, new_data=data, new_path=str(out_path))
-          self.multi_labels.append(label)
-          self.multi_paths.append(str(out_path))
-
-  def generate_multi_config(self):
-      """
-      Create YAML config for multiple variants.
-      """
-      yaml = YAML()
-      self.configs_folder.mkdir(parents=True, exist_ok=True)
-      # Dateiname
-      cfg_name = f"{self.run_name}-multi.yaml"
-      cfg_path = self.configs_folder.joinpath(cfg_name)
-
-      config = {
-          "testId": self.run_name,
-          "type": "multi-plc",
-          "reference": self.multi_paths[0] if self.multi_paths else "",
-          "stimuli": [
-        {"id": label, "file": path}
-        for label, path in zip(self.multi_labels, self.multi_paths)
-          ],
-          "pages": 1,
-          "instructions": "Please rate the quality of the variants.",
-      }
-      with open(cfg_path, "w") as f:
-          yaml.dump(config, f) 
-
   def get_results(self) -> list:
 
     # Read the data from the database
@@ -422,3 +382,173 @@ class ListeningTest(object):
       formatted_results = list(result.itertuples(index=False, name=None))
 
     return formatted_results
+  
+  def generate_multi_config(self, session, plc_algorithms, pages_per_PLS, stimulus_length):
+      '''
+      Generates a MUSHRA config file when all algorithms have been processed.
+      '''
+      yaml = YAML(typ=['rt', 'string'])
+      config = {
+          "testname": "Multi-PLC Comparison",
+          "testId": self.run_name,
+          "bufferSize": 2048,
+          "stopOnErrors": False,
+          "showButtonPreviousPage": False,
+          "remoteService": "service/write.php",
+          "pages": []
+      }
+      intro = {
+          "type": "generic",
+          "id": "Intro",
+          "name": "Instructions",
+          "content": f'\
+              <h2>Requirements</h2>\
+              <p>For this test please use good hifi headphones.</p>\
+              <h2>Explanation</h2>\
+              The goal of this test is to assess how audible audio glitches are in different speech signals.<br>\
+              You will be presented with {len(plc_algorithms)+2} unlabeled audio tracks in each of the {pages_per_PLS} listening sessions.<br>\
+              Each audio track has a length of {stimulus_length/1000} seconds.<br>\
+              You need to assign each track a score between 0 and 100 representing how audible the glitches were.<br>\
+              The scale is divided into the following sections: "Excellent", "Good", "Fair", "Poor", and "Bad".\
+\
+                <h2>Audio Examples</h2>\
+                Below you can find 3 examples of the audio tracks you will be presented with.<br>\
+                Listen carefully to the examples to understand the scale.<br>\
+              <table>\
+                <tr>\
+                  <th></th>\
+                  <th>Speech</th>\
+                </tr>\
+                <tr>\
+                  <td>Excellent</td>\
+                  <td>\
+                    <audio controls>\
+                        <source src="configs/resources/audio/reference_5-1080.wav" type="audio/wav">\
+                        Your browser does not support the audio element.\
+                    </audio>\
+                  </td>\
+                </tr>\
+                <tr>\
+                  <td>Bad</td>\
+                  <td>\
+                    <audio controls>\
+                        <source src="configs/resources/audio/ZerosPLC_5-1080.wav" type="audio/wav">\
+                        Your browser does not support the audio element.\
+                    </audio>\
+                  </td>\
+                </tr>\
+                <tr>\
+                  <td>Fair</td>\
+                  <td>\
+                    <audio controls>\
+                        <source src="configs/resources/audio/ExternalPLC_5-1080.wav" type="audio/wav">\
+                        Your browser does not support the audio element.\
+                    </audio>\
+                  </td>\
+                </tr>\
+              </table>\
+              <style>\
+                  table {{\
+                      margin-left: auto;\
+                      margin-right: auto;\
+                      border-collapse: collapse;\
+                  }}\
+                  th, td {{\
+                      border: 0px solid black;\
+                      padding: 10px;\
+                      text-align: center;\
+                  }}\
+              </style>'
+      }
+      config["pages"].append(intro)
+
+      n_pages = len(session["orig_ref_paths"][0])
+
+      for page_idx in range(n_pages):
+          stimuli_map = {}
+          ref_path = session["orig_ref_paths"][0][page_idx]                
+          for algorithm in plc_algorithms:
+              for run_paths in session["recon_paths"][algorithm]:
+                  algorithm_wav = run_paths[page_idx]
+                  stimuli_map[Path(algorithm_wav).stem] = str(Path(algorithm_wav).relative_to(self.webmushra_folder))
+          page = {
+              "type": "mushra",
+              "id": f"loss-{page_idx+1}",
+              "name": f"Loss {page_idx+1}",
+              "content": "Bewerte die Qualität.",
+              "createAnchor35": False,
+              "createAnchor70": False,
+              "showWaveform": True,
+              "enableLooping": False,
+              "switchBack": True,
+              "randomize": True,
+              "reference": str(Path(ref_path).relative_to(self.webmushra_folder)),
+              "stimuli": stimuli_map
+          }
+          config["pages"].append(page)
+
+      finish = {
+          "type": "finish",
+          "name": "Thank you",
+          "content": "Thank you for attending",
+          "popupContent": "Your results were sent. Goodbye and have a nice day",
+          "showResults": False,
+          "writeResults": True,
+          "questionnaire": [
+              {
+                  "type": "text",
+                  "label": "Name",
+                  "name": "Name"
+              },
+              {
+                  "type": "text",
+                  "label": "Surname",
+                  "name": "Surname"
+              },
+              {
+                  "type": "number",
+                  "label": "Age",
+                  "name": "Age",
+                  "min": 0,
+                  "max": 100,
+                  "default": 30
+              },
+              {
+                  "type": "likert",
+                  "name": "gender",
+                  "label": "Gender",
+                  "response": [
+                      {"value": "male", "label": "Male"},
+                      {"value": "female", "label": "Female"}
+                  ]
+              },
+              {
+                  "type": "likert",
+                  "name": "Hearing ability",
+                  "label": "Hearing ability",
+                  "response": [
+                      {"value": "bad", "label": "Bad"},
+                      {"value": "normal", "label": "Normal"},
+                      {"value": "good", "label": "Good"}
+                  ]
+              },
+              {
+                  "type": "text",
+                  "name": "Used headphones",
+                  "label": "Used headphones",
+              },
+              {
+                  "type": "text",
+                  "label": "Email",
+                  "name": "email"
+              }
+          ]
+      }
+      config["pages"].append(finish)
+
+      cfg_path = self.configs_folder.joinpath(self.run_name + ".yaml")
+      if not cfg_path.exists():
+          with open(cfg_path, "w") as f:
+              yaml.dump(config, f)
+
+      return cfg_path
