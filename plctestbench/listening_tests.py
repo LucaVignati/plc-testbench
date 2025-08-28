@@ -490,7 +490,7 @@ class ListeningTest(object):
       finish = {
           "type": "finish",
           "name": "Thank you",
-          "content": "Thank you for attending",
+          "content": "Thank you for attending.",
           "popupContent": "Your results were sent. Goodbye and have a nice day",
           "showResults": False,
           "writeResults": True,
