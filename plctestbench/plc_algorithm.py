@@ -259,7 +259,6 @@ class LastPacketPLC(PLCAlgorithm):
                             elif self.clip_strategy == "flip":
                                 start_value = 1 if reconstructed_buffer[sample_idx, channel] > 1 else -1
                                 reconstructed_buffer[sample_idx, channel] = _flip_in_place(reconstructed_buffer[sample_idx, channel], start_value)
-            print(reconstructed_buffer)
         return reconstructed_buffer
 
 
