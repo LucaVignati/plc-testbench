@@ -23,7 +23,6 @@ from .utils import (
     extract_intorni,
     force_single_loss_per_stimulus,
     is_loud_enough,
-    relative_to_root,
 )
 from .worker import Worker
 
@@ -387,17 +386,11 @@ class PerceptualCalculator(OutputAnalyser):
         self.fs = self.settings.get("fs")
         self.packet_size = self.settings.get("packet_size")
         self.intorno_length = self.settings.get("intorno_length")
-        self.linear_mag = self.settings.get("linear_mag")
-        self.transform_type = self.settings.get("transform_type")
         self.min_frequency = self.settings.get("min_frequency")
         self.max_frequency = self.settings.get("max_frequency")
         self.bins_per_octave = self.settings.get("bins_per_octave")
         self.n_bins = self.settings.get("n_bins")
         self.minimum_window = self.settings.get("minimum_window")
-        self.masking = self.settings.get("masking")
-        self.masking_offset = self.settings.get("masking_offset")
-        self.db_weighting = self.settings.get("db_weighting")
-        self.metric = self.settings.get("metric")
 
     def run(
         self,
@@ -422,7 +415,6 @@ class PerceptualCalculator(OutputAnalyser):
         )
 
         pm = PerceptualMetric(
-            self.transform_type,
             self.min_frequency,
             self.max_frequency,
             self.bins_per_octave,
@@ -431,11 +423,6 @@ class PerceptualCalculator(OutputAnalyser):
             len(intorni_original[1][0][:, 0]),
             self.fs,
             self.intorno_length,
-            self.linear_mag,
-            self.masking,
-            self.masking_offset,
-            self.db_weighting,
-            self.metric,
         )
 
         spectrograms = [

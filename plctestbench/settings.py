@@ -1039,47 +1039,26 @@ class WindowedPEAQCalculatorSettings(Settings):
         self.settings["intorno_length"] = intorno_length
 
 
-class TransformEnum(Enum):
-    CQT = "cqt"
-    DCGC = "dcgc"
-
-
-class DBWeightingEnum(Enum):
-    A_WEIGHTING = "A"
-    C_WEIGHTING = "C"
-    NONE = "None"
-
-
 class PerceptualCalculatorSettings(Settings):
 
     def __init__(
         self,
         intorno_length: int = 300,
         linear_mag: bool = False,
-        transform_type: TransformEnum = TransformEnum.CQT,
         min_frequency: float = 32.7,
         max_frequency: float = 20000,
         bins_per_octave: int = 12,
         n_bins: int = 100,
         minimum_window: int = 128,
-        masking: bool = True,
-        masking_offset: int = 0,
-        db_weighting: DBWeightingEnum = DBWeightingEnum.NONE,
-        metric: str = "",
     ) -> None:
         super().__init__()
         self.settings["intorno_length"] = intorno_length
         self.settings["linear_mag"] = linear_mag
-        self.settings["transform_type"] = transform_type
         self.settings["min_frequency"] = min_frequency
         self.settings["max_frequency"] = max_frequency
         self.settings["bins_per_octave"] = bins_per_octave
         self.settings["n_bins"] = n_bins
         self.settings["minimum_window"] = minimum_window
-        self.settings["masking"] = masking
-        self.settings["masking_offset"] = masking_offset
-        self.settings["db_weighting"] = db_weighting
-        self.settings["metric"] = metric
 
 
 class HumanCalculatorSettings(Settings):
