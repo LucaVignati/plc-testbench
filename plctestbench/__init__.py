@@ -1,13 +1,15 @@
+try:
+    import importlib.resources as importlib_resources
+except ImportError:
+    import importlib_resources
+
 from functools import lru_cache
 
-import pkg_resources
 import yaml
 
 name = "ecc-testbench"
 
-MODULES_MANIFEST_PATH = pkg_resources.resource_filename(
-    __name__, "modules_manifest.yaml"
-)
+MODULES_MANIFEST_PATH = importlib_resources.files(__name__) / "modules_manifest.yaml"
 
 
 @lru_cache
