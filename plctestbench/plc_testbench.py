@@ -1,5 +1,3 @@
-from anytree import LevelOrderIter
-
 from .data_manager import DataManager
 from .loss_simulator import PacketLossSimulator
 from .models import TestbenchConfiguration

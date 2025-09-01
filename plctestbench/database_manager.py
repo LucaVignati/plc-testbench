@@ -28,7 +28,7 @@ class DatabaseManager(metaclass=Singleton):
 
         self.initialized = False
         self.email = escape_email(user.email)
-        self._init_client(user, *args, **kwargs)
+        self._init_client(user=user, *args, **kwargs)
 
     @abstractmethod
     def _init_client(self, user: User = None, *args, **kwargs) -> None:
@@ -91,31 +91,33 @@ class MongoDatabaseManager(DatabaseManager):
 
     def _init_client(
         self,
-        ip: str = None,
-        port: int = None,
-        username: str = None,
-        password: str = None,
+        db_ip: str = None,
+        db_port: int = None,
+        db_username: str = None,
+        db_password: str = None,
         user: User = None,
         conn_string: str = None,
         *args,
         **kwargs,
     ) -> None:
         if (
-            ip is None
-            or port is None
-            or username is None
-            or password is None
+            db_ip is None
+            or db_port is None
+            or db_username is None
+            or db_password is None
             or user is None
         ) and conn_string is None:
-            raise Exception("DatabaseManager: missing parameters")
-        self.username = username
-        self.password = password
+            raise Exception(
+                f"DatabaseManager: missing parameters: {db_ip}, {db_port}, {db_username}, {db_password}, {user}, {conn_string}"
+            )
+        self.username = db_username
+        self.password = db_password
         if conn_string:
             self.client = MongoClient(conn_string)
         else:
             self.client = MongoClient(
-                host=ip,
-                port=port,
+                host=db_ip,
+                port=int(db_port),
                 username=self.username,
                 password=self.password,
             )
@@ -172,7 +174,7 @@ class MongoDatabaseManager(DatabaseManager):
         """
         database = self.get_database()
         try:
-            database["runs"].insert_one(run)
+            database["runs_internal"].insert_one(run.asdict())
         except pymongo.errors.DuplicateKeyError:
             print("Run already exists in the database.")
 
@@ -181,21 +183,23 @@ class MongoDatabaseManager(DatabaseManager):
         This function is used to retrieve a run from the database.
         """
         database = self.get_database()
-        return database["runs"].find_one({"_id": run_id})
+        return database["runs_internal"].find_one({"_id": run_id})
 
     def set_run_status(self, run_id: str, status: RunStatus) -> None:
         """
         This function is used to set the status of a run in the database.
         """
         database = self.get_database()
-        database["runs"].update_one({"_id": run_id}, {"$set": {"status": status}})
+        database["runs_internal"].update_one(
+            {"_id": run_id}, {"$set": {"status": status}}
+        )
 
     def delete_run(self, run_id: str) -> None:
         """
         This function is used to delete a run from the database.
         """
         database = self.get_database()
-        database["runs"].delete_one({"_id": run_id})
+        database["runs_internal"].delete_one({"_id": run_id})
 
     def save_user(self, user: User):
         """
@@ -203,7 +207,7 @@ class MongoDatabaseManager(DatabaseManager):
         """
         database = self.client["global"]
         if database["users"].find_one({"email": user.email}) is None:
-            database["users"].insert_one(user)
+            database["users"].insert_one(user.__dict__)
         else:
             print("User already exists in the database.")
 
@@ -304,7 +308,7 @@ class TinyDBDatabaseManager(DatabaseManager):
             filepath.unlink()
 
         database.table(collection_name).remove(where("_id") == node_id)
-        for doc in database.table("runs").all():
+        for doc in database.table("runs_internal").all():
             updated_nodes = [node for node in doc["nodes"] if node["_id"] != node_id]
             database.table(collection_name).update(
                 {"nodes": updated_nodes}, where("_id") == node_id
@@ -315,21 +319,23 @@ class TinyDBDatabaseManager(DatabaseManager):
         This function is used to save a run to the database.
         """
         database = self.get_database()
-        database.table("runs").insert(self._serialize_run(run))
+        database.table("runs_internal").insert(self._serialize_run(run))
 
     def get_run(self, run_id: str) -> Run:
         """
         This function is used to retrieve a run from the database.
         """
         database = self.get_database()
-        return self._deserialize_run(database.table("runs").get(where("_id") == run_id))
+        return self._deserialize_run(
+            database.table("runs_internal").get(where("_id") == run_id)
+        )
 
     def set_run_status(self, run_id: str, status: RunStatus) -> None:
         """
         This function is used to set the status of a run in the database.
         """
         database = self.get_database()
-        database.table("runs").update(
+        database.table("runs_internal").update(
             operations.set("status", status), where("_id") == run_id
         )
 
@@ -338,7 +344,7 @@ class TinyDBDatabaseManager(DatabaseManager):
         This function is used to delete a run from the database.
         """
         database: TinyDB = self.get_database()
-        database.table("runs").remove(where("_id") == run_id)
+        database.table("runs_internal").remove(where("_id") == run_id)
 
     def save_user(self, user: User):
         """
@@ -404,7 +410,7 @@ class TinyDBDatabaseManager(DatabaseManager):
 
     def _deserialize_run(self, run: dict[str, Any]) -> Run:
         run.created_on = datetime.fromisoformat(run.created_on)
-        return
+        return run
 
 
 database_manager_factory = ObjectFactory()

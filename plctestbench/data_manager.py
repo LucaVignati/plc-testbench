@@ -2,7 +2,7 @@ import datetime
 
 from anytree import LevelOrderIter, search
 
-from .database_manager import database_manager_factory
+from .database_manager import DatabaseManager, database_manager_factory
 from .models import Run, RunStatus, TestbenchConfiguration, User
 from .node import (
     LostSamplesMaskNode,
@@ -40,12 +40,11 @@ class DataManager(object):
             if "progress_monitor" in testbench_settings.__dict__.keys()
             else progress_monitor
         )
-
         self.path_manager = PathManager(root_folder)
-        self.database_manager = database_manager_factory.create(
+        self.database_manager: DatabaseManager = database_manager_factory.create(
             testbench_settings.db_platform,
-            self.user,
-            **testbench_settings.__dataclass_fields__
+            user=self.user,
+            **testbench_settings.__dict__
         )
         self.root_nodes = []
         self.worker_classes = []
@@ -132,7 +131,6 @@ class DataManager(object):
             Inputs:
                 parent:         the newly created node will be attached to the
                                 tree as a child of this node.
-                worker_classes: this list contains the workers and associated
                                 callbacks for each level of the tree.
                 idx:            this index is used to move forward and stop the
                                 recursion and access the appropriate element of
