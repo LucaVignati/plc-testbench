@@ -33,6 +33,17 @@ class Run:
     def asdict(self) -> dict[str, Any]:
         return asdict(self)
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Run":
+        return cls(
+            _id=data.get("_id"),
+            workers=data.get("workers"),
+            nodes=data.get("nodes"),
+            status=RunStatus(data.get("status")) if data.get("status") else None,
+            creator=data.get("creator"),
+            created=data.get("created"),
+        )
+
 
 @dataclass
 class TestbenchConfiguration:

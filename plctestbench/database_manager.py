@@ -183,7 +183,7 @@ class MongoDatabaseManager(DatabaseManager):
         This function is used to retrieve a run from the database.
         """
         database = self.get_database()
-        return database["runs_internal"].find_one({"_id": run_id})
+        return Run.from_dict(database["runs_internal"].find_one({"_id": run_id}))
 
     def set_run_status(self, run_id: str, status: RunStatus) -> None:
         """
