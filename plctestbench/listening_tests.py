@@ -382,14 +382,14 @@ class ListeningTest(object):
       formatted_results = list(result.itertuples(index=False, name=None))
 
     return formatted_results
-  
-  def generate_multi_config(self, session, plc_algorithms, pages_per_PLS, stimulus_length):
+
+  def generate_multi_config(self, session, plc_algorithms, packet_loss_simulators, pages_per_PLS, stimulus_length):
       '''
       Generates a MUSHRA config file when all algorithms have been processed.
       '''
       yaml = YAML(typ=['rt', 'string'])
       config = {
-          "testname": "Multi-PLC Comparison",
+          "testname": "PLC Listening Test",
           "testId": self.run_name,
           "bufferSize": 2048,
           "stopOnErrors": False,
@@ -406,9 +406,10 @@ class ListeningTest(object):
               <p>For this test please use good hifi headphones.</p>\
               <h2>Explanation</h2>\
               The goal of this test is to assess how audible audio glitches are in different speech signals.<br>\
-              You will be presented with {len(plc_algorithms)+2} unlabeled audio tracks in each of the {pages_per_PLS} listening sessions.<br>\
-              Each audio track has a length of {stimulus_length/1000} seconds.<br>\
-              You need to assign each track a score between 0 and 100 representing how audible the glitches were.<br>\
+              You will be presented with {pages_per_PLS*len(packet_loss_simulators)} listening sessions.<br>\
+              Each session has 1 reference track and {len(plc_algorithms)+1} unlabeled audio tracks.<br>\
+              All audio tracks have a length of {stimulus_length/1000} seconds.<br>\
+              You need to assign each one a score between 0 and 100 representing how audible the glitches are.<br>\
               The scale is divided into the following sections: "Excellent", "Good", "Fair", "Poor", and "Bad".\
 \
                 <h2>Audio Examples</h2>\
@@ -462,56 +463,70 @@ class ListeningTest(object):
       }
       config["pages"].append(intro)
 
-      n_pages = len(session["orig_ref_paths"][0])
+      raw_ref_sets = session["orig_ref_paths"]
+      unique_ref_sets = []
+      seen_patterns = set()
+      for ref_list in raw_ref_sets:
+          if not ref_list:
+              continue
+          loss_pattern_folder = Path(ref_list[0]).parent.name
+          if loss_pattern_folder in seen_patterns:
+              continue
+          seen_patterns.add(loss_pattern_folder)
+          unique_ref_sets.append(ref_list)
 
-      for page_idx in range(n_pages):
-          stimuli_map = {}
-          ref_path = session["orig_ref_paths"][0][page_idx]                
-          for algorithm in plc_algorithms:
-              for run_paths in session["recon_paths"][algorithm]:
-                  algorithm_wav = run_paths[page_idx]
-                  stimuli_map[Path(algorithm_wav).stem] = str(Path(algorithm_wav).relative_to(self.webmushra_folder))
-          page = {
-              "type": "mushra",
-              "id": f"loss-{page_idx+1}",
-              "name": f"Loss {page_idx+1}",
-              "content": "Bewerte die Qualität.",
-              "createAnchor35": False,
-              "createAnchor70": False,
-              "showWaveform": True,
-              "enableLooping": False,
-              "switchBack": True,
-              "randomize": True,
-              "reference": str(Path(ref_path).relative_to(self.webmushra_folder)),
-              "stimuli": stimuli_map
-          }
-          config["pages"].append(page)
+      for algo, runs in session["recon_paths"].items():
+          if len(runs) != len(unique_ref_sets):
+              print(f"[WARN] Algo {algo}: runs={len(runs)} unique_ref_sets={len(unique_ref_sets)} (Inkonsistenz)")
+
+      for pls_idx, ref_list in enumerate(unique_ref_sets):
+          for page_idx, ref_path in enumerate(ref_list):
+              stimuli_map = {}
+              for algorithm in plc_algorithms:
+                  algo_runs = session["recon_paths"].get(algorithm, [])
+                  if pls_idx >= len(algo_runs):
+                      continue
+                  run_paths = algo_runs[pls_idx]
+                  if page_idx >= len(run_paths):
+                      continue
+                  wav_path = run_paths[page_idx]
+                  key = Path(wav_path).stem
+                  stimuli_map[key] = str(Path(wav_path).relative_to(self.webmushra_folder))
+              if not stimuli_map:
+                  continue
+              ref_rel = str(Path(ref_path).relative_to(self.webmushra_folder))
+              page_id = f"page-{pls_idx * len(ref_list) + page_idx + 1}"
+              page = {
+                  "type": "mushra",
+                  "id": page_id,
+                  "name": f"Listening session {pls_idx * len(ref_list) + page_idx + 1}",
+                  "content": "Listen to the Reference and each of the Conditions 1 to 5. You can only rate the one you are listening to. If you are done press Next",
+                  "createAnchor35": False,
+                  "createAnchor70": False,
+                  "showWaveform": True,
+                  "enableLooping": False,
+                  "switchBack": True,
+                  "randomize": True,
+                  "reference": ref_rel,
+                  "stimuli": stimuli_map
+                }
+              config["pages"].append(page)
 
       finish = {
           "type": "finish",
-          "name": "Thank you",
-          "content": "Thank you for attending.",
+          "name": "Finished",
+          "content": "Thank you for attending. Please enter your details. After entering them you can press send results.",
           "popupContent": "Your results were sent. Goodbye and have a nice day",
           "showResults": False,
           "writeResults": True,
           "questionnaire": [
-              {
-                  "type": "text",
-                  "label": "Name",
-                  "name": "Name"
-              },
-              {
-                  "type": "text",
-                  "label": "Surname",
-                  "name": "Surname"
-              },
               {
                   "type": "number",
                   "label": "Age",
                   "name": "Age",
                   "min": 0,
                   "max": 100,
-                  "default": 30
+                  "default": 0
               },
               {
                   "type": "likert",
@@ -519,12 +534,13 @@ class ListeningTest(object):
                   "label": "Gender",
                   "response": [
                       {"value": "male", "label": "Male"},
-                      {"value": "female", "label": "Female"}
+                      {"value": "female", "label": "Female"},
+                      {"value": "no info", "label": "No info"}
                   ]
               },
               {
                   "type": "likert",
-                  "name": "Hearing ability",
+                  "name": "hearing ability",
                   "label": "Hearing ability",
                   "response": [
                       {"value": "bad", "label": "Bad"},
@@ -534,14 +550,9 @@ class ListeningTest(object):
               },
               {
                   "type": "text",
-                  "name": "Used headphones",
-                  "label": "Used headphones",
+                  "name": "headphones",
+                  "label": "Headphones",
               },
-              {
-                  "type": "text",
-                  "label": "Email",
-                  "name": "email"
-              }
           ]
       }
       config["pages"].append(finish)

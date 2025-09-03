@@ -7,8 +7,9 @@ from .file_wrapper import SimpleCalculatorData, PEAQData, AudioFile
 from .utils import dummy_progress_bar, extract_intorni, force_single_loss_per_stimulus, is_loud_enough
 from .perceptual_metric import *
 from .listening_tests import ListeningTest
-from .utils import relative_to_root, fade_in, fade_out, leading_silence, trailing_silence
-from .path_manager import folder_suffixes, _format_pls_settings
+from .utils import fade_in, fade_out, leading_silence, trailing_silence
+from .path_manager import _format_pls_settings
+from .file_wrapper import AudioFile as AF
 
 def normalise(x, amp_scale=1.0):
     return(amp_scale * x / np.amax(np.abs(x)))
@@ -467,8 +468,9 @@ class MultiHumanCalculator(OutputAnalyser):
         self.persistent = False
         self.plc_algorithms = self.settings.get("plc_algorithms")
         self.packet_loss_simulators = self.settings.get("packet_loss_simulators")
-        global call_count
-        call_count = 0 # gets set to 0 on first init only
+        global call_count_PLC, call_count_PLS
+        call_count_PLC = 0 # gets set to 0 on first init only
+        call_count_PLS = 0 # gets set to 0 on first init only
 
     def _transpose(self, matrix):
         return [[matrix[j][i] for j in range(len(matrix))] for i in range(len(matrix[0]))]
@@ -516,23 +518,21 @@ class MultiHumanCalculator(OutputAnalyser):
             session["original_full"] = intorni_original_loud
             session["stimuli_count"] = len(selected)
 
-        algo_segments = self._transpose([[intorno[idx] for intorno in intorni_reconstructed_loud]
+        algorithm_segments = self._transpose([[intorno[idx] for intorno in intorni_reconstructed_loud]
                                          for idx in session["stimuli_indices"]])
-        return algo_segments
+        return algorithm_segments
 
     @staticmethod
     def get_reconstructed_tracks_folder_name(simulator_class, simulator_settings):
         base = f"{simulator_class.__name__}-{_format_pls_settings(simulator_settings)}"
         return f"{base}"
 
-    def _write_segments(self, listening_test, key, original_track_node, plc_algorithm, algo_segments):
-        from .file_wrapper import AudioFile as AF
+    def _write_segments(self, listening_test, key, original_track_node, plc_algorithm, algorithm_segments):
         session = self._sessions[key]
         fs = original_track_node.get_samplerate()
         fade_time = 300
 
-        simulator_idx = getattr(self, "current_simulator_idx", 0)
-        simulator_class, simulator_settings = self.packet_loss_simulators[simulator_idx]
+        simulator_class, simulator_settings = self.packet_loss_simulators[call_count_PLS]
         loss_pattern_folder = self.get_reconstructed_tracks_folder_name(simulator_class, simulator_settings)
 
         references_dir = listening_test.references_test_folder.joinpath(loss_pattern_folder)
@@ -548,6 +548,8 @@ class MultiHumanCalculator(OutputAnalyser):
             fade_out(seg, fs, fade_time)
             seg = leading_silence(seg, fs, 200)
             seg = trailing_silence(seg, fs, 300)
+            if seg.ndim == 1:
+                seg = np.stack([seg, seg], axis=-1)
             out_path = references_dir.joinpath(f"reference_{list_index}-{packet_index}.wav")
             AF.from_audio_file(original_track_node, new_data=seg, new_path=str(out_path))
             ref_paths.append(out_path)
@@ -555,12 +557,14 @@ class MultiHumanCalculator(OutputAnalyser):
 
         # write stimuli files
         stored_paths = []
-        for list_index, (packet_index, recon_seg) in enumerate(zip(session["original_segments"][0], algo_segments[1])):
+        for list_index, (packet_index, recon_seg) in enumerate(zip(session["original_segments"][0], algorithm_segments[1])):
             seg = recon_seg.copy()
             fade_in(seg, fs, fade_time)
             fade_out(seg, fs, fade_time)
             seg = leading_silence(seg, fs, 200)
             seg = trailing_silence(seg, fs, 300)
+            if seg.ndim == 1:
+                seg = np.stack([seg, seg], axis=-1)
             out_path = stimuli_dir.joinpath(f"{plc_algorithm}_{list_index}-{packet_index}.wav")
             AF.from_audio_file(original_track_node, new_data=seg, new_path=str(out_path))
             stored_paths.append(out_path)
@@ -569,7 +573,9 @@ class MultiHumanCalculator(OutputAnalyser):
         session["recon_paths"][plc_algorithm].append(stored_paths)
 
     def run(self, original_track_node: AudioFile, reconstructed_track_node: AudioFile, lost_samples_idxs_data):
-        global call_count
+        global call_count_PLC
+        global call_count_PLS
+
         key = "global"
         if key not in self._sessions:
             self._sessions[key] = {
@@ -589,18 +595,24 @@ class MultiHumanCalculator(OutputAnalyser):
         session = self._sessions[key]
         session["lost_samples_idxs_data"] = lost_samples_idxs_data
         listening_test = ListeningTest(self.settings)
-        plc_algorithms = self.plc_algorithms[call_count][0].__name__
+        plc_algorithms = self.plc_algorithms[call_count_PLC][0].__name__
 
         algorithm_segments = self._select_or_get_indices(original_track_node, reconstructed_track_node, lost_samples_idxs_data, key)
         self._write_segments(listening_test, key, original_track_node, plc_algorithms, algorithm_segments)
-        
-        if call_count == (len(self.plc_algorithms) - 1) + (len(self.packet_loss_simulators) - 1):
-            plc_algorithm_names = [plc_algorithm[0].__name__ for plc_algorithm in self.plc_algorithms]
-            cfg_path = listening_test.generate_multi_config(session, plc_algorithm_names, self.pages_per_PLS, self.stimulus_length)
-            session["config_written"] = True
-            print(f"[MultiHumanCalculator] Created shared config: {cfg_path}")
-            call_count = 0
-        call_count += 1
+
+        length_plc = len(self.plc_algorithms) - 1
+        length_pls = len(self.packet_loss_simulators) - 1
+
+        if call_count_PLC == length_plc:
+            if call_count_PLS == length_pls and call_count_PLC == length_plc:
+                if call_count_PLC + call_count_PLS == (length_plc + length_pls):
+                    plc_algorithm_names = [plc_algorithm[0].__name__ for plc_algorithm in self.plc_algorithms]
+                    packet_loss_simulators_names = [simulator[0].__name__ for simulator in self.packet_loss_simulators]
+                    cfg_path = listening_test.generate_multi_config(session, plc_algorithm_names, packet_loss_simulators_names, self.pages_per_PLS, self.stimulus_length)
+                    session["config_written"] = True
+                    print(f"[MultiHumanCalculator] Created shared config: {cfg_path}")
+            call_count_PLS += 1
+        call_count_PLC = 0 if call_count_PLC == length_plc else call_count_PLC + 1
 
         # Dummy-Metrik
         return np.full(len(original_track_node.get_data()) // self.packet_size, np.nan, dtype=float)
