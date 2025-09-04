@@ -389,7 +389,7 @@ class ListeningTest(object):
       '''
       yaml = YAML(typ=['rt', 'string'])
       config = {
-          "testname": "PLC Listening Test",
+          "testname": "Listening Test",
           "testId": self.run_name,
           "bufferSize": 2048,
           "stopOnErrors": False,
@@ -403,22 +403,20 @@ class ListeningTest(object):
           "name": "Instructions",
           "content": f'\
               <h2>Requirements</h2>\
-              <p>For this test please use good hifi headphones.</p>\
+              <p>Please use hi-fi headphones.</p>\
               <h2>Explanation</h2>\
-              The goal of this test is to assess how audible audio glitches are in different speech signals.<br>\
-              You will be presented with {pages_per_PLS*len(packet_loss_simulators)} listening sessions.<br>\
-              Each session has 1 reference track and {len(plc_algorithms)+1} unlabeled audio tracks.<br>\
-              All audio tracks have a length of {stimulus_length/1000} seconds.<br>\
-              You need to assign each one a score between 0 and 100 representing how audible the glitches are.<br>\
+              The purpose of this test is to evaluate the audio quality of various speech signals. You will be presented with {pages_per_PLS*len(packet_loss_simulators)} listening sessions.\
+              Each session has 1 reference track and {len(plc_algorithms)+1} unlabeled audio tracks. All audio tracks have a length of {stimulus_length/1000} seconds.\
+              You must assign each one a score between 0 and 100 that indicates how good the audio quality is compared to the reference.\
               The scale is divided into the following sections: "Excellent", "Good", "Fair", "Poor", and "Bad".\
+              The audio tracks are played back in a loop. You can listen to a specific section by moving the sliders below the audio waveform.<br>\
 \
                 <h2>Audio Examples</h2>\
-                Below you can find 3 examples of the audio tracks you will be presented with.<br>\
+                Below you can find 3 examples of the audio tracks you will be presented with.\
                 Listen carefully to the examples to understand the scale.<br>\
               <table>\
                 <tr>\
-                  <th></th>\
-                  <th>Speech</th>\
+                  <td></td>\
                 </tr>\
                 <tr>\
                   <td>Excellent</td>\
@@ -504,7 +502,7 @@ class ListeningTest(object):
                   "createAnchor35": False,
                   "createAnchor70": False,
                   "showWaveform": True,
-                  "enableLooping": False,
+                  "enableLooping": True,
                   "switchBack": True,
                   "randomize": True,
                   "reference": ref_rel,
@@ -546,6 +544,16 @@ class ListeningTest(object):
                       {"value": "bad", "label": "Bad"},
                       {"value": "normal", "label": "Normal"},
                       {"value": "good", "label": "Good"}
+                  ]
+              },
+              {
+                  "type": "likert",
+                  "name": "audio expertise",
+                  "label": "Audio expertise",
+                  "response": [
+                      {"value": "below", "label": "Below"},
+                      {"value": "average", "label": "Average"},
+                      {"value": "above", "label": "Above"}
                   ]
               },
               {

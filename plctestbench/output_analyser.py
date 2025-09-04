@@ -462,9 +462,11 @@ class MultiHumanCalculator(OutputAnalyser):
         self.fs = self.settings.get("fs")
         self.packet_size = self.settings.get("packet_size")
         self.stimulus_length = self.settings.get("stimulus_length")
-        self.single_loss = self.settings.get("single_loss_per_stimulus")
+        self.no_audio_reuse_per_stimuli = self.settings.get("no_audio_reuse_per_stimuli")
+        self.new_audio_per_page = self.settings.get("new_audio_per_page")
         self.pages_per_PLS = self.settings.get("pages_per_PLS")
         self.choose_seed = self.settings.get("choose_seed")
+        self.original_audio_tracks = self.settings.get("original_audio_tracks")
         self.persistent = False
         self.plc_algorithms = self.settings.get("plc_algorithms")
         self.packet_loss_simulators = self.settings.get("packet_loss_simulators")
@@ -481,7 +483,7 @@ class MultiHumanCalculator(OutputAnalyser):
 
     def _select_or_get_indices(self, original_track_node, reconstructed_track_node, lost_samples_idxs_data, key):
         fs = self.fs
-        if self.single_loss:
+        if self.no_audio_reuse_per_stimuli:
             lost_samples_idxs = force_single_loss_per_stimulus(
                 lost_samples_idxs_data.get_data(), fs, self.stimulus_length/2, self.packet_size)
         else:
@@ -530,7 +532,7 @@ class MultiHumanCalculator(OutputAnalyser):
     def _write_segments(self, listening_test, key, original_track_node, plc_algorithm, algorithm_segments):
         session = self._sessions[key]
         fs = original_track_node.get_samplerate()
-        fade_time = 300
+        fade_time = 10
 
         simulator_class, simulator_settings = self.packet_loss_simulators[call_count_PLS]
         loss_pattern_folder = self.get_reconstructed_tracks_folder_name(simulator_class, simulator_settings)

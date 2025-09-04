@@ -992,24 +992,30 @@ class MultiHumanCalculatorSettings(Settings):
     '''
     This class contains the settings for the MultiHumanCalculator.
         Input:
-            stimulus_length:            length of extracted stimuli from audio file in ms.
-            single_loss_per_stimulus:   enables one packet loss per stimuli.
-            pages_per_PLS:              number of testpages per packet loss simulator.
-            choose_seed:                for comparing results: leave at 1
-            packet_loss_simulators:     list of packet loss simulators to test.
-            plc_algorithms:             list of PLC algorithms to test.
+            stimulus_length:                length of extracted stimuli from audio file in ms.
+            no_audio_reuse_per_stimuli:     enables no reuse of audio data for each PLC.
+            pages_per_PLS:                  number of testpages per packet loss simulator.
+            new_audio_per_page:             enables new audio data for each page.
+            choose_seed:                    for comparing results: leave at 1
+            original_audio_tracks:          list of original audio tracks and their settings.
+            packet_loss_simulators:         list of packet loss simulators their settings.
+            plc_algorithms:                 list of PLC algorithms their settings.
     '''
     def __init__(self, stimulus_length: int = 3000,
-                       single_loss_per_stimulus: bool = True,
+                       no_audio_reuse_per_stimuli: bool = True,
                        pages_per_PLS: int = 3,
+                       new_audio_per_page: bool = True,
                        choose_seed: int = 1,
+                       original_audio_tracks: list[tuple] | None = None,
                        packet_loss_simulators: list[tuple] | None = None,
                        plc_algorithms: list[tuple] | None = None) -> None:
         super().__init__()
         self.settings["stimulus_length"] = stimulus_length
-        self.settings["single_loss_per_stimulus"] = single_loss_per_stimulus
+        self.settings["no_audio_reuse_per_stimuli"] = no_audio_reuse_per_stimuli
         self.settings["pages_per_PLS"] = pages_per_PLS
+        self.settings["new_audio_per_page"] = new_audio_per_page
         self.settings["choose_seed"] = choose_seed
+        self.settings["original_audio_tracks"] = original_audio_tracks
         self.settings["packet_loss_simulators"] = packet_loss_simulators
         self.settings["plc_algorithms"] = plc_algorithms
 
