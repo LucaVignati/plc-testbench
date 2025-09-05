@@ -383,7 +383,7 @@ class ListeningTest(object):
 
     return formatted_results
 
-  def generate_multi_config(self, session, plc_algorithms, packet_loss_simulators, pages_per_PLS, stimulus_length):
+  def generate_multi_config(self, session, audio_tracks, plc_algorithms, packet_loss_simulators, new_audio_per_page, pages_per_PLS, stimulus_length):
       '''
       Generates a MUSHRA config file when all algorithms have been processed.
       '''
@@ -405,10 +405,13 @@ class ListeningTest(object):
               <h2>Requirements</h2>\
               <p>Please use hi-fi headphones.</p>\
               <h2>Explanation</h2>\
-              The purpose of this test is to evaluate the audio quality of various speech signals. You will be presented with {pages_per_PLS*len(packet_loss_simulators)} listening sessions.\
-              Each session has 1 reference track and {len(plc_algorithms)+1} unlabeled audio tracks. All audio tracks have a length of {stimulus_length/1000} seconds.\
-              You must assign each one a score between 0 and 100 that indicates how good the audio quality is compared to the reference.\
+              You will be presented with {pages_per_PLS*len(packet_loss_simulators)} listening sessions.\
+              Each session has 1 reference track and {len(plc_algorithms)+1} unlabeled audio tracks.\
+              All audio tracks have a length of {stimulus_length/1000} seconds.\
+              You must rate how disruptive artifacts are in the context of audio quality.\
+              Therefore assign each one a score between 0 and 100 that indicates how good the audio quality is compared to the reference.\
               The scale is divided into the following sections: "Excellent", "Good", "Fair", "Poor", and "Bad".\
+              Excellent audio quality means inaudible artifacts, bad audio quality means clearly audible artifacts.\
               The audio tracks are played back in a loop. You can listen to a specific section by moving the sliders below the audio waveform.<br>\
 \
                 <h2>Audio Examples</h2>\
@@ -477,6 +480,23 @@ class ListeningTest(object):
           if len(runs) != len(unique_ref_sets):
               print(f"[WARN] Algo {algo}: runs={len(runs)} unique_ref_sets={len(unique_ref_sets)} (Inkonsistenz)")
 
+      for audio_idx, audio_track in enumerate(audio_tracks):
+         raw_ref_sets = session["orig_ref_paths"]
+      unique_ref_sets = []
+      seen_patterns = set()
+      for ref_list in raw_ref_sets:
+          if not ref_list:
+              continue
+          loss_pattern_folder = Path(ref_list[0]).parent.name
+          if loss_pattern_folder in seen_patterns:
+              continue
+          seen_patterns.add(loss_pattern_folder)
+          unique_ref_sets.append(ref_list)
+
+      for algo, runs in session["recon_paths"].items():
+          if len(runs) != len(unique_ref_sets):
+              print(f"[WARN] Algo {algo}: runs={len(runs)} unique_ref_sets={len(unique_ref_sets)} (Inkonsistenz)")
+
       for pls_idx, ref_list in enumerate(unique_ref_sets):
           for page_idx, ref_path in enumerate(ref_list):
               stimuli_map = {}
@@ -498,7 +518,7 @@ class ListeningTest(object):
                   "type": "mushra",
                   "id": page_id,
                   "name": f"Listening session {pls_idx * len(ref_list) + page_idx + 1}",
-                  "content": "Listen to the Reference and each of the Conditions 1 to 5. You can only rate the one you are listening to. If you are done press Next",
+                  "content": "Listen to the Reference and each of the Conditions 1 to 5. You can only rate the one you are listening to. If you are done press next.",
                   "createAnchor35": False,
                   "createAnchor70": False,
                   "showWaveform": True,
