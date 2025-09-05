@@ -458,7 +458,7 @@ class HumanCalculator(OutputAnalyser):
 
 class MultiHumanCalculator(OutputAnalyser):
     """
-    Compares multiple PLC algorithms using a listening test for 1 Audio file.
+    Compares multiple PLC algorithms using a listening test for 1 Audio file (To Do: support multiple audio files).
     """
     _sessions: dict = {}
 
