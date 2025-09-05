@@ -993,9 +993,9 @@ class MultiHumanCalculatorSettings(Settings):
     This class contains the settings for the MultiHumanCalculator.
         Input:
             stimulus_length:                length of extracted stimuli from audio file in ms.
-            no_audio_reuse_per_stimuli:     enables no reuse of audio data for each PLC.
+            no_audio_reuse_per_stimuli:     enables no reuse of audio data for each PLC. (currently not working)
             pages_per_PLS:                  number of testpages per packet loss simulator.
-            new_audio_per_page:             enables new audio data for each page.
+            new_audio_per_page:             enables new audio data for each page. (currently not working)
             choose_seed:                    for comparing results: leave at 1
             original_audio_tracks:          list of original audio tracks and their settings.
             packet_loss_simulators:         list of packet loss simulators their settings.
