@@ -1020,7 +1020,7 @@ class PEAQMode(Enum):
 
 class PEAQCalculatorSettings(Settings):
 
-    def __init__(self, peaq_mode: PEAQMode = PEAQMode.basic):
+    def __init__(self, peaq_mode: str = "basic"):
         """
         This class containes the settings for the PEAQCalculator class.
 

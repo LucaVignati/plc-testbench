@@ -219,13 +219,13 @@ class PEAQCalculator(OutputAnalyser):
         reconstructed_track_node: AudioFile,
         lost_samples_idxs: DataFile = None,
     ) -> PEAQData:
-        peaq_mode = self.settings.get("peaq_mode")
-        if peaq_mode == PEAQMode.basic:
+        peaq_mode: str = self.settings.get("peaq_mode")
+        if peaq_mode == PEAQMode.basic.name:
             mode_flag = "--basic"
-        elif peaq_mode == PEAQMode.advanced:
+        elif peaq_mode == PEAQMode.advanced.name:
             mode_flag = "--advanced"
         else:
-            mode_flag = ""
+            mode_flag = "--basic"
         path = original_track_node.get_path()
         new_path = path[:-4] + "_norm" + path[-4:]
         new_data = normalise(original_track_node.get_data())
