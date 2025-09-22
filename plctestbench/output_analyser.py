@@ -184,12 +184,19 @@ class SpectralEnergyCalculator(OutputAnalyser):
 
         num_samples = len(x_r)
 
-        x_rk, x_ek = [
-            (np.fft.fft(w * x_r[i : i + N]), np.fft.fft(w * x_e[i : i + N]))
-            for i in self.progress_monitor(
-                range(0, num_samples - N, hop), desc=str(self)
-            )
-        ]
+        if x_r.ndim > 1:
+            w = w[:, None]
+
+        x_rk = []
+        x_ek = []
+        for sample in self.progress_monitor(
+            range(0, num_samples - N, hop), desc=str(self)
+        ):
+            x_r_win = w * x_r[sample : sample + N]
+            x_e_win = w * x_e[sample : sample + N]
+            x_rk.append(np.fft.fft(x_r_win, axis=0))
+            x_ek.append(np.fft.fft(x_e_win, axis=0))
+
         x_2rk = np.abs(np.array(x_rk)) ** 2
         x_2ek = np.abs(np.array(x_ek)) ** 2
 
