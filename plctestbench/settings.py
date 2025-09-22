@@ -406,10 +406,14 @@ class CrossfadeSettings(Settings):
         super().__init__()
         self.settings["length"] = length if length is not None else 10
         self.settings["function"] = (
-            function if function is not None else CrossfadeFunction.power
+            CrossfadeFunction(function)
+            if function is not None
+            else CrossfadeFunction.power
         )
         self.settings["exponent"] = exponent if exponent is not None else 1.0
-        self.settings["type"] = type if type is not None else CrossfadeType.power
+        self.settings["type"] = (
+            CrossfadeType(type) if type is not None else CrossfadeType.power
+        )
 
         self.__validate__()
 
@@ -1028,7 +1032,7 @@ class PEAQCalculatorSettings(Settings):
                 peaq_mode:      mode of the PEAQ algorithm.
         """
         super().__init__()
-        self.settings["peaq_mode"] = peaq_mode
+        self.settings["peaq_mode"] = PEAQMode(peaq_mode)
 
 
 class WindowedPEAQCalculatorSettings(Settings):

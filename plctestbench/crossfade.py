@@ -29,7 +29,9 @@ def hann_crossfade(settings: CrossfadeSettings, length_in_samples: int) -> np.ar
 
 
 class Crossfade(object):
-    def __init__(self, settings: Settings, crossfade_settings: Settings) -> None:
+    def __init__(
+        self, settings: Settings, crossfade_settings: CrossfadeSettings
+    ) -> None:
         self.settings = settings
         self.crossfade_settings = crossfade_settings
         self.fs = settings.get("fs")
