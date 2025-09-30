@@ -20,7 +20,7 @@ essentia = [
     { version = "2.1b6.dev1177", markers = "platform_system == 'Darwin' and platform_machine == 'arm64'" },
     { version = "2.1b6.dev1110", markers = "platform_system == 'Linux' and platform_machine == 'x86_64'" },
 ]
-python = ">=3.10"
+python = "3.12"
 numpy = { version = "1.26.0", python = ">=3.10,<3.13" }
 soundfile = "0.12.1"
 anytree = { version = "2.12.1", python = ">=3.10,<4.0" }
@@ -42,17 +42,17 @@ optional = true
 [tool.poetry.group.notebook.dependencies]
 ipywidgets = "^8.1.5"
 
-[tool.poetry.group.deep_learning]
-optional = true
-
-[tool.poetry.group.deep_learning.dependencies]
-tensorflow = "*"
-
-# [tool.poetry.group.burg]
+# [tool.poetry.group.deep_learning]
 # optional = true
 
-# [tool.poetry.group.burg.dependencies]
-# burg-plc = { git = "https://github.com/LucaVignati/burg-python-bindings.git" }
+# [tool.poetry.group.deep_learning.dependencies]
+# tensorflow = "2.15"
+
+[tool.poetry.group.burg]
+optional = true
+
+[tool.poetry.group.burg.dependencies]
+burg-plc = { git = "https://github.com/CIMIL/burg-python-bindings.git" }
 
 # [tool.poetry.group.cpp_template]
 # optional = true

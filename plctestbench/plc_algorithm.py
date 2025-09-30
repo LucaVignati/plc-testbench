@@ -34,7 +34,7 @@ from .settings import (
     ZerosPLCSettings,
 )
 from .spatial import CodecMode, MidSideCodec
-from .utils import force_2d, get_class, prepare_progress_monitor, recursive_split_audio
+from .utils import force_2d, prepare_progress_monitor, recursive_split_audio
 
 
 class PLCAlgorithm(Worker):
