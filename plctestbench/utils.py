@@ -3,6 +3,7 @@ import hashlib
 from time import sleep
 import numpy as np
 from pathlib import Path
+from typing import Callable
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -11,6 +12,7 @@ def _is_notebook() -> bool:
     This function returns True if the code is running in a Jupyter notebook.
     '''
     try:
+        from IPython.core.getipython import get_ipython
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
             return True   # Jupyter notebook or qtconsole
@@ -77,7 +79,7 @@ def force_2d(arr):
         arr = np.expand_dims(arr, axis=-1)
     return arr
 
-def prepare_progress_monitor(progress_monitor) -> callable:
+def prepare_progress_monitor(progress_monitor) -> Callable:
             def composite_progress_monitor(iterable, desc):
                     for item in iterable:
                         progress_monitor.update(1)
@@ -96,7 +98,7 @@ def extract_intorni(audio_file, lost_samples_idxs, intorno_size, fs, packet_size
             if start_idx is None:
                 start_idx = idx
                 end_idx = idx
-            elif idx == end_idx + 1:
+            elif idx == end_idx + 1: #type: ignore
                 end_idx = idx
             else:
                 boundary_indexes.append((start_idx, end_idx))
@@ -152,14 +154,20 @@ def fade_out(audio, fs, fade_out_time) -> None:
         fade_out_window = fade_out_window[:, np.newaxis]
     audio[-fade_out_samples:] *= fade_out_window
 
-def leading_silence(audio, fs, silence_time) -> None:
+def leading_silence(audio, fs, silence_time) -> np.ndarray:
     silence_samples = int(silence_time * fs / 1000)
-    silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
+    if audio.ndim == 1:  # Mono
+        silence = np.zeros(silence_samples, dtype=audio.dtype)
+    else:  # Stereo oder Multichannel
+        silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
     return np.concatenate((silence, audio), axis=0)
 
-def trailing_silence(audio, fs, silence_time) -> None:
+def trailing_silence(audio, fs, silence_time) -> np.ndarray:
     silence_samples = int(silence_time * fs / 1000)
-    silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
+    if audio.ndim == 1:  # Mono
+        silence = np.zeros(silence_samples, dtype=audio.dtype)
+    else:  # Stereo oder Multichannel
+        silence = np.zeros((silence_samples, audio.shape[1]), dtype=audio.dtype)
     return np.concatenate((audio, silence), axis=0)
 
 def is_loud_enough(audio_data, audio_reference, threshold=-30):

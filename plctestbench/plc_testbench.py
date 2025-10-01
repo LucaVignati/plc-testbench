@@ -1,8 +1,5 @@
-from anytree import LevelOrderIter
-
 from .data_manager import DataManager
 from .plot_manager import PlotManager
-
 
 class PLCTestbench(object):
     '''
@@ -10,13 +7,13 @@ class PLCTestbench(object):
     initialising the testing components and running the testbench.
     '''
 
-    def __init__(self, original_audio_tracks: list = None,
-                 packet_loss_simulators: list = None,
-                 plc_algorithms: list = None,
-                 output_analysers: list = None,
-                 testbench_settings: dict = None,
-                 user: dict = None,
-                 run_id: int = None):
+    def __init__(self, original_audio_tracks: list | None = None,
+                 packet_loss_simulators: list | None = None,
+                 plc_algorithms: list | None = None,
+                 output_analysers: list | None = None,
+                 testbench_settings: dict | None = None,
+                 user: dict | None = None,
+                 run_id: int | None = None):
         '''
         Initialise the parameters and testing components.
 
@@ -53,10 +50,29 @@ class PLCTestbench(object):
         Run the testbench.
         '''
         self.data_manager.run_testbench()
+        print("testbench.run finished!")
 
-    def plot(self, plot_settings={}, show=True, to_file=False, original_tracks=False, lost_samples_masks=False, reconstructed_tracks=False, output_analyses=False, group=False, peaq_summary=False) -> None:
+    def plot(self, plot_settings={},
+             show=True,
+             to_file=False,
+             original_tracks=False,
+             lost_samples_masks=False,
+             reconstructed_tracks=False,
+             output_analyses=False,
+             group=False,
+             peaq_summary=False) -> None:
         '''
         Plot all the results
+
+            Inputs:
+                show:                   shows plots in Jupyter Notebook
+                to_file:                plots will be saved as files
+                original_tracks:        plots audio track in Jupyter Notebook
+                lost_samples_masks:     plots a diagram of the lost samples in Jupyter Notebook
+                reconstructed_tracks:   plots audio signals after reconstruction in Jupyter Notebook
+                output_analyses:        plots the results of the metrics in Jupyter Notebook
+                group:                  combined setting for the 4 parameters above
+                peaq_summary:           plots the peaq results (currently not usable, implementation incomplete)
         '''
         if original_tracks:
             plot_manager = PlotManager(plot_settings)
@@ -99,4 +115,5 @@ class PLCTestbench(object):
 
         if show:
             PlotManager.show()
+        print("testbench.plot finished!")
         

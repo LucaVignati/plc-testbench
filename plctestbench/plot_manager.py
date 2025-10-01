@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from .node import ReconstructedTrackNode, Node, OriginalTrackNode, LostSamplesMaskNode, OutputAnalysisNode
-from .output_analyser import SimpleCalculator, MSECalculator, MAECalculator, SpectralEnergyCalculator, PEAQCalculator, PerceptualCalculator, HumanCalculator
+from .output_analyser import SimpleCalculator, MSECalculator, MAECalculator, SpectralEnergyCalculator, PEAQCalculator, WindowedPEAQCalculator, PerceptualCalculator, HumanCalculator
 from .file_wrapper import SimpleCalculatorData
 
 class PlotManager(object):
@@ -48,17 +48,20 @@ class PlotManager(object):
             else:
                 audio_channel_data = subsampled_audio_data
                 ax = [ax]
-            #ax = fig.add_axes([0, 0, 1, 1])
             ax[n].plot(x, audio_channel_data, linewidth=self.linewidth)
             ax[n].set_title("Channel " + str(n + 1) + "/" + str(n_channels))
             ax[n].set_xlabel("Time [s]")
             ax[n].set_ylabel("Normalized Amplitude")
             ax[n].set_xlim(0, x[-1])
             ax[n].set_ylim(-1, 1)
+
+        # Add space between subplots for stereo files
+        if n_channels > 1:
+            fig.subplots_adjust(hspace=0.3)
+
         if to_file:
             fig.savefig(node.get_path(), bbox_inches='tight')
 
-        plt.close(fig)
 
     def plot_lost_samples_mask(self, node: LostSamplesMaskNode, to_file=False) -> None:
         '''
@@ -71,16 +74,14 @@ class PlotManager(object):
         original_track_length = (len(original_track.get_data()) - 1)/samplerate
         lost_packet_times = lost_packets_idx / (samplerate/packet_size)
         fig = plt.figure(figsize=self.figsize, dpi=self.dpi)
-        fig.suptitle("Lost Samples")
+        fig.suptitle("Lost Packets")
         ax = fig.add_axes([0, 0, 1, 1])
         ax.vlines(lost_packet_times, 0, 1, linewidth=self.linewidth)
         ax.set_xlabel("Time [s]")
-        ax.set_ylabel("Lost Samples")
+        ax.set_ylabel("Lost Packets")
         ax.set_xlim(0, original_track_length)
         if to_file:
             fig.savefig(node.get_path(), bbox_inches='tight')
-
-        plt.close(fig)
 
     def plot_output_analysis(self, node: OutputAnalysisNode, to_file=False) -> None:
         '''
@@ -91,22 +92,23 @@ class PlotManager(object):
         n_channels = original_track.get_channels()
         original_track_length = (len(original_track.get_data()))/samplerate
         data = node.get_file().get_data()
-        fig = plt.figure(figsize=self.figsize, dpi=self.dpi)
+        
         if isinstance(data, SimpleCalculatorData):
             worker_class = node.worker.__class__
             if worker_class == MSECalculator:
                 name = "Mean Square Error"
             elif worker_class == MAECalculator:
                 name = "Mean Absolute Error"
-            elif worker_class == PerceptualCalculator or worker_class == HumanCalculator:
+            elif worker_class == PerceptualCalculator:
                 name = "Perceived Error"
+            elif worker_class == HumanCalculator:
+                name =  "Glitch Audibility"
             else:
                 raise NotImplementedError("Plotting for " + worker_class.__name__ + " not implemented")
+            
+            fig, ax = plt.subplots(n_channels, 1, sharex=True, figsize=self.figsize, dpi=self.dpi)
             fig.suptitle(name)
-            ax = fig.add_axes([0, 0, 1, 1])
-            ax.set_xlabel("Time [s]")
-            ax.set_ylabel(name)
-            ax.set_xlim(0, original_track_length)
+            ax = ax if n_channels > 1 else [ax]  # Ensure ax is iterable for mono files
             error = data.get_error()
             dots = len(error)
             dots = min(dots, 500000)
@@ -115,19 +117,28 @@ class PlotManager(object):
             end = original_track_length
             pace = end/len(subsampled_error)
             x = np.arange(0, end, pace)
+            
             for n in range(n_channels):
                 if error.ndim > 1:
                     channel_data = subsampled_error[:, n]
                 else:
                     channel_data = subsampled_error
-                label = "Channel " + str(n + 1)
-                ax.plot(x[:len(channel_data)], channel_data, label=label)
-            plt.legend(loc="upper left")
+                label = "Channel " + str(n + 1) + "/" + str(n_channels)
+                ax[n].plot(x[:len(channel_data)], channel_data, label=label)
+                ax[n].set_title(label)
+                ax[n].set_xlabel("Time [s]")
+                ax[n].set_ylabel(name)
+                ax[n].set_xlim(0, original_track_length)
+            
+            # Add space between subplots for stereo files
+            if n_channels > 1:
+                fig.subplots_adjust(hspace=0.3)
+            
             if to_file:
                 fig.savefig(node.get_path(), bbox_inches='tight')
         if issubclass(node.worker.__class__, SpectralEnergyCalculator):
             name = "Spectral Energy"
-        if issubclass(node.worker.__class__, PEAQCalculator):
+        if issubclass(node.worker.__class__, PEAQCalculator) or issubclass(node.worker.__class__, WindowedPEAQCalculator):
             name = "PEAQ"
             odg_text = "Objective Difference Grade: "
             di_text = "Distortion Index: "
@@ -136,8 +147,6 @@ class PlotManager(object):
             if to_file:
                 with open(node.get_path() + ".txt", "w", encoding="utf-8") as file:
                     file.write(file_content)
-
-        plt.close(fig)
 
     def plot_peaq_summary(self, nodes: Tuple[OutputAnalysisNode, ...], to_file=False) -> None:
         '''

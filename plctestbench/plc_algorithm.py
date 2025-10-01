@@ -1,8 +1,8 @@
 from math import ceil
 import librosa
 import numpy as np
-from burg_plc import BurgBasic
-from cpp_plc_template import BasePlcTemplate
+from burg_plc import BurgBasic # type: ignore
+from cpp_plc_template import BasePlcTemplate # type: ignore
 import tensorflow as tf
 from plctestbench.worker import Worker
 from .settings import Settings, StereoImageType
@@ -32,15 +32,17 @@ class PLCAlgorithm(Worker):
             self.context_length = int(self.settings.get("context_length") * self.settings.get("fs") / 1000)
         except:
             self.context_length = self.packet_size
-
-    
+        self.packet_type = fade_in_settings.get("packet_type")
 
     def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
         '''
-        
+        This method processes an audio track and performs Packet Loss Concealment.
+        It splits the signal into packets, checks for each packet whether it was lost (based on lost_samples_idx),
+        and reconstructs the packet if necessary using the PLC logic. Finally, the reconstructed signal is returned.
         '''
         def zero_pad(original_track: np.ndarray):
             '''
+            Pads the signal with zeros so that its length is a multiple of the packet size.
             '''
             rounding_difference = self.packet_size - track_length % self.packet_size
             npad = ((0, rounding_difference),(0, 0))
@@ -61,7 +63,7 @@ class PLCAlgorithm(Worker):
             start_idx = i*self.packet_size
             end_idx = (i+1)*self.packet_size
             buffer = original_track[start_idx:end_idx]
-            is_valid = not i == lost_packets_idx[j]
+            is_valid = not (i == lost_packets_idx[j])
             reconstructed_buffer = self._tick(buffer, is_valid)
             reconstructed_track[start_idx:end_idx] = reconstructed_buffer
 
@@ -75,6 +77,7 @@ class PLCAlgorithm(Worker):
         this function does nothing.
         '''
         self.context = np.zeros((self.context_length, self.n_channels))
+        self.context_fade_in = np.zeros((self.context_length, self.n_channels))
 
     def _tick(self, buffer: np.ndarray, is_valid: bool) -> np.ndarray:
         '''
@@ -102,6 +105,16 @@ class PLCAlgorithm(Worker):
         This function is called for every buffer.
         '''
         self.context = np.roll(self.context, -self.packet_size, axis=1)
+        self.context_fade_in = np.roll(self.context_fade_in, -self.packet_size, axis=1)
+        if self.packet_type == 'last sample' and is_valid == True:
+            if buffer.shape[1] == 2:
+                self.context_fade_in = np.full_like(buffer, [buffer[-1, 0], buffer[-1, 1]])
+            else:
+                self.context_fade_in = np.full_like(buffer, buffer[-1, :])
+        elif self.packet_type == 'last packet' and is_valid == True:
+            self.context_fade_in[-self.packet_size:, :] = buffer[::-1]
+        else:
+            self.context_fade_in[-self.packet_size:, :] = buffer
         self.context[-self.packet_size:, :] = buffer
         return buffer
 
@@ -110,7 +123,7 @@ class PLCAlgorithm(Worker):
         This function is called for every buffer.
         '''
         self.fade_in.start()
-        output_buffer = self.fade_in(self.context[-self.packet_size:], buffer)
+        output_buffer = self.fade_in(self.context_fade_in[-self.packet_size:], buffer)
         return output_buffer
     
     def _predict(self, buffer: np.ndarray) -> np.ndarray:
@@ -128,6 +141,7 @@ class PLCAlgorithm(Worker):
             prediction = self._predict(buffer)
             output_buffer = self.crossfade(prediction, buffer)
         return output_buffer
+    
 
 class AdvancedPLC(PLCAlgorithm):
     '''
@@ -140,7 +154,7 @@ class AdvancedPLC(PLCAlgorithm):
     
     def __init__(self, settings: Settings) -> None:
         Worker.__init__(self, settings)
-        self.plc_algorithms = []
+        self.plc_algorithms = dict()
         all_plc_settings = self.settings.get("settings")
         self.plc_algorithms = {channel: [self.get_worker(worker_settings, settings) for worker_settings in settings_list] \
                                for channel, settings_list in all_plc_settings.items()}
@@ -164,8 +178,11 @@ class AdvancedPLC(PLCAlgorithm):
         if self.channel_link:
             processed_track['linked'] = original_track
         else:
-            for idx, channel in enumerate(self.frequencies.keys()):
-                processed_track[channel] = original_track[:, idx]
+            if original_track.shape[1] == 2:
+                for idx, channel in enumerate(self.frequencies.keys()):
+                    processed_track[channel] = original_track[:, idx]
+            else:
+                raise ValueError("Your audio file is mono. It needs to be stereo.")
         for channel, crossovers in self.crossovers.items():
             processed_track[channel] = recursive_split_audio(processed_track[channel], crossovers, [])
 
@@ -194,7 +211,7 @@ class AdvancedPLC(PLCAlgorithm):
 
 class ZerosPLC(PLCAlgorithm):
     '''
-    ZerosPLC is ...
+    ZerosPLC inserts Zero Samples in a lost packet.
     '''
     
     def _predict(self, buffer: np.ndarray):
@@ -203,9 +220,10 @@ class ZerosPLC(PLCAlgorithm):
         '''
         return np.zeros(np.shape(buffer))
 
+
 class LastPacketPLC(PLCAlgorithm):
     '''
-    LastPacketPLC is ...
+    LastPacketPLC uses the last packet before a lost packet to reconstruct it.
     '''
 
     def __init__(self, settings: Settings) -> None:
@@ -213,29 +231,36 @@ class LastPacketPLC(PLCAlgorithm):
         self.mirror_x = settings.get("mirror_x")
         self.mirror_y = settings.get("mirror_y")
         self.clip_strategy = settings.get("clip_strategy")
-
-    def _predict(self, _: np.ndarray):
+    def _predict(self, buffer: np.ndarray) -> np.ndarray:
         '''
         
         '''
-        def _flip_in_place(buffer: np.ndarray):
+        _ = buffer
+        def _flip_in_place(buffer: np.ndarray, start_value = buffer[0]):
             '''
+            Flips the array in place.
             '''
-            return -(buffer - buffer[0]) + buffer[0]
-
+            return -(buffer - start_value) + start_value
         reconstructed_buffer = self.context[-self.packet_size:]
         if self.mirror_x:
             reconstructed_buffer = np.flip(reconstructed_buffer, axis=0)
             if self.mirror_y:
                 for channel in range(self.n_channels):
                     reconstructed_buffer[:, channel] = _flip_in_place(reconstructed_buffer[:, channel])
-                    for sample in range(np.shape(reconstructed_buffer)[0]):
-                        if abs(sample) > 1:
+                    for sample_idx in range(np.shape(reconstructed_buffer)[0]):
+                        if abs(reconstructed_buffer[sample_idx, channel]) > 1 and self.clip_strategy is not None:
                             if self.clip_strategy == "subtract":
-                                reconstructed_buffer[sample:, channel] = reconstructed_buffer[sample:, channel] - (sample - np.sign(sample))
+                                if reconstructed_buffer[sample_idx, channel] > 1:
+                                    reconstructed_buffer[sample_idx, channel] -= reconstructed_buffer[sample_idx, channel]
+                                    reconstructed_buffer[sample_idx, channel] += np.sign(sample_idx)
+                                else:
+                                    reconstructed_buffer[sample_idx, channel] += abs(reconstructed_buffer[sample_idx, channel])
+                                    reconstructed_buffer[sample_idx, channel] -= np.sign(sample_idx)
                             elif self.clip_strategy == "flip":
-                                reconstructed_buffer[sample:, channel] = _flip_in_place(reconstructed_buffer[sample:, channel])
+                                start_value = 1 if reconstructed_buffer[sample_idx, channel] > 1 else -1
+                                reconstructed_buffer[sample_idx, channel] = _flip_in_place(reconstructed_buffer[sample_idx, channel], start_value)
         return reconstructed_buffer
+
 
 class LowCostPLC(PLCAlgorithm):
     '''
@@ -243,7 +268,6 @@ class LowCostPLC(PLCAlgorithm):
     in "Low-delay error concealment with low computational overhead
     for audio over ip applications" by Marco Fink and Udo Zölzer
     '''
-
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         self.lcc = LowCostConcealment(settings.get("max_frequency"),
@@ -265,11 +289,11 @@ class LowCostPLC(PLCAlgorithm):
         '''
         return self.lcc.process(buffer, is_valid)
 
+
 class BurgPLC(PLCAlgorithm):
     '''
     BurgPLC is ...
     '''
-    
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         self.order = settings.get("order")
@@ -297,11 +321,11 @@ class BurgPLC(PLCAlgorithm):
         self.previous_valid = is_valid
         return buffer
 
+
 class ExternalPLC(PLCAlgorithm):
     '''
     ExternalPLC is ...
     '''
-    
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
         self.bpt = BasePlcTemplate()
@@ -309,7 +333,7 @@ class ExternalPLC(PLCAlgorithm):
 
     def _tick(self, buffer: np.ndarray, is_valid: bool):
         '''
-        
+        This function is called for every buffer. Buffer shape is (samples, channels), process expects (channels, samples).
         '''
         buffer = np.transpose(buffer)
         reconstructed_buffer = np.zeros(np.shape(buffer), np.float32)
@@ -317,14 +341,16 @@ class ExternalPLC(PLCAlgorithm):
         reconstructed_buffer = np.transpose(reconstructed_buffer)
         return reconstructed_buffer
 
+
 class DeepLearningPLC(PLCAlgorithm):
     '''
     DeepLearningPLC is ...
     '''
-    
     def __init__(self, settings: Settings) -> None:
         super().__init__(settings)
-        self.model = tf.keras.models.load_model(settings.get("model_path"), compile=False)
+        self.model: tf.keras.Model | None = tf.keras.models.load_model(str(settings.get("model_path")), compile=False)
+        if self.model is None:
+            raise RuntimeError("Failed to load the deep learning model. Please check the model path and file.")
         self.fs_dl = settings.get("fs_dl")
         self.context_length = settings.get("context_length")
         self.context_length_samples = settings.get("context_length_samples")
@@ -341,17 +367,21 @@ class DeepLearningPLC(PLCAlgorithm):
         return self._predict_reconstructed_buffer(buffer)
 
     def _compute_spectrogram(self, context, fs):
-        return librosa.feature.melspectrogram(y=np.pad(context, (0, self.window_length-self.hop_size)), sr=fs, n_fft=self.window_length, hop_length=self.hop_size, win_length=self.window_length,
-    center=False, n_mels=self.num_mel_bins, fmin=self.lower_edge_hertz, fmax=self.upper_edge_hertz)
+        return librosa.feature.melspectrogram(
+            y=np.pad(context, (0, self.window_length-self.hop_size)), sr=fs, n_fft=self.window_length, hop_length=self.hop_size,
+            win_length=self.window_length, center=False, n_mels=self.num_mel_bins, fmin=self.lower_edge_hertz, fmax=self.upper_edge_hertz
+            )
 
     def _predict_reconstructed_buffer(self, buffer):
         reconstructed_buffer = np.zeros(np.shape(buffer.T))
         context = librosa.resample(self.context.T, orig_sr=self.sample_rate, target_sr=self.fs_dl).T
         for channel_index in range(np.shape(buffer)[1]):
             spectrogram_2s = self._compute_spectrogram(context[-round(self.context_length_samples/4):, channel_index], self.fs_dl)
-            #spectrogram_4s = self._compute_spectrogram(librosa.resample(context[-round(self.context_length_samples/2):, channel_index], orig_sr=self.fs_dl, target_sr=self.fs_dl/2), self.fs_dl/2)
+            # spectrogram_4s = self._compute_spectrogram(
+            # librosa.resample(context[-round(self.context_length_samples/2):, channel_index], orig_sr=self.fs_dl, target_sr=self.fs_dl/2), self.fs_dl/2
+            # )
             #spectrogram_8s = self._compute_spectrogram(librosa.resample(context[:, channel_index], orig_sr=self.fs_dl, target_sr=self.fs_dl/4), self.fs_dl/4)
             spectrograms = np.expand_dims(spectrogram_2s, axis=0)
             last_packet = np.expand_dims(context[-self.packet_size:, channel_index], axis=0)
-            reconstructed_buffer[channel_index, :] = self.model((spectrograms, last_packet))
+            reconstructed_buffer[channel_index, :] = self.model([spectrograms, last_packet]) # type: ignore
         return reconstructed_buffer.T

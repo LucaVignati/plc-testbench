@@ -9,8 +9,7 @@ folder_suffixes = ['lost_samples_masks',
 
 def compute_absolute_folder_path(parent: Node) -> str:
     '''
-    This private function computes the absolute path of the given
-    node climbing down the ancestors list.
+    This private function computes the absolute path of the given node climbing down the ancestors list.
 
         Inputs:
             node:   the node instance to compute the absolute path for
@@ -18,8 +17,23 @@ def compute_absolute_folder_path(parent: Node) -> str:
     folder_path = ""
     for ancestor in parent.ancestors:
         folder_path = path.join(folder_path, ancestor.get_folder_name())
-    folder_path = path.join(folder_path, parent.get_folder_name())
+    folder_name = parent.get_folder_name()
+    if folder_name is not None:
+        folder_path = path.join(folder_path, folder_name)
     return folder_path
+
+def _format_pls_settings(settings) -> str:
+    settings_dict = getattr(settings, "settings", None)
+    if not isinstance(settings_dict, dict):
+        return ""
+    parts = []
+    for key, value in settings_dict.items():
+        value_str = str(value)
+        if '.' in value_str:
+            value_str = value_str.replace('.', 'p')
+        parts.append(f"{key}={value_str}")
+    return "-".join(parts)
+
 
 class PathManager(object):
 
@@ -30,8 +44,7 @@ class PathManager(object):
         to deal with filepaths.
 
             Inputs:
-                root_folder:    The root folder where all the files will
-                                be created
+                root_folder:    The root folder where all the files will be created
         '''
         self.root_folder = root_folder
         if not path.exists(root_folder):
@@ -58,7 +71,7 @@ class PathManager(object):
             os.mkdir(folder_name)
         return folder_name, absolute_path
 
-    def get_node_paths(self, worker, settings, parent: Node) -> tuple:
+    def get_node_paths(self, worker, settings, parent: Node | None) -> tuple:
         '''
         This function computes the relative path of the node, creates its
         directory and stores it in the node.
@@ -72,7 +85,10 @@ class PathManager(object):
         folder_name = None
         index = parent.depth + 1
         node_path = compute_absolute_folder_path(parent)
-        worker_name = worker.__name__ + '-' + str(hash(settings))
+        if worker.__module__.endswith("loss_simulator"):
+            worker_name = f"{worker.__name__}-{_format_pls_settings(settings)}"
+        else:
+            worker_name = worker.__name__ + '-' + str(hash(settings))
         absolute_path = path.join(node_path, worker_name)
         if index < len(folder_suffixes):
             folder_name = worker_name + '-' + folder_suffixes[index]

@@ -7,6 +7,8 @@ from ruamel.yaml import YAML
 import json
 import pandas as pd
 import copy
+from io import StringIO
+import numpy as np
 
 class ListeningTest(object):
 
@@ -74,7 +76,7 @@ class ListeningTest(object):
       # Add silence to the beginning and end of the stimulus
       stimulus = leading_silence(stimulus, fs, 200)
       stimulus = trailing_silence(stimulus, fs, 300)
-      destination.append(AudioFile.from_audio_file(reference_file, new_data=stimulus, new_path=test_folder.joinpath(f"{idx}-{index}.wav")))
+      destination.append(AudioFile.from_audio_file(reference_file, new_data=stimulus, new_path=str(test_folder.joinpath(f"{idx}-{index}.wav"))))
 
   def set_references(self, reference_data, reference_file) -> None:
     self._set_stimuli(reference_data, reference_file)
@@ -223,14 +225,14 @@ class ListeningTest(object):
     # Generate the pages for the test
     reference = self.audio_folder.joinpath(self.settings.get("reference"))
     anchor = self.audio_folder.joinpath(self.settings.get("anchor"))
-    randomized_pages = ["random"]
+    randomized_pages = []
     page_content = "<p>IMPORTANT: When you press play on a stimulus, let it play till the end or hit pause. If you press play on another stimulus before the first finished, a glitch will be produced and the test will be invalid.</p>Please rate the audibility of the glitch in the following audio examples. How much can you hear it?"
     s = self.settings.get("stimuli_per_page")
     page_data = [(self.indexes[i:i+s], self.stimuli[i:i+s]) for i in range(0, len(self.references), s)]
     for data in page_data:
       indexes, stimuli = data
       page = {
-        "type": "splat",
+        "type": "mushra",
         "id": '-'.join([str(index) for index in indexes]),
         "name": "Test in progress",
         "content": page_content,
@@ -334,12 +336,15 @@ class ListeningTest(object):
     if config_file_path.exists():
       with open(config_file_path, 'r') as file:
         existing_config = yaml.load(file)
-      if existing_config != config:
+        if existing_config != config:
           raise ValueError(f"A config file with the same name and different content exists: {config_file_path}. Resolve manually.")
+
     else:
       with open(config_file_path, 'w') as file:
-        config_stirng = yaml.dump_to_string(config).replace('- -', '-\n  -')
-        file.write(config_stirng)
+        stream = StringIO()
+        yaml.dump(config, stream)
+        config_string = stream.getvalue().replace('- -', '-\n  -')
+        file.write(config_string)
 
   def get_results(self) -> list:
 
@@ -377,3 +382,212 @@ class ListeningTest(object):
       formatted_results = list(result.itertuples(index=False, name=None))
 
     return formatted_results
+
+  def generate_multi_config(self, session, audio_tracks, plc_algorithms, packet_loss_simulators, new_audio_per_page, pages_per_PLS, stimulus_length):
+      '''
+      Generates a MUSHRA config file when all algorithms have been processed.
+      '''
+      yaml = YAML(typ=['rt', 'string'])
+      config = {
+          "testname": "Listening Test",
+          "testId": self.run_name,
+          "bufferSize": 2048,
+          "stopOnErrors": False,
+          "showButtonPreviousPage": False,
+          "remoteService": "service/write.php",
+          "pages": []
+      }
+      intro = {
+          "type": "generic",
+          "id": "Intro",
+          "name": "Instructions",
+          "content": f'\
+              <h2>Requirements</h2>\
+              <p>Please use hi-fi headphones.</p>\
+              <h2>Explanation</h2>\
+              You will be presented with {pages_per_PLS*len(packet_loss_simulators)} listening sessions.\
+              Each session has 1 reference track and {len(plc_algorithms)+1} unlabeled audio tracks.\
+              All audio tracks have a length of {stimulus_length/1000} seconds.\
+              You must rate how disruptive artifacts are in the context of audio quality.\
+              Therefore assign each one a score between 0 and 100 that indicates how good the audio quality is compared to the reference.\
+              The scale is divided into the following sections: "Excellent", "Good", "Fair", "Poor", and "Bad".\
+              Excellent audio quality means inaudible artifacts, bad audio quality means clearly audible artifacts.\
+              The audio tracks are played back in a loop. You can listen to a specific section by moving the sliders below the audio waveform.<br>\
+\
+                <h2>Audio Examples</h2>\
+                Below you can find 3 examples of the audio tracks you will be presented with.\
+                Listen carefully to the examples to understand the scale.<br>\
+              <table>\
+                <tr>\
+                  <td></td>\
+                </tr>\
+                <tr>\
+                  <td>Excellent</td>\
+                  <td>\
+                    <audio controls>\
+                        <source src="configs/resources/audio/reference_5-1080.wav" type="audio/wav">\
+                        Your browser does not support the audio element.\
+                    </audio>\
+                  </td>\
+                </tr>\
+                <tr>\
+                  <td>Bad</td>\
+                  <td>\
+                    <audio controls>\
+                        <source src="configs/resources/audio/ZerosPLC_5-1080.wav" type="audio/wav">\
+                        Your browser does not support the audio element.\
+                    </audio>\
+                  </td>\
+                </tr>\
+                <tr>\
+                  <td>Fair</td>\
+                  <td>\
+                    <audio controls>\
+                        <source src="configs/resources/audio/ExternalPLC_5-1080.wav" type="audio/wav">\
+                        Your browser does not support the audio element.\
+                    </audio>\
+                  </td>\
+                </tr>\
+              </table>\
+              <style>\
+                  table {{\
+                      margin-left: auto;\
+                      margin-right: auto;\
+                      border-collapse: collapse;\
+                  }}\
+                  th, td {{\
+                      border: 0px solid black;\
+                      padding: 10px;\
+                      text-align: center;\
+                  }}\
+              </style>'
+      }
+      config["pages"].append(intro)
+
+      raw_ref_sets = session["orig_ref_paths"]
+      unique_ref_sets = []
+      seen_patterns = set()
+      for ref_list in raw_ref_sets:
+          if not ref_list:
+              continue
+          loss_pattern_folder = Path(ref_list[0]).parent.name
+          if loss_pattern_folder in seen_patterns:
+              continue
+          seen_patterns.add(loss_pattern_folder)
+          unique_ref_sets.append(ref_list)
+
+      for algo, runs in session["recon_paths"].items():
+          if len(runs) != len(unique_ref_sets):
+              print(f"[WARN] Algo {algo}: runs={len(runs)} unique_ref_sets={len(unique_ref_sets)} (Inkonsistenz)")
+
+      for audio_idx, audio_track in enumerate(audio_tracks):
+         raw_ref_sets = session["orig_ref_paths"]
+      unique_ref_sets = []
+      seen_patterns = set()
+      for ref_list in raw_ref_sets:
+          if not ref_list:
+              continue
+          loss_pattern_folder = Path(ref_list[0]).parent.name
+          if loss_pattern_folder in seen_patterns:
+              continue
+          seen_patterns.add(loss_pattern_folder)
+          unique_ref_sets.append(ref_list)
+
+      for algo, runs in session["recon_paths"].items():
+          if len(runs) != len(unique_ref_sets):
+              print(f"[WARN] Algo {algo}: runs={len(runs)} unique_ref_sets={len(unique_ref_sets)} (Inkonsistenz)")
+
+      for pls_idx, ref_list in enumerate(unique_ref_sets):
+          for page_idx, ref_path in enumerate(ref_list):
+              stimuli_map = {}
+              for algorithm in plc_algorithms:
+                  algo_runs = session["recon_paths"].get(algorithm, [])
+                  if pls_idx >= len(algo_runs):
+                      continue
+                  run_paths = algo_runs[pls_idx]
+                  if page_idx >= len(run_paths):
+                      continue
+                  wav_path = run_paths[page_idx]
+                  key = Path(wav_path).stem
+                  stimuli_map[key] = str(Path(wav_path).relative_to(self.webmushra_folder))
+              if not stimuli_map:
+                  continue
+              ref_rel = str(Path(ref_path).relative_to(self.webmushra_folder))
+              page_id = f"page-{pls_idx * len(ref_list) + page_idx + 1}"
+              page = {
+                  "type": "mushra",
+                  "id": page_id,
+                  "name": f"Listening session {pls_idx * len(ref_list) + page_idx + 1}",
+                  "content": "Listen to the Reference and each of the Conditions 1 to 5. You can only rate the one you are listening to. If you are done press next.",
+                  "createAnchor35": False,
+                  "createAnchor70": False,
+                  "showWaveform": True,
+                  "enableLooping": True,
+                  "switchBack": True,
+                  "randomize": True,
+                  "reference": ref_rel,
+                  "stimuli": stimuli_map
+                }
+              config["pages"].append(page)
+
+      finish = {
+          "type": "finish",
+          "name": "Finished",
+          "content": "Thank you for attending. Please enter your details. After entering them you can press send results.",
+          "popupContent": "Your results were sent. Goodbye and have a nice day",
+          "showResults": False,
+          "writeResults": True,
+          "questionnaire": [
+              {
+                  "type": "number",
+                  "label": "Age",
+                  "name": "Age",
+                  "min": 0,
+                  "max": 100,
+                  "default": 0
+              },
+              {
+                  "type": "likert",
+                  "name": "gender",
+                  "label": "Gender",
+                  "response": [
+                      {"value": "male", "label": "Male"},
+                      {"value": "female", "label": "Female"},
+                      {"value": "no info", "label": "No info"}
+                  ]
+              },
+              {
+                  "type": "likert",
+                  "name": "hearing ability",
+                  "label": "Hearing ability",
+                  "response": [
+                      {"value": "bad", "label": "Bad"},
+                      {"value": "normal", "label": "Normal"},
+                      {"value": "good", "label": "Good"}
+                  ]
+              },
+              {
+                  "type": "likert",
+                  "name": "audio expertise",
+                  "label": "Audio expertise",
+                  "response": [
+                      {"value": "below", "label": "Below"},
+                      {"value": "average", "label": "Average"},
+                      {"value": "above", "label": "Above"}
+                  ]
+              },
+              {
+                  "type": "text",
+                  "name": "headphones",
+                  "label": "Headphones",
+              },
+          ]
+      }
+      config["pages"].append(finish)
+
+      cfg_path = self.configs_folder.joinpath(self.run_name + ".yaml")
+      if not cfg_path.exists():
+          with open(cfg_path, "w") as f:
+              yaml.dump(config, f)
+
+      return cfg_path

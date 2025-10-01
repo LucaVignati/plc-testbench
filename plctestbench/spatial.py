@@ -7,18 +7,19 @@ class CodecMode(Enum):
 
 class MidSideCodec(object):
 
-  def __call__(self, audio: np.ndarray, type:CodecMode = CodecMode.ENCODE) -> np.ndarray:
+  def __call__(self, audio: np.ndarray,
+               type:CodecMode = CodecMode.ENCODE) -> np.ndarray:
     if type == CodecMode.ENCODE:
-      return MidSideCodec.encode(audio)
+      return self.encode(audio)
     elif type == CodecMode.DECODE:
-      return MidSideCodec.decode(audio)
-    
-  def encode(left_right: np.ndarray) -> np.ndarray:
+      return self.decode(audio)
+
+  def encode(self, left_right: np.ndarray) -> np.ndarray:
     mid = (left_right[:,0] + left_right[:,1]) / 2
     side = (left_right[:,0] - left_right[:,1]) / 2
     return np.stack((mid, side), axis=1)
 
-  def decode(mid_side: np.ndarray) -> np.ndarray:
+  def decode(self, mid_side: np.ndarray) -> np.ndarray:
     left = (mid_side[:,0] + mid_side[:,1]) * 2
     right = (mid_side[:,0] - mid_side[:,1]) * 2
     return np.stack((left, right), axis=1)

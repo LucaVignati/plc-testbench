@@ -10,7 +10,7 @@ from .utils import get_class, compute_hash, progress_monitor
 
 class DataManager(object):
 
-    def __init__(self, testbench_settings: dict, user: dict = None) -> None:
+    def __init__(self, testbench_settings: dict, user: dict | None = None) -> None:
         '''
         This class manages the data flow in and out of the data tree.
 
@@ -58,7 +58,7 @@ class DataManager(object):
             self._set_run_status('FAILED')
         self._set_run_status('COMPLETED')
 
-    def set_workers(self, original_audio_tracks: list,
+    def set_workers(self, original_audio_tracks: list | None,
                           packet_loss_simulators: list,
                           plc_algorithms: list,
                           output_analysers: list) -> None:
@@ -98,17 +98,14 @@ class DataManager(object):
         self._save_run_to_database()
         return self.run['_id']
 
-    def _recursive_tree_init(self, parent: Node = None, idx: int = 0):
+    def _recursive_tree_init(self, parent: Node | None = None, idx: int = 0):
         '''
         This function recursively instanciates all the nodes in the tree.
 
             Inputs:
-                parent:         the newly created node will be attached to the
-                                tree as a child of this node.
-                worker_classes: this list contains the workers and associated
-                                callbacks for each level of the tree.
-                idx:            this index is used to move forward and stop the
-                                recursion and access the appropriate element of
+                parent:         the newly created node will be attached to the tree as a child of this node.
+                worker_classes: this list contains the workers and associated callbacks for each level of the tree.
+                idx:            this index is used to move forward and stop the recursion and access the appropriate element of
                                 the worker_classes list.
         '''
         database = None
@@ -117,8 +114,6 @@ class DataManager(object):
         worker_class = self.worker_classes[idx]
         node_class = self.node_classes[idx]
         for worker, settings in worker_class:
-            # if isinstance(settings, tuple):
-                
             settings.set_progress_monitor(self.progress_monitor)
             folder_name, absolute_path = self.path_manager.get_node_paths(worker, settings, parent)
             if parent is None:
@@ -160,7 +155,7 @@ class DataManager(object):
         '''
         run = self.database_manager.get_run(run_id)
         self.worker_classes = []
-        for worker_type in run['workers']:
+        for worker_type in run['workers'] if run is not None else []:
             workers = []
             for worker in worker_type:
                 settings = Settings(worker['settings'])

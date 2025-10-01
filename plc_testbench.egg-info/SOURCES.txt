@@ -12,11 +12,13 @@ plctestbench/data_manager.py
 plctestbench/database_manager.py
 plctestbench/file_wrapper.py
 plctestbench/filters.py
+plctestbench/listening_tests.py
 plctestbench/loss_simulator.py
 plctestbench/low_cost_concealment.py
 plctestbench/node.py
 plctestbench/output_analyser.py
 plctestbench/path_manager.py
+plctestbench/perceptual_metric.py
 plctestbench/plc_algorithm.py
 plctestbench/plc_testbench.py
 plctestbench/plot_manager.py

@@ -1,14 +1,13 @@
 import numpy as np
-from plctestbench.settings import Settings, CrossfadeFunction, CrossfadeType
+from plctestbench.settings import Settings
 from .filters import LinkwitzRileyCrossover
 from .utils import recursive_split_audio
-from .settings import CrossfadeFunction, CrossfadeType
 
-def power_crossfade(settings: Settings) -> np.array:
-    return np.array([x ** settings.get("exponent") for x in np.linspace(0, 1, settings.length_in_samples)])
+def power_crossfade(settings: Settings, length_in_samples: int) -> np.ndarray:
+    return np.array([x ** settings.get("exponent") for x in np.linspace(0, 1, length_in_samples)])
 
-def sinusoidal_crossfade(settings: Settings) -> np.array:
-    return np.sin(np.linspace(0, np.pi/2, settings.length_in_samples))
+def sinusoidal_crossfade(length_in_samples: int) -> np.ndarray:
+    return np.sin(np.linspace(0, np.pi/2, length_in_samples))
 
 class Crossfade(object):
     def __init__(self, settings: Settings, crossfade_settings: Settings) -> None:
@@ -16,32 +15,35 @@ class Crossfade(object):
         self.crossfade_settings = crossfade_settings
         self.fs = settings.get("fs")
         self.length = self.crossfade_settings.get("length")
-        self.crossfade_settings.length_in_samples = round(self.length * self.fs * 0.001)
+        self.length_in_samples = round(self.length * self.fs * 0.001)
         self._ongoing = False
         self.idx = 0
         
+        self.crossfade_buffer_a = np.zeros(self.length_in_samples)
+        self.crossfade_buffer_b = np.zeros(self.length_in_samples)
+
         self.function = self.crossfade_settings.get("function")
-        if self.function == CrossfadeFunction.power:
-            self.crossfade_buffer_a = power_crossfade(self.crossfade_settings)
-        elif self.function == CrossfadeFunction.sinusoidal:
-            self.crossfade_buffer_a = sinusoidal_crossfade(self.crossfade_settings)
+        if self.function == "power":
+            self.crossfade_buffer_a = power_crossfade(self.crossfade_settings, self.length_in_samples)
+        elif self.function == "sinusoidal":
+            self.crossfade_buffer_a = sinusoidal_crossfade(self.length_in_samples)
 
         self.type = self.crossfade_settings.get("type")
-        if self.type == CrossfadeType.power:
+        if self.type == "power":
             self.crossfade_buffer_b = (1 - self.crossfade_buffer_a ** 2) ** (1/2)
-        elif self.type == CrossfadeType.amplitude:
+        elif self.type == "amplitude":
             self.crossfade_buffer_b = 1 - self.crossfade_buffer_a
 
-    def __call__(self, prediction: np.ndarray, buffer: np.ndarray = None) -> np.ndarray:
+    def __call__(self, prediction: np.ndarray, buffer: np.ndarray | None = None) -> np.ndarray:
         '''
         '''
         # One-pad the crossfade_buffer_a to match the length of the buffer in case it is shorter
+        if buffer is None:
+            buffer = np.zeros_like(prediction)
         if self._ongoing:
             if np.shape(self.crossfade_buffer_a)[0] - self.idx < np.shape(prediction)[0]:
                 self.crossfade_buffer_a = np.pad(self.crossfade_buffer_a, (0, len(prediction) - (len(self.crossfade_buffer_a) - self.idx)), 'constant', constant_values=(1))
                 self.crossfade_buffer_b = np.pad(self.crossfade_buffer_b, (0, len(prediction) - (len(self.crossfade_buffer_b) - self.idx)), 'constant', constant_values=(0))
-            if buffer is None:
-                buffer = np.zeros_like(prediction)
             output_buffer = prediction * self.crossfade_buffer_b[self.idx:self.idx + len(prediction), np.newaxis] + buffer * self.crossfade_buffer_a[self.idx:self.idx + len(prediction), np.newaxis]
             self.idx += len(prediction)
         else:
@@ -53,7 +55,7 @@ class Crossfade(object):
         self.idx = 0
 
     def ongoing(self) -> bool:
-        if self.idx >= self.crossfade_settings.length_in_samples:
+        if self.idx >= self.length_in_samples:
             self._ongoing = False
         return self._ongoing
 
@@ -68,7 +70,7 @@ class MultibandCrossfade(object):
         self.crossovers = [LinkwitzRileyCrossover(self.crossover_order, freq, self.settings.get("fs")) for freq in self.frequencies]
         self.crossfades = [Crossfade(self.settings, xfade_settings) for xfade_settings in self.crossfade_settings]
 
-    def __call__(self, prediction: np.ndarray, buffer: np.ndarray = None) -> np.ndarray:
+    def __call__(self, prediction: np.ndarray, buffer: np.ndarray | None = None) -> np.ndarray:
         '''
         '''
         if buffer is None:
