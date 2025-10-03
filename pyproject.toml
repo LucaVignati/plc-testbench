@@ -34,7 +34,8 @@ ruamel-yaml-clib = "0.2.12"
 librosa = "0.10.1"
 scipy = "1.14.1"
 pandas = "^2.2.3"
-
+burg-plc = { git = "https://github.com/CIMIL/burg-python-bindings.git" }
+tensorflow = "2.15"
 
 [tool.poetry.group.notebook]
 optional = true
@@ -42,18 +43,6 @@ optional = true
 [tool.poetry.group.notebook.dependencies]
 ipywidgets = "^8.1.5"
 ipykernel = "6.30.1"
-
-[tool.poetry.group.deep_learning]
-optional = true
-
-[tool.poetry.group.deep_learning.dependencies]
-tensorflow = "2.15"
-
-[tool.poetry.group.burg]
-optional = true
-
-[tool.poetry.group.burg.dependencies]
-burg-plc = { git = "https://github.com/CIMIL/burg-python-bindings.git" }
 
 # [tool.poetry.group.cpp_template]
 # optional = true
