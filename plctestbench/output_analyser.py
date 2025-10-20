@@ -372,6 +372,7 @@ class WindowedPEAQCalculator(OutputAnalyser):
                 peaq_odg, peaq_di = peaq_output.split("\n", 1)
                 _, peaq_odg = peaq_odg.split(peaq_odg_text)
                 _, peaq_di = peaq_di.split(peaq_di_text)
+                print(peaq_odg)
                 metric[idx] = self.sign * float(peaq_odg)
             else:
                 print("The peaq program exited with the following errors:")
@@ -444,7 +445,6 @@ class PerceptualCalculator(OutputAnalyser):
         metric = np.zeros(len(original_track_node.get_data()) // self.packet_size)
 
         for spectrogram in spectrograms:
-            print(f'Perceptual metric-{spectrogram["idx"]}: ', end="")
             perc_metric = pm(spectrogram)
             metric[spectrogram["idx"]] = perc_metric
 

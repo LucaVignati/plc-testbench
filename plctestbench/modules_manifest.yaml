@@ -80,10 +80,36 @@ PacketLossSimulator:
 PLCAlgorithm:
   - name: AdvancedPLC
     settings:
-      - name: settings
-        type: dict
-        default: null
-        value: null
+      - name: band_settings
+        type: dict_str_list_PLCSettings
+        default:
+          linked: []
+        value:
+          linked: []
+        values: null
+      - name: frequencies
+        type: dict_str_list_int
+        default:
+          linked: []
+        value:
+          linked: []
+        values: null
+      - name: order
+        type: int
+        default: 4
+        value: 4
+        values: null
+      - name: stereo_image_processing
+        type: Enum
+        default: dual_mono
+        value: dual_mono
+        values:
+          - dual_mono
+          - mid_side
+      - name: channel_link
+        type: bool
+        default: false
+        value: false
         values: null
 
   - name: ZerosPLC
@@ -207,124 +233,124 @@ PLCAlgorithm:
         value: 2
         values: null
 
-  - name: BurgPLC
-    settings:
-      - name: crossfade
-        type: list_CrossfadeSettings
-        default: []
-        value: []
-        values: null
-      - name: fade_in
-        type: list_CrossfadeSettings
-        default: []
-        value: []
-        values: null
-      - name: crossfade_frequencies
-        type: list_int
-        default: null
-        value: null
-        values: null
-      - name: crossover_order
-        type: int
-        default: null
-        value: null
-        values: null
-      - name: context_length
-        type: int
-        default: 100
-        value: 100
-        values: null
-      - name: order
-        type: int
-        default: 1
-        value: 1
-        values: null
+  # - name: BurgPLC
+  #   settings:
+  #     - name: crossfade
+  #       type: list_CrossfadeSettings
+  #       default: []
+  #       value: []
+  #       values: null
+  #     - name: fade_in
+  #       type: list_CrossfadeSettings
+  #       default: []
+  #       value: []
+  #       values: null
+  #     - name: crossfade_frequencies
+  #       type: list_int
+  #       default: null
+  #       value: null
+  #       values: null
+  #     - name: crossover_order
+  #       type: int
+  #       default: null
+  #       value: null
+  #       values: null
+  #     - name: context_length
+  #       type: int
+  #       default: 100
+  #       value: 100
+  #       values: null
+  #     - name: order
+  #       type: int
+  #       default: 1
+  #       value: 1
+  #       values: null
 
-  - name: ExternalPLC
-    settings:
-      - name: crossfade
-        type: list_CrossfadeSettings
-        default: []
-        value: []
-        values: null
-      - name: fade_in
-        type: list_CrossfadeSettings
-        default: []
-        value: []
-        values: null
-      - name: crossfade_frequencies
-        type: list_int
-        default: null
-        value: null
-        values: null
-      - name: crossover_order
-        type: int
-        default: null
-        value: null
-        values: null
+  # - name: ExternalPLC
+  #   settings:
+  #     - name: crossfade
+  #       type: list_CrossfadeSettings
+  #       default: []
+  #       value: []
+  #       values: null
+  #     - name: fade_in
+  #       type: list_CrossfadeSettings
+  #       default: []
+  #       value: []
+  #       values: null
+  #     - name: crossfade_frequencies
+  #       type: list_int
+  #       default: null
+  #       value: null
+  #       values: null
+  #     - name: crossover_order
+  #       type: int
+  #       default: null
+  #       value: null
+  #       values: null
 
-  - name: DeepLearningPLC
-    settings:
-      - name: crossfade
-        type: list_CrossfadeSettings
-        default: []
-        value: []
-        values: null
-      - name: fade_in
-        type: list_CrossfadeSettings
-        default: []
-        value: []
-        values: null
-      - name: crossfade_frequencies
-        type: list_int
-        default: null
-        value: null
-        values: null
-      - name: crossover_order
-        type: int
-        default: null
-        value: null
-        values: null
-      - name: model_path
-        type: str
-        default: dl_models/model_bs256_100epochs_0.01_1e-3_1e-7
-        value: dl_models/model_bs256_100epochs_0.01_1e-3_1e-7
-        values: null
-      - name: fs_dl
-        type: int
-        default: 16000
-        value: 16000
-        values: null
-      - name: context_length
-        type: int
-        default: 8000
-        value: 8000
-        values: null
-      - name: hop_size
-        type: int
-        default: 160
-        value: 160
-        values: null
-      - name: window_length
-        type: int
-        default: 480
-        value: 480
-        values: null
-      - name: lower_edge_hertz
-        type: float
-        default: 40
-        value: 40
-        values: null
-      - name: upper_edge_hertz
-        type: float
-        default: 7600
-        value: 7600
-        values: null
-      - name: num_mel_bins
-        type: int
-        default: 100
-        value: 100
-        values: null
+  # - name: DeepLearningPLC
+  #   settings:
+  #     - name: crossfade
+  #       type: list_CrossfadeSettings
+  #       default: []
+  #       value: []
+  #       values: null
+  #     - name: fade_in
+  #       type: list_CrossfadeSettings
+  #       default: []
+  #       value: []
+  #       values: null
+  #     - name: crossfade_frequencies
+  #       type: list_int
+  #       default: null
+  #       value: null
+  #       values: null
+  #     - name: crossover_order
+  #       type: int
+  #       default: null
+  #       value: null
+  #       values: null
+  #     - name: model_path
+  #       type: str
+  #       default: dl_models/model_bs256_100epochs_0.01_1e-3_1e-7
+  #       value: dl_models/model_bs256_100epochs_0.01_1e-3_1e-7
+  #       values: null
+  #     - name: fs_dl
+  #       type: int
+  #       default: 16000
+  #       value: 16000
+  #       values: null
+  #     - name: context_length
+  #       type: int
+  #       default: 8000
+  #       value: 8000
+  #       values: null
+  #     - name: hop_size
+  #       type: int
+  #       default: 160
+  #       value: 160
+  #       values: null
+  #     - name: window_length
+  #       type: int
+  #       default: 480
+  #       value: 480
+  #       values: null
+  #     - name: lower_edge_hertz
+  #       type: float
+  #       default: 40
+  #       value: 40
+  #       values: null
+  #     - name: upper_edge_hertz
+  #       type: float
+  #       default: 7600
+  #       value: 7600
+  #       values: null
+  #     - name: num_mel_bins
+  #       type: int
+  #       default: 100
+  #       value: 100
+  #       values: null
 
 
 OutputAnalyser:
@@ -392,83 +418,83 @@ OutputAnalyser:
           - basic
           - advanced
 
-  - name: WindowedPEAQCalculator
-    settings:
-      - name: peaq_mode
-        type: Enum
-        default: basic
-        value: basic
-        values:
-          - basic
-          - advanced
-      - name: intorno_length
-        type: int
-        default: 300
-        value: 300
-        values: null
+  # - name: WindowedPEAQCalculator
+  #   settings:
+  #     - name: peaq_mode
+  #       type: Enum
+  #       default: basic
+  #       value: basic
+  #       values:
+  #         - basic
+  #         - advanced
+  #     - name: intorno_length
+  #       type: int
+  #       default: 300
+  #       value: 300
+  #       values: null
 
-  - name: PerceptualCalculator
-    settings:
-      - name: intorno_length
-        type: int
-        default: 300
-        value: 300
-        values: null
-      - name: linear_mag
-        type: bool
-        default: false
-        value: false
-        values: null
-      - name: transform_type
-        type: Enum
-        default: cqt
-        value: cqt
-        values:
-          - cqt
-          - dcgc
-      - name: min_frequency
-        type: float
-        default: 32.7
-        value: 32.7
-        values: null
-      - name: max_frequency
-        type: float
-        default: 20000
-        value: 20000
-        values: null
-      - name: bins_per_octave
-        type: int
-        default: 12
-        value: 12
-        values: null
-      - name: n_bins
-        type: int
-        default: 100
-        value: 100
-        values: null
-      - name: minimum_window
-        type: int
-        default: 128
-        value: 128
-        values: null
-      - name: masking
-        type: bool
-        default: true
-        value: true
-        values: null
-      - name: masking_offset
-        type: int
-        default: 0
-        value: 0
-        values: null
-      - name: db_weighting
-        type: Enum
-        default: None
-        value: None
-        values:
-          - A
-          - C
-          - None
+  # - name: PerceptualCalculator
+  #   settings:
+  #     - name: intorno_length
+  #       type: int
+  #       default: 300
+  #       value: 300
+  #       values: null
+  #     - name: linear_mag
+  #       type: bool
+  #       default: false
+  #       value: false
+  #       values: null
+  #     - name: transform_type
+  #       type: Enum
+  #       default: cqt
+  #       value: cqt
+  #       values:
+  #         - cqt
+  #         - dcgc
+  #     - name: min_frequency
+  #       type: float
+  #       default: 32.7
+  #       value: 32.7
+  #       values: null
+  #     - name: max_frequency
+  #       type: float
+  #       default: 20000
+  #       value: 20000
+  #       values: null
+  #     - name: bins_per_octave
+  #       type: int
+  #       default: 12
+  #       value: 12
+  #       values: null
+  #     - name: n_bins
+  #       type: int
+  #       default: 100
+  #       value: 100
+  #       values: null
+  #     - name: minimum_window
+  #       type: int
+  #       default: 128
+  #       value: 128
+  #       values: null
+  #     - name: masking
+  #       type: bool
+  #       default: true
+  #       value: true
+  #       values: null
+  #     - name: masking_offset
+  #       type: int
+  #       default: 0
+  #       value: 0
+  #       values: null
+  #     - name: db_weighting
+  #       type: Enum
+  #       default: None
+  #       value: None
+  #       values:
+  #         - A
+  #         - C
+  #         - None
       
 CrossfadeSettings:
   - name: NoCrossfadeSettings

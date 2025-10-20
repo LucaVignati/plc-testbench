@@ -520,8 +520,8 @@ class PLCSettings(Settings):
 
     def __init__(
         self,
-        crossfade: list[CrossfadeSettings] = None,
-        fade_in: list[CrossfadeSettings] = None,
+        crossfade: list[CrossfadeSettings] | CrossfadeSettings = None,
+        fade_in: list[CrossfadeSettings] | CrossfadeSettings = None,
         crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
     ) -> None:
@@ -530,6 +530,12 @@ class PLCSettings(Settings):
             crossfade_frequencies if crossfade_frequencies is not None else []
         )
         self.__validate_frequencies__()
+
+        crossfade = (
+            [crossfade] if isinstance(crossfade, CrossfadeSettings) else crossfade
+        )
+        fade_in = [fade_in] if isinstance(fade_in, CrossfadeSettings) else fade_in
+
         self.settings["crossfade"] = (
             crossfade
             if crossfade
@@ -692,8 +698,8 @@ class BurgPLCSettings(PLCSettings):
 
     def __init__(
         self,
-        crossfade: list[CrossfadeSettings] = None,
-        fade_in: list[CrossfadeSettings] = None,
+        crossfade: list[CrossfadeSettings] | CrossfadeSettings = None,
+        fade_in: list[CrossfadeSettings] | CrossfadeSettings = None,
         crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
         context_length: int = 100,
@@ -796,7 +802,7 @@ class AdvancedPLCSettings(PLCSettings):
     def __init__(
         self,
         band_settings: dict[str, list[PLCSettings]] = {
-            "linked": [LastPacketPLCSettings(crossfade_frequencies=[3000])]
+            "linked": [LastPacketPLCSettings()]
         },
         frequencies: dict[str, list[int]] = {"linked": []},
         order: int = 4,
