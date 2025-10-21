@@ -233,38 +233,38 @@ PLCAlgorithm:
         value: 2
         values: null
 
-  # - name: BurgPLC
-  #   settings:
-  #     - name: crossfade
-  #       type: list_CrossfadeSettings
-  #       default: []
-  #       value: []
-  #       values: null
-  #     - name: fade_in
-  #       type: list_CrossfadeSettings
-  #       default: []
-  #       value: []
-  #       values: null
-  #     - name: crossfade_frequencies
-  #       type: list_int
-  #       default: null
-  #       value: null
-  #       values: null
-  #     - name: crossover_order
-  #       type: int
-  #       default: null
-  #       value: null
-  #       values: null
-  #     - name: context_length
-  #       type: int
-  #       default: 100
-  #       value: 100
-  #       values: null
-  #     - name: order
-  #       type: int
-  #       default: 1
-  #       value: 1
-  #       values: null
+  - name: BurgPLC
+    settings:
+      - name: crossfade
+        type: list_CrossfadeSettings
+        default: []
+        value: []
+        values: null
+      - name: fade_in
+        type: list_CrossfadeSettings
+        default: []
+        value: []
+        values: null
+      - name: crossfade_frequencies
+        type: list_int
+        default: null
+        value: null
+        values: null
+      - name: crossover_order
+        type: int
+        default: null
+        value: null
+        values: null
+      - name: context_length
+        type: int
+        default: 100
+        value: 100
+        values: null
+      - name: order
+        type: int
+        default: 1
+        value: 1
+        values: null
 
   # - name: ExternalPLC
   #   settings:
