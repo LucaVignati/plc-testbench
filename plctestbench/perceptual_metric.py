@@ -1,6 +1,52 @@
+from __future__ import annotations
+
 import librosa
 import numpy as np
-from essentia.standard import NSGConstantQ
+
+try:
+    from essentia.standard import NSGConstantQ
+
+    _cqt_impl_class = NSGConstantQ
+
+except ImportError:
+
+    class LibrosaCQTWrapper:
+        def __init__(
+            self,
+            inputSize: int,
+            minFrequency: float,
+            maxFrequency: float,
+            binsPerOctave: int,
+            minimumWindow: int,
+            sampleRate: int,
+        ):
+            self.inputSize = inputSize
+            self.minFrequency = minFrequency
+            self.maxFrequency = maxFrequency
+            self.binsPerOctave = binsPerOctave
+            self.minimumWindow = minimumWindow
+            self.sampleRate = sampleRate
+
+        def __call__(self, y):
+            n_bins = int(
+                self.binsPerOctave * np.log2(self.maxFrequency / self.minFrequency)
+            )
+
+            return librosa.cqt(
+                y,
+                sr=self.sampleRate,
+                hop_length=512,
+                fmin=self.minFrequency,
+                n_bins=n_bins,
+                bins_per_octave=self.binsPerOctave,
+                window="hann",
+                filter_scale=1,
+                norm=1,
+                pad_mode="constant",
+                dtype=np.complex64,
+            )
+
+    _cqt_impl_class = LibrosaCQTWrapper
 
 
 class PerceptualMetric(object):
@@ -25,12 +71,13 @@ class PerceptualMetric(object):
         self.fs = fs
         self.intorno_length = intorno_length
 
-        cqt = NSGConstantQ(
+        cqt = _cqt_impl_class(
+            inputSize=input_size,
             minFrequency=min_frequency,
             maxFrequency=max_frequency,
             binsPerOctave=bins_per_octave,
             minimumWindow=minimum_window,
-            inputSize=input_size,
+            sampleRate=fs,
         )
         self.transform = lambda original, reconstructed: {
             "original": cqt(original)[0],

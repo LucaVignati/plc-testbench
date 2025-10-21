@@ -442,7 +442,7 @@ class PerceptualCalculator(OutputAnalyser):
             )
         ]
 
-        metric = np.zeros(len(original_track_node.get_data()) // self.packet_size)
+        metric = np.zeros((len(original_track_node.get_data()) // self.packet_size) + 1)
 
         for spectrogram in spectrograms:
             perc_metric = pm(spectrogram)
