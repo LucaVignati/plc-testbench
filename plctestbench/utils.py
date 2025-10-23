@@ -38,7 +38,7 @@ else:
 progress_monitor = lambda caller: tqdm
 
 
-def get_class(class_name):
+def get_class(class_name: str):
     """
     This function returns the class with the given name.
     """
@@ -46,7 +46,54 @@ def get_class(class_name):
         if module_name.startswith("plctestbench"):
             if hasattr(module, class_name):
                 return getattr(module, class_name)
+
+    cls_ = get_class_plugin(class_name)
+    if cls_ is not None:
+        return cls_
+
     raise ValueError(f"The class {class_name} does not exist.")
+
+
+def get_class_plugin(class_name: str):
+
+    import importlib.util
+    import os
+    from pathlib import Path
+
+    is_settings_class: bool = class_name.endswith("Settings")
+
+    module_name = (
+        class_name.replace("Settings", "") if is_settings_class else class_name
+    )
+
+    plugins_directory = os.getenv("PLUGINS_DIRECTORY")
+    if not plugins_directory:
+        raise ValueError(
+            f"The class {class_name} does not exist and no plugins directory configured."
+        )
+
+    plugin_file_path = Path(plugins_directory) / f"{module_name}Algorithm.py"
+
+    print(class_name)
+
+    if not plugin_file_path.exists():
+        raise ValueError(
+            f"The class {class_name} does not exist and plugin file {plugin_file_path} not found."
+        )
+
+    # Load the plugin module
+    spec = importlib.util.spec_from_file_location(
+        f"{module_name}Algorithm", plugin_file_path
+    )
+    plugin_module = importlib.util.module_from_spec(spec)
+    sys.modules[f"{module_name}Algorithm"] = plugin_module
+    spec.loader.exec_module(plugin_module)
+
+    # Get the class from the plugin module
+    if hasattr(plugin_module, class_name):
+        return getattr(plugin_module, class_name)
+
+    return None
 
 
 def compute_hash(obj):
