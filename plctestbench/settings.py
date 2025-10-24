@@ -1043,9 +1043,9 @@ class PEAQCalculatorSettings(Settings):
 
 class WindowedPEAQCalculatorSettings(Settings):
 
-    def __init__(self, peaq_mode: PEAQMode = PEAQMode.basic, intorno_length: int = 300):
+    def __init__(self, peaq_mode: str = "basic", intorno_length: int = 300):
         super().__init__()
-        self.settings["peaq_mode"] = peaq_mode
+        self.settings["peaq_mode"] = PEAQMode(peaq_mode)
         self.settings["intorno_length"] = intorno_length
 
 

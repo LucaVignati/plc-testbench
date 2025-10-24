@@ -390,23 +390,23 @@ OutputAnalyser:
         value: 1
         values: null
 
-  - name: SpectralEnergyCalculator
-    settings:
-      - name: N
-        type: int
-        default: 1024
-        value: 1024
-        values: null
-      - name: hop
-        type: int
-        default: null
-        value: null
-        values: null
-      - name: amp_scale
-        type: float
-        default: 1
-        value: 1
-        values: null
+  # - name: SpectralEnergyCalculator
+  #   settings:
+  #     - name: N
+  #       type: int
+  #       default: 1024
+  #       value: 1024
+  #       values: null
+  #     - name: hop
+  #       type: int
+  #       default: null
+  #       value: null
+  #       values: null
+  #     - name: amp_scale
+  #       type: float
+  #       default: 1
+  #       value: 1
+  #       values: null
 
   - name: PEAQCalculator
     settings:
@@ -418,83 +418,53 @@ OutputAnalyser:
           - basic
           - advanced
 
-  # - name: WindowedPEAQCalculator
-  #   settings:
-  #     - name: peaq_mode
-  #       type: Enum
-  #       default: basic
-  #       value: basic
-  #       values:
-  #         - basic
-  #         - advanced
-  #     - name: intorno_length
-  #       type: int
-  #       default: 300
-  #       value: 300
-  #       values: null
+  - name: WindowedPEAQCalculator
+    settings:
+      - name: peaq_mode
+        type: Enum
+        default: basic
+        value: basic
+        values:
+          - basic
+          - advanced
+      - name: intorno_length
+        type: int
+        default: 300
+        value: 300
+        values: null
 
-  # - name: PerceptualCalculator
-  #   settings:
-  #     - name: intorno_length
-  #       type: int
-  #       default: 300
-  #       value: 300
-  #       values: null
-  #     - name: linear_mag
-  #       type: bool
-  #       default: false
-  #       value: false
-  #       values: null
-  #     - name: transform_type
-  #       type: Enum
-  #       default: cqt
-  #       value: cqt
-  #       values:
-  #         - cqt
-  #         - dcgc
-  #     - name: min_frequency
-  #       type: float
-  #       default: 32.7
-  #       value: 32.7
-  #       values: null
-  #     - name: max_frequency
-  #       type: float
-  #       default: 20000
-  #       value: 20000
-  #       values: null
-  #     - name: bins_per_octave
-  #       type: int
-  #       default: 12
-  #       value: 12
-  #       values: null
-  #     - name: n_bins
-  #       type: int
-  #       default: 100
-  #       value: 100
-  #       values: null
-  #     - name: minimum_window
-  #       type: int
-  #       default: 128
-  #       value: 128
-  #       values: null
-  #     - name: masking
-  #       type: bool
-  #       default: true
-  #       value: true
-  #       values: null
-  #     - name: masking_offset
-  #       type: int
-  #       default: 0
-  #       value: 0
-  #       values: null
-  #     - name: db_weighting
-  #       type: Enum
-  #       default: None
-  #       value: None
-  #       values:
-  #         - A
-  #         - C
-  #         - None
+  - name: PerceptualCalculator
+    settings:
+      - name: intorno_length
+        type: int
+        default: 300
+        value: 300
+        values: null
+      - name: min_frequency
+        type: float
+        default: 32.7
+        value: 32.7
+        values: null
+      - name: max_frequency
+        type: float
+        default: 20000
+        value: 20000
+        values: null
+      - name: bins_per_octave
+        type: int
+        default: 12
+        value: 12
+        values: null
+      - name: n_bins
+        type: int
+        default: 100
+        value: 100
+        values: null
+      - name: minimum_window
+        type: int
+        default: 128
+        value: 128
+        values: null
       
 CrossfadeSettings:
   - name: NoCrossfadeSettings

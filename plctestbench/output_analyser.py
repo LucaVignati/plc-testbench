@@ -372,7 +372,6 @@ class WindowedPEAQCalculator(OutputAnalyser):
                 peaq_odg, peaq_di = peaq_output.split("\n", 1)
                 _, peaq_odg = peaq_odg.split(peaq_odg_text)
                 _, peaq_di = peaq_di.split(peaq_di_text)
-                print(peaq_odg)
                 metric[idx] = self.sign * float(peaq_odg)
             else:
                 print("The peaq program exited with the following errors:")
