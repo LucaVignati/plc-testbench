@@ -429,21 +429,21 @@ OutputAnalyser:
           - advanced
       - name: intorno_length
         type: int
-        default: 300
-        value: 300
+        default: 3000
+        value: 3000
         values: null
 
   - name: PerceptualCalculator
     settings:
       - name: intorno_length
         type: int
-        default: 300
-        value: 300
+        default: 3000
+        value: 3000
         values: null
       - name: min_frequency
         type: float
-        default: 32.7
-        value: 32.7
+        default: 10
+        value: 10
         values: null
       - name: max_frequency
         type: float
@@ -452,8 +452,8 @@ OutputAnalyser:
         values: null
       - name: bins_per_octave
         type: int
-        default: 12
-        value: 12
+        default: 48
+        value: 48
         values: null
       - name: n_bins
         type: int
@@ -474,7 +474,7 @@ CrossfadeSettings:
     settings:
       - name: length
         type: int
-        default: 10
+        default: 1
         value: 0
         values: null
       - name: function
@@ -502,7 +502,7 @@ CrossfadeSettings:
     settings:
       - name: length
         type: int
-        default: 10
+        default: 1
         value: 0
         values: null
       - name: type
@@ -517,7 +517,7 @@ CrossfadeSettings:
     settings:
       - name: length
         type: int
-        default: 10
+        default: 1
         value: 0
         values: null
       - name: type
@@ -532,7 +532,7 @@ CrossfadeSettings:
     settings:
       - name: length
         type: int
-        default: 10
+        default: 1
         value: 0
         values: null
       - name: type
@@ -547,7 +547,7 @@ CrossfadeSettings:
     settings:
       - name: length
         type: int
-        default: 10
+        default: 1
         value: 0
         values: null
       - name: type
