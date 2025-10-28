@@ -204,8 +204,11 @@ class AdvancedPLC(PLCAlgorithm):
             processed_track["linked"] = original_track
         else:
             for idx, channel in enumerate(self.frequencies.keys()):
-                processed_track[channel] = original_track[:, idx]
+                processed_track[channel] = force_2d(original_track[:, idx])
         for channel, crossovers in self.crossovers.items():
+            if len(crossovers) == 0:
+                processed_track[channel] = [processed_track[channel]]
+                continue
             processed_track[channel] = recursive_split_audio(
                 processed_track[channel], crossovers, []
             )

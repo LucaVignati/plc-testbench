@@ -84,15 +84,31 @@ PLCAlgorithm:
         type: dict_str_list_PLCSettings
         default:
           linked: []
+          left: []
+          right: []
+          mid: []
+          side: []
         value:
           linked: []
+          left: []
+          right: []
+          mid: []
+          side: []
         values: null
       - name: frequencies
         type: dict_str_list_int
         default:
           linked: []
+          left: []
+          right: []
+          mid: []
+          side: []
         value:
           linked: []
+          left: []
+          right: []
+          mid: []
+          side: []
         values: null
       - name: order
         type: int

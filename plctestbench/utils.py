@@ -74,8 +74,6 @@ def get_class_plugin(class_name: str):
 
     plugin_file_path = Path(plugins_directory) / f"{module_name}Algorithm.py"
 
-    print(class_name)
-
     if not plugin_file_path.exists():
         raise ValueError(
             f"The class {class_name} does not exist and plugin file {plugin_file_path} not found."
