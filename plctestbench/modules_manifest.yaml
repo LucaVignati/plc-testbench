@@ -193,26 +193,26 @@ PLCAlgorithm:
 
   - name: LowCostPLC
     settings:
-      - name: crossfade
-        type: list_CrossfadeSettings
-        default: []
-        value: []
-        values: null
-      - name: fade_in
-        type: list_CrossfadeSettings
-        default: []
-        value: []
-        values: null
-      - name: crossfade_frequencies
-        type: list_int
-        default: null
-        value: null
-        values: null
-      - name: crossover_order
-        type: int
-        default: null
-        value: null
-        values: null
+      # - name: crossfade
+      #   type: list_CrossfadeSettings
+      #   default: []
+      #   value: []
+      #   values: null
+      # - name: fade_in
+      #   type: list_CrossfadeSettings
+      #   default: []
+      #   value: []
+      #   values: null
+      # - name: crossfade_frequencies
+      #   type: list_int
+      #   default: null
+      #   value: null
+      #   values: null
+      # - name: crossover_order
+      #   type: int
+      #   default: null
+      #   value: null
+      #   values: null
       - name: max_frequency
         type: float
         default: 4800
@@ -489,8 +489,8 @@ CrossfadeSettings:
   - name: ManualCrossfadeSettings
     settings:
       - name: length
-        type: int
-        default: 1
+        type: float
+        default: 2.0
         value: 0
         values: null
       - name: function
@@ -517,8 +517,8 @@ CrossfadeSettings:
   - name: LinearCrossfadeSettings
     settings:
       - name: length
-        type: int
-        default: 1
+        type: float
+        default: 2.0
         value: 0
         values: null
       - name: type
@@ -532,8 +532,8 @@ CrossfadeSettings:
   - name: QuadraticCrossfadeSettings
     settings:
       - name: length
-        type: int
-        default: 1
+        type: float
+        default: 2.0
         value: 0
         values: null
       - name: type
@@ -547,8 +547,8 @@ CrossfadeSettings:
   - name: CubicCrossfadeSettings
     settings:
       - name: length
-        type: int
-        default: 1
+        type: float
+        default: 2.0
         value: 0
         values: null
       - name: type
@@ -562,8 +562,8 @@ CrossfadeSettings:
   - name: SinusoidalCrossfadeSettings
     settings:
       - name: length
-        type: int
-        default: 1
+        type: float
+        default: 2.0
         value: 0
         values: null
       - name: type

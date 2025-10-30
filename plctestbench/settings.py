@@ -398,7 +398,7 @@ class CrossfadeSettings(Settings):
 
     def __init__(
         self,
-        length: int,
+        length: float,
         function: CrossfadeFunction,
         exponent: float,
         type: CrossfadeType,
