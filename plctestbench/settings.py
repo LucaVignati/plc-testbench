@@ -372,6 +372,27 @@ class GilbertElliotPLSSettings(Settings):
         self.assert_setting_is_number_in_range("k", 0, 1)
 
 
+class CustomMaskPLSSettings(Settings):
+
+    def __init__(
+        self,
+        seed: int = 1,
+        packet_size: int = 32,
+        mask: str = "0",
+        invert: bool = False,
+    ):
+        super().__init__()
+        self.settings["packet_size"] = packet_size
+        self.settings["mask"] = mask
+        self.settings["invert"] = invert
+        self.settings["seed"] = seed
+
+        self.__validate__()
+
+    def __validate__(self):
+        self.assert_setting_is_number_in_range("packet_size", min_value=1)
+
+
 class StereoImageType(Enum):
     dual_mono = "dual_mono"
     mid_side = "mid_side"

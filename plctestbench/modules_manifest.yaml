@@ -77,6 +77,24 @@ PacketLossSimulator:
         default: 0.999999
         value: 0.999999
         values: null
+  - name: CustomMaskPLS
+    settings:
+      - name: packet_size
+        type: int
+        default: 32
+        value: 32
+        values: null
+      - name: mask
+        type: str
+        default: "0101"
+        value: 0101
+        values: null
+      - name: invert
+        type: bool
+        default: False
+        value: False
+        values: null
+
 PLCAlgorithm:
   - name: AdvancedPLC
     settings:
@@ -368,7 +386,6 @@ PLCAlgorithm:
   #       value: 100
   #       values: null
 
-
 OutputAnalyser:
   - name: MSECalculator
     settings:
@@ -481,7 +498,7 @@ OutputAnalyser:
         default: 128
         value: 128
         values: null
-      
+
 CrossfadeSettings:
   - name: NoCrossfadeSettings
     settings:
@@ -558,7 +575,7 @@ CrossfadeSettings:
         values:
           - power
           - amplitude
-        
+
   - name: SinusoidalCrossfadeSettings
     settings:
       - name: length

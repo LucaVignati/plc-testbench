@@ -7,6 +7,7 @@ from .settings import (
     BinomialPLSSettings,
     GilbertElliotPLSSettings,
     MetronomePLSSettings,
+    CustomMaskPLSSettings,
     Settings,
 )
 
@@ -159,3 +160,55 @@ class GilbertElliotPLS(PacketLossSimulator):
         if loss <= self.current_state[2]:
             return True
         return False
+
+
+class CustomMaskPLS(PacketLossSimulator):
+    """
+    Packet loss simulator that uses a predefined binary mask to determine
+    which packets are considered lost.
+
+    Each packet corresponds to one character in the mask string:
+    - `'1'` indicates a lost packet (by default).
+    - `'0'` indicates a successfully received packet.
+    This behavior can be inverted by setting `invert=True`.
+
+    The simulator increments an internal counter at every tick. When the
+    counter exceeds the length of the mask, no further packets are dropped
+    (i.e., all subsequent packets are considered received).
+
+    It is recommended that the total number of packets ('#samples / packet_size')
+    match the length of the mask. If they differ, the simulator stops applying
+    the mask once the end is reached.
+
+    Attributes
+    ----------
+    mask : str
+        A string of '0' and '1' characters defining the drop pattern.
+    invert : bool
+        If True, inverts the meaning of mask values ('1' = not lost, '0' = lost).
+    counter : int
+        Internal counter tracking the current mask position.
+
+    Methods
+    -------
+    tick() -> bool
+        Returns True if the current packet should be considered lost,
+        False otherwise. Automatically advances the internal counter.
+    """
+
+    def __init__(self, settings: CustomMaskPLSSettings):
+        super().__init__(settings)
+        self.mask: str = settings.get("mask")
+        self.invert: bool = settings.get("invert")
+        self.counter = 0
+
+    def tick(self):
+        try:
+            lost = bool(int(self.mask[self.counter]))
+            lost = not lost if self.invert else lost
+        except IndexError:
+            lost = False
+        except ValueError:
+            lost = False
+        self.counter += 1
+        return lost
