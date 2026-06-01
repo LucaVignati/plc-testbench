@@ -2,6 +2,8 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any
 
+from .utils import progress_monitor
+
 
 class RunStatus(str, Enum):
     CREATED = "CREATED"
@@ -59,6 +61,8 @@ class TestbenchConfiguration:
     db_username: str = None
 
     db_password: str = None
+
+    progress_monitor: object = progress_monitor
 
 
 @dataclass
