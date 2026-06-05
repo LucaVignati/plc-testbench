@@ -32,7 +32,7 @@ librosa = "0.10.1"
 scipy = "1.14.1"
 pandas = "^2.2.3"
 burg-plc = { git = "https://github.com/CIMIL/burg-python-bindings.git", markers = "sys_platform == 'linux'" }
-tensorflow = { version = "2.15" }
+tensorflow = "2.16.1"
 
 [tool.poetry.group.notebook]
 optional = true
