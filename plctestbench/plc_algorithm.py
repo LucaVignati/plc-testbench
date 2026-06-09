@@ -24,7 +24,8 @@ from .low_cost_concealment import LowCostConcealment
 from .settings import (
     AdvancedPLCSettings,
     BurgPLCSettings,
-    DeepLearningPLCSettings,
+    PARCnetPLCSettings,
+    VermaPLCSettings,
     ExternalPLCSettings,
     LastPacketPLCSettings,
     LowCostPLCSettings,
@@ -54,11 +55,11 @@ class PLCAlgorithm(Worker):
             raise ValueError("fade in length cannot be longer than the packet size")
         self.fade_in = Crossfade(self.settings, fade_in_settings)
         try:
-            self.context_length = int(
+            self.algorithm_context_length = int(
                 self.settings.get("context_length") * self.settings.get("fs") / 1000
             )
         except:
-            self.context_length = self.packet_size
+            self.algorithm_context_length = self.packet_size
 
     def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
         """ """
@@ -98,7 +99,7 @@ class PLCAlgorithm(Worker):
         doesn't override it (because it doesn't need it) so
         this function does nothing.
         """
-        self.context = np.zeros((self.context_length, self.n_channels))
+        self.context = np.zeros((self.algorithm_context_length, self.n_channels))
 
     def _tick(self, buffer: np.ndarray, is_valid: bool) -> np.ndarray:
         """
@@ -348,7 +349,7 @@ class BurgPLC(PLCAlgorithm):
         self.previous_valid = False
         self.coefficients = np.zeros(self.order)
         context_length_samples = round(
-            self.context_length / 1000 * self.settings.get("fs")
+            self.algorithm_context_length / 1000 * self.settings.get("fs")
         )
         self.burg = BurgBasic(context_length_samples)
 
@@ -391,16 +392,14 @@ class ExternalPLC(PLCAlgorithm):
         return reconstructed_buffer
 
 
-class DeepLearningPLC(PLCAlgorithm):
+class VermaPLC(PLCAlgorithm):
     """
-    DeepLearningPLC is ...
+    VermaPLC is ...
     """
 
-    def __init__(self, settings: DeepLearningPLCSettings) -> None:
+    def __init__(self, settings: VermaPLCSettings) -> None:
         super().__init__(settings)
-        self.model = tf.keras.models.load_model(
-            settings.get("model_path"), compile=False
-        )
+        self.model = tf.keras.models.load_model(settings.get("model_path"))
         self.fs_dl = settings.get("fs_dl")
         self.context_length = settings.get("context_length")
         self.context_length_samples = settings.get("context_length_samples")
@@ -433,12 +432,16 @@ class DeepLearningPLC(PLCAlgorithm):
         context = librosa.resample(
             self.context.T, orig_sr=self.sample_rate, target_sr=self.fs_dl
         ).T
+        left_pad_size = self.context.shape[0] - context.shape[0]
+        context = np.pad(
+            context, pad_width=((left_pad_size, 0), (0, 0)), mode="constant"
+        )
         for channel_index in range(np.shape(buffer)[1]):
             spectrogram_2s = self._compute_spectrogram(
                 context[-round(self.context_length_samples / 4) :, channel_index],
                 self.fs_dl,
             )
-            spectrograms = np.expand_dims(spectrogram_2s, axis=0)
+            spectrograms = spectrogram_2s[np.newaxis, ..., np.newaxis]
             last_packet = np.expand_dims(
                 context[-self.packet_size :, channel_index], axis=0
             )

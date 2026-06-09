@@ -760,7 +760,7 @@ class ExternalPLCSettings(PLCSettings):
         super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
 
 
-class DeepLearningPLCSettings(PLCSettings):
+class VermaPLCSettings(PLCSettings):
 
     def __init__(
         self,
@@ -768,7 +768,7 @@ class DeepLearningPLCSettings(PLCSettings):
         fade_in: list[CrossfadeSettings] = None,
         crossfade_frequencies: list[int] = None,
         crossover_order: int = None,
-        model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7",
+        model_path: str = "dl_models/model_bs256_100epochs_0.01_1e-3_1e-7.h5",
         fs_dl: int = 16000,
         context_length: int = 8000,
         hop_size: int = 160,
@@ -778,7 +778,7 @@ class DeepLearningPLCSettings(PLCSettings):
         num_mel_bins: int = 100,
     ):
         """
-        This class containes the settings for the DeepLearningPLC class.
+        This class containes the settings for the VermaPLCAlgorithm class.
 
             Input:
                 model_path:         path to the model used for PLC.
@@ -791,7 +791,7 @@ class DeepLearningPLCSettings(PLCSettings):
                 num_mel_bins:       number of mel bins of the tracks.
         """
         super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
-        self.settings["model_path"] = relative_to_root(model_path)
+        self.settings["model_path"] = str(relative_to_root(model_path))
         self.settings["fs_dl"] = fs_dl
         self.settings["context_length"] = context_length
         self.settings["context_length_samples"] = (
