@@ -323,68 +323,110 @@ PLCAlgorithm:
   #       value: null
   #       values: null
 
-  # - name: DeepLearningPLC
-  #   settings:
-  #     - name: crossfade
-  #       type: list_CrossfadeSettings
-  #       default: []
-  #       value: []
-  #       values: null
-  #     - name: fade_in
-  #       type: list_CrossfadeSettings
-  #       default: []
-  #       value: []
-  #       values: null
-  #     - name: crossfade_frequencies
-  #       type: list_int
-  #       default: null
-  #       value: null
-  #       values: null
-  #     - name: crossover_order
-  #       type: int
-  #       default: null
-  #       value: null
-  #       values: null
-  #     - name: model_path
-  #       type: str
-  #       default: dl_models/model_bs256_100epochs_0.01_1e-3_1e-7
-  #       value: dl_models/model_bs256_100epochs_0.01_1e-3_1e-7
-  #       values: null
-  #     - name: fs_dl
-  #       type: int
-  #       default: 16000
-  #       value: 16000
-  #       values: null
-  #     - name: context_length
-  #       type: int
-  #       default: 8000
-  #       value: 8000
-  #       values: null
-  #     - name: hop_size
-  #       type: int
-  #       default: 160
-  #       value: 160
-  #       values: null
-  #     - name: window_length
-  #       type: int
-  #       default: 480
-  #       value: 480
-  #       values: null
-  #     - name: lower_edge_hertz
-  #       type: float
-  #       default: 40
-  #       value: 40
-  #       values: null
-  #     - name: upper_edge_hertz
-  #       type: float
-  #       default: 7600
-  #       value: 7600
-  #       values: null
-  #     - name: num_mel_bins
-  #       type: int
-  #       default: 100
-  #       value: 100
-  #       values: null
+  - name: VermaPLC
+    settings:
+      - name: crossfade
+        type: list_CrossfadeSettings
+        default: []
+        value: []
+        values: null
+      - name: fade_in
+        type: list_CrossfadeSettings
+        default: []
+        value: []
+        values: null
+      - name: crossfade_frequencies
+        type: list_int
+        default: null
+        value: null
+        values: null
+      - name: crossover_order
+        type: int
+        default: null
+        value: null
+        values: null
+      - name: model_path
+        type: str
+        default: dl_models/model_bs256_100epochs_0.01_1e-3_1e-7
+        value: dl_models/model_bs256_100epochs_0.01_1e-3_1e-7
+        values: null
+      - name: fs_dl
+        type: int
+        default: 16000
+        value: 16000
+        values: null
+      - name: context_length
+        type: int
+        default: 8000
+        value: 8000
+        values: null
+      - name: hop_size
+        type: int
+        default: 160
+        value: 160
+        values: null
+      - name: window_length
+        type: int
+        default: 480
+        value: 480
+        values: null
+      - name: lower_edge_hertz
+        type: float
+        default: 40
+        value: 40
+        values: null
+      - name: upper_edge_hertz
+        type: float
+        default: 7600
+        value: 7600
+        values: null
+      - name: num_mel_bins
+        type: int
+        default: 100
+        value: 100
+        values: null
+
+  - name: PARCnetPLC
+    settings:
+      - name: config_preset
+        type: Enum
+        default: is2_mplc_challenge
+        value: is2_mplc_challenge
+        values:
+          - is2_mplc_challenge
+          - custom
+      - name: dl_model_path
+        type: str
+        default: dl_models/parcnet-is2_mplc_challenge.pth
+        value: dl_models/parcnet-is2_mplc_challenge.pth
+      - name: dl_fs
+        type: int
+        default: 44100
+        value: 44100
+      - name: extra_packet_dim
+        type: int
+        default: 256
+        value: 256
+      - name: ar_order
+        type: int
+        default: 256
+        value: 256
+      - name: ar_fade_dim
+        type: int
+        default: 8
+        value: 8
+      - name: ar_diagonal_load
+        type: float
+        default: 0.001
+        value: 0.001
+      - name: context_length_blocks
+        type: int
+        default: 8
+        value: 8
+      - name: nn_fade_dim
+        type: int
+        default: 64
+        value: 64
 
 OutputAnalyser:
   - name: MSECalculator

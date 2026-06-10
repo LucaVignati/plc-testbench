@@ -818,6 +818,55 @@ class VermaPLCSettings(PLCSettings):
         self.assert_setting_is_number_in_range("num_mel_bins", min_value=1)
 
 
+class PARCnetConfigPreset(Enum):
+    ieee_paper = "ieee_paper"
+    is2_mplc_challenge = "is2_mplc_challenge"
+    custom = "custom"
+
+
+class PARCnetPLCSettings(PLCSettings):
+
+    def __init__(
+        self,
+        crossfade: list[CrossfadeSettings] = None,
+        fade_in: list[CrossfadeSettings] = None,
+        crossfade_frequencies: list[int] = None,
+        crossover_order: int = None,
+        dl_model_path: str = "dl_models/parcnet-is2_mplc_challenge.pth",
+        dl_fs: int = 44100,
+        config_preset: PARCnetConfigPreset = PARCnetConfigPreset.is2_mplc_challenge,
+        extra_packet_dim: int = 256,
+        ar_order: int = 256,
+        ar_fade_dim: int = 8,
+        ar_diagonal_load: float = 0.001,
+        context_length_blocks: int = 8,
+        nn_fade_dim: int = 64,
+    ):
+        super().__init__(crossfade, fade_in, crossfade_frequencies, crossover_order)
+        self.settings["dl_model_path"] = str(relative_to_root(dl_model_path))
+        self.settings["ar_order"] = ar_order
+        self.settings["ar_fade_dim"] = ar_fade_dim
+        self.settings["ar_diagonal_load"] = ar_diagonal_load
+        if config_preset == PARCnetConfigPreset.is2_mplc_challenge:
+            self.settings["dl_fs"] = 44100
+            self.settings["extra_packet_dim"] = 256
+            self.settings["nn_fade_dim"] = 64
+        if config_preset == PARCnetConfigPreset.custom:
+            self.settings["dl_fs"] = dl_fs
+            self.settings["extra_packet_dim"] = extra_packet_dim
+            self.settings["nn_fade_dim"] = nn_fade_dim
+
+        self.settings["context_length_blocks"] = context_length_blocks
+
+        self.__validate__()
+
+    def __validate__(self):
+        super().__validate__()
+        self.assert_setting_is_number_in_range("extra_packet_dim", min_value=0)
+        self.assert_setting_is_number_in_range("ar_order", min_value=128)
+        self.assert_setting_is_number_in_range("ar_fade_dim", min_value=1)
+
+
 class AdvancedPLCSettings(PLCSettings):
 
     def __init__(

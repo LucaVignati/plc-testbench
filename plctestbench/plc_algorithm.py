@@ -21,10 +21,11 @@ from plctestbench.worker import Worker
 from .crossfade import Crossfade, MultibandCrossfade
 from .filters import LinkwitzRileyCrossover
 from .low_cost_concealment import LowCostConcealment
+from .parcnet import PARCnet
 from .settings import (
     AdvancedPLCSettings,
-    BurgPLCSettings,
     PARCnetPLCSettings,
+    BurgPLCSettings,
     VermaPLCSettings,
     ExternalPLCSettings,
     LastPacketPLCSettings,
@@ -449,3 +450,65 @@ class VermaPLC(PLCAlgorithm):
                 (spectrograms, last_packet)
             )
         return reconstructed_buffer.T
+
+
+class PARCnetPLC(PLCAlgorithm):
+    """ """
+
+    def __init__(self, settings: PARCnetPLCSettings) -> None:
+        super().__init__(settings)
+
+        self.dl_model_path = settings.get("dl_model_path")
+        self.ar_order = settings.get("ar_order")
+        self.ar_fade_dim = settings.get("ar_fade_dim")
+        self.ar_diagonal_load = settings.get("ar_diagonal_load")
+        self.dl_fs = settings.get("dl_fs")
+        self.extra_packet_dim = settings.get("extra_packet_dim")
+        self.nn_fade_dim = settings.get("nn_fade_dim")
+        self.context_length_blocks = self.settings.get("context_length_blocks")
+
+        self.context_length_samples = self.context_length_blocks * self.packet_size
+
+        self.algorithm_context_length = self.context_length_samples
+
+        self.model = PARCnet(
+            self.dl_model_path,
+            self.packet_size,
+            self.extra_packet_dim,
+            self.ar_order,
+            self.ar_diagonal_load,
+            self.context_length_blocks,
+            self.context_length_blocks,
+            self.nn_fade_dim,
+            "cpu",
+        )
+
+    def _prepare_to_play(self):
+        self.extra_pred_buffer = np.zeros((self.extra_packet_dim, self.n_channels))
+        self.is_burst = False
+        return super()._prepare_to_play()
+
+    def _a_priori(self, buffer, is_valid):
+        if self.is_burst:
+            buffer[: self.extra_packet_dim, :] *= self.model.fade_in[:, np.newaxis]
+            buffer[: self.extra_packet_dim, :] += self.extra_pred_buffer
+        return super()._a_priori(buffer, is_valid)
+
+    def _predict(self, buffer: np.ndarray):
+        """ """
+        reconstructed_buffer = np.zeros(np.shape(buffer.T))
+        for channel_idx in range(self.n_channels):
+            prediction, extra_pred = self.model(
+                self.context.T[:, channel_idx], self.is_burst
+            )
+
+            self.extra_pred_buffer[:, channel_idx] = extra_pred
+            reconstructed_buffer[channel_idx, :] = prediction
+        self.is_burst = True
+        return reconstructed_buffer.T
+
+    def _a_posteriori(self, buffer, is_valid):
+        if is_valid:
+            self.is_burst = False
+
+        return super()._a_posteriori(buffer, is_valid)

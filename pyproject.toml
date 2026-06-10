@@ -26,6 +26,7 @@ tqdm = "4.67.1"
 matplotlib = "3.9.3"
 typing_inspect = "*"
 tinydb = { version = "4.8.2", python = ">=3.10,<4.0" }
+PyYAML = "6.0.3"
 ruamel-yaml = "0.18.6"
 ruamel-yaml-clib = "0.2.12"
 librosa = "0.10.1"
@@ -33,6 +34,7 @@ scipy = "1.14.1"
 pandas = "^2.2.3"
 burg-plc = { git = "https://github.com/CIMIL/burg-python-bindings.git", markers = "sys_platform == 'linux'" }
 tensorflow = "2.16.1"
+torch = "2.12.0"
 
 [tool.poetry.group.notebook]
 optional = true
