@@ -1,4 +1,4 @@
-from plctestbench.settings import Settings
+from plctestbench.settings import Settings, OriginalAudioSettings
 from plctestbench.utils import dummy_progress_bar
 
 
@@ -22,8 +22,11 @@ class Worker(object):
 
 
 class OriginalAudio(Worker):
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: OriginalAudioSettings) -> None:
         super().__init__(settings)
 
     def run(self) -> None:
         dummy_progress_bar(self)
+
+    def __str__(self) -> str:
+        return self.settings.get("filename")
