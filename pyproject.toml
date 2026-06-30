@@ -35,6 +35,7 @@ pandas = "^2.2.3"
 burg-plc = { git = "https://github.com/CIMIL/burg-python-bindings.git", markers = "sys_platform == 'linux'" }
 tensorflow = "2.16.1"
 torch = "2.12.0"
+onnxruntime = "1.27.0"
 
 [tool.poetry.group.notebook]
 optional = true

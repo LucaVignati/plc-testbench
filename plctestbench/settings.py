@@ -1178,3 +1178,18 @@ class PlotsSettings(Settings):
         self.settings["dpi"] = dpi
         self.settings["linewidth"] = linewidth
         self.settings["figsize"] = figsize
+
+
+class PLCMOSModel(Enum):
+    plcmos_0 = "0"
+    plcmos_0alpha = "0alpha"
+    plcmos_2val = "2-val"
+    plcmos_2 = "2"
+
+
+class PLCMOSCalculatorSettings(Settings):
+
+    def __init__(self, plcmos_model: str = "2", request_intrusive: bool = True):
+        super().__init__()
+        self.settings["plcmos_model"] = PLCMOSModel(plcmos_model)
+        self.settings["request_intrusive"] = request_intrusive

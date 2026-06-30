@@ -6,6 +6,7 @@ import soundfile as sf
 
 from .file_wrapper import AudioFile, DataFile, PEAQData, SimpleCalculatorData
 from .listening_tests import ListeningTest
+from .plcmos import PLCMOSEstimator
 from .perceptual_metric import *
 from .settings import (
     HumanCalculatorSettings,
@@ -17,6 +18,8 @@ from .settings import (
     Settings,
     SpectralEnergyCalculatorSettings,
     WindowedPEAQCalculatorSettings,
+    PLCMOSCalculatorSettings,
+    PLCMOSModel,
 )
 from .utils import (
     dummy_progress_bar,
@@ -384,8 +387,35 @@ class WindowedPEAQCalculator(OutputAnalyser):
 
 
 class PerceptualCalculator(OutputAnalyser):
-    """
-    PerceptualCalculator is ...
+    """Implementation of https://aes2.org/publications/elibrary-page/?id=23028
+
+    This class implements an objective evaluation method inspired by
+    psychoacoustic principles and based on a constant-Q time–frequency
+    representation. The metric is designed to quantify the perceived
+    audibility of glitches introduced by packet loss (e.g., zeroed segments)
+    by comparing original and reconstructed audio in localized regions
+    ("intorni") around loss events.
+
+
+    Processing pipeline:
+    - Extracts time-localized segments around packet loss indices from both
+      original and reconstructed signals.
+    - Computes constant-Q spectrogram representations for each segment pair.
+    - Applies a perceptual metric to estimate glitch audibility per event.
+    - Aggregates results into a packet-aligned metric vector.
+
+    The implementation follows the methodology proposed in the referenced
+    paper, which demonstrates improved correlation with human subjective
+    evaluations of glitch audibility compared to standard objective metrics.
+
+    Args:
+        settings (PerceptualCalculatorSettings): Configuration parameters
+            including sampling rate, packet size, analysis window length,
+            and constant-Q transform settings.
+
+    Returns:
+        SimpleCalculatorData: A vector containing perceptual metric values
+        aligned with packet indices.
     """
 
     def __init__(self, settings: PerceptualCalculatorSettings) -> None:
@@ -571,3 +601,52 @@ class HumanCalculator(OutputAnalyser):
             metric[int(idx.split("-")[-1])] = mean
 
         return SimpleCalculatorData(metric)
+
+
+class PLCMOSCalculator(OutputAnalyser):
+    """
+    PLCMOSCalculator is ...
+    """
+
+    def __init__(self, settings: PLCMOSCalculatorSettings) -> None:
+        super().__init__(settings)
+
+    def run(
+        self,
+        original_track_node: AudioFile,
+        reconstructed_track_node: AudioFile,
+        lost_samples_idxs: DataFile = None,
+    ) -> SimpleCalculatorData:
+        plcmos_model: PLCMOSModel = self.settings.get("plcmos_model")
+        request_intrusive: PLCMOSModel = self.settings.get("request_intrusive")
+
+        plcmos = PLCMOSEstimator(model_version=plcmos_model.value)
+
+        is_intrusive = plcmos_model == PLCMOSModel.plcmos_0alpha or (
+            plcmos_model == PLCMOSModel.plcmos_0 and request_intrusive
+        )
+
+        reconstructed_track_node_resampled = librosa.resample(
+            reconstructed_track_node.get_data().T,
+            orig_sr=reconstructed_track_node.get_samplerate(),
+            target_sr=16000,
+        ).T
+
+        original_track_node_resampled = librosa.resample(
+            original_track_node.get_data().T,
+            orig_sr=original_track_node.get_samplerate(),
+            target_sr=16000,
+        ).T
+
+        score = 0
+        for channel_idx in range(original_track_node.get_channels()):
+            score += plcmos.run(
+                reconstructed_track_node_resampled[:, channel_idx],
+                16000,
+                original_track_node_resampled[:, channel_idx] if is_intrusive else None,
+            )
+
+        dummy_progress_bar(self)
+
+        score /= original_track_node.get_channels()
+        return SimpleCalculatorData(score)
