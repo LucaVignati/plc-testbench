@@ -78,13 +78,61 @@ class BinomialPLS(PacketLossSimulator):
 
 class MetronomePLS(PacketLossSimulator):
     """
-    This class implements a metronome packet loss model.
+    This class implements a deterministic and periodic
+    metronome packet loss model.
+
+
+    The model generates bursts of consecutive packet losses at regular
+    intervals. Each period defines a cycle in which a fixed number of
+    packets are dropped, followed by a sequence of correctly received
+    packets.
+
+    The simulator operates on a per-packet basis (via `tick()`), maintaining
+    an internal counter that advances at each packet boundary.
+
+
+    For each cycle:
+    - The cycle length is defined by `period`
+    - The first `duration` packets in the cycle are marked as lost
+    - The remaining packets in the cycle are received correctly
+
+
+    An optional `offset` allows delaying the start of the first loss burst,
+    effectively shifting the pattern in time.
+
+
+    Example (period=10, duration=3, offset=0):
+        Packet indices:   0 1 2 3 4 5 6 7 8 9 | 10 11 12 ...
+        Loss pattern:     L L L R R R R R R R | L  L  L ...
+
+
+    Example (period=10, duration=3, offset=4):
+        Packet indices:   0 1 2 3 4 5 6 7 8 9 | 10 11 ...
+        Loss pattern:     R R R R L L L R R R | R  L ...
+
+
     """
 
     def __init__(self, settings: MetronomePLSSettings) -> None:
         """
-        Variables:
-            period: the period in samples of the lost packets
+        period : int
+            Length of the full cycle in packets (loss + no-loss).
+            Must be >= 1.
+
+
+        duration : int
+            Number of consecutive packets lost at the start of each cycle.
+            Must satisfy 0 <= duration <= period.
+
+
+        offset : int
+            Initial shift (in packets) applied before the periodic pattern starts.
+            A positive offset delays the first loss burst.
+
+
+        counter : int
+            Internal state tracking the current position within the cycle.
+            Initialized as `-offset` to account for the initial delay.
         """
         super().__init__(settings)
         self.period = settings.get("period")
@@ -94,9 +142,13 @@ class MetronomePLS(PacketLossSimulator):
 
     def tick(self) -> bool:
         """
-        This function returns True every period samples.
-        Output:
-            True if the packet has been lost
+        Advances the internal counter and determines whether the current
+        packet is lost.
+
+        Returns
+        -------
+        bool
+            True if the current packet is lost, False otherwise.
         """
         self.counter += 1
         if self.counter == self.period:
