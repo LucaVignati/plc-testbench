@@ -20,6 +20,8 @@ from .settings import (
     WindowedPEAQCalculatorSettings,
     PLCMOSCalculatorSettings,
     PLCMOSModel,
+    PESQCalculatorSettings,
+    PESQMode,
 )
 from .utils import (
     dummy_progress_bar,
@@ -622,10 +624,12 @@ class PLCMOSCalculator(OutputAnalyser):
 
         plcmos = PLCMOSEstimator(model_version=plcmos_model.value)
 
+        # Use intrusive model
         is_intrusive = plcmos_model == PLCMOSModel.plcmos_0alpha or (
             plcmos_model == PLCMOSModel.plcmos_0 and request_intrusive
         )
 
+        # Resample to 16 KHz
         reconstructed_track_node_resampled = librosa.resample(
             reconstructed_track_node.get_data().T,
             orig_sr=reconstructed_track_node.get_samplerate(),
@@ -649,4 +653,51 @@ class PLCMOSCalculator(OutputAnalyser):
         dummy_progress_bar(self)
 
         score /= original_track_node.get_channels()
+        return SimpleCalculatorData(score)
+
+
+class PESQCalculator(OutputAnalyser):
+    """
+    PESQCalculator is ...
+    """
+
+    def __init__(self, settings: PESQCalculatorSettings) -> None:
+        super().__init__(settings)
+
+    def run(
+        self,
+        original_track_node: AudioFile,
+        reconstructed_track_node: AudioFile,
+        lost_samples_idxs: DataFile = None,
+    ) -> SimpleCalculatorData:
+        pesq_mode: PESQMode = self.settings.get("pesq_mode")
+
+        # Resample to 16 KHz
+        reconstructed_track_node_resampled = librosa.resample(
+            reconstructed_track_node.get_data().T,
+            orig_sr=reconstructed_track_node.get_samplerate(),
+            target_sr=16000,
+        ).T
+
+        original_track_node_resampled = librosa.resample(
+            original_track_node.get_data().T,
+            orig_sr=original_track_node.get_samplerate(),
+            target_sr=16000,
+        ).T
+
+        # Downmix to mono
+        reconstructed_track_node_resampled = reconstructed_track_node_resampled.mean(
+            axis=1
+        )
+        original_track_node_resampled = original_track_node_resampled.mean(axis=1)
+
+        score = pesq(
+            16000,
+            original_track_node_resampled,
+            reconstructed_track_node_resampled,
+            mode=pesq_mode.value,
+        )
+
+        dummy_progress_bar(self)
+
         return SimpleCalculatorData(score)
