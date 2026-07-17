@@ -119,12 +119,18 @@ class Node(BaseNode, NodeMixin):
             + "worker: "
             + str(self.worker)
             + "\n"
+            + "id: "
+            + str(self.get_id())
+            + "\n"
             + "folder name: "
             + str(self.folder_name)
             + "\n"
             + "absolute path: "
             + str(self.absolute_path)
         )
+
+    # def __repr__(self):
+    #     return self.__str__()
 
 
 class OriginalTrackNode(Node):
@@ -157,7 +163,6 @@ class OriginalTrackNode(Node):
         return self.absolute_path.rpartition("/")[2].split(".")[0]
 
     def _run(self) -> None:
-        print(self.get_track_name())
         self.get_worker().run()
         self.persistent = self.get_worker().is_persistent()
 
@@ -192,7 +197,7 @@ class LostSamplesMaskNode(Node):
     def _run(self) -> None:
         original_track_data = self.get_original_track().get_data()
         num_samples = len(original_track_data)
-        lost_samples_idx = self.get_worker().run(num_samples)
+        lost_samples_idx = self.get_worker().run(num_samples, self.get_id())
         self.persistent = self.get_worker().is_persistent()
         self.file = DataFile(lost_samples_idx, self.absolute_path + ".npy")
 
@@ -232,7 +237,7 @@ class ReconstructedTrackNode(Node):
         original_track_data = original_track.get_data()
         lost_samples_idx = self.get_lost_samples_mask().get_data()
         reconstructed_track = self.get_worker().run(
-            original_track_data, lost_samples_idx
+            original_track_data, lost_samples_idx, self.get_id()
         )
         self.persistent = self.get_worker().is_persistent()
         self.file = AudioFile.from_audio_file(
@@ -278,7 +283,7 @@ class OutputAnalysisNode(Node):
         reconstructed_track = self.get_reconstructed_track()
         lost_samples_idx = self.get_lost_samples_mask()
         output_analysis = self.get_worker().run(
-            original_track, reconstructed_track, lost_samples_idx
+            original_track, reconstructed_track, lost_samples_idx, self.get_id()
         )
         self.persistent = self.get_worker().is_persistent()
         self.file = DataFile(output_analysis, self.absolute_path + ".pickle")

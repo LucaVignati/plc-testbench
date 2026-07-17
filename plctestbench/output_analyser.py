@@ -97,6 +97,7 @@ class MSECalculator(SimpleCalculator):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs: DataFile = None,
+        id: str = "",
     ):
         """
         Calculation of Mean Square Error between the reference and signal
@@ -112,7 +113,7 @@ class MSECalculator(SimpleCalculator):
         x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
         error = [
             np.mean((x_rw[n] - x_ew[n]) ** 2, 0)
-            for n in self.progress_monitor(range(len(x_rw)), desc=str(self))
+            for n in self.progress_monitor(range(len(x_rw)), desc=f"{str(self)}|{id}")
         ]
         return SimpleCalculatorData(error)
 
@@ -130,6 +131,7 @@ class MAECalculator(SimpleCalculator):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs: DataFile = None,
+        id: str = "",
     ):
         """
         Calculation of Mean Absolute Error between the reference and signal
@@ -145,7 +147,7 @@ class MAECalculator(SimpleCalculator):
         x_rw, x_ew = super().run(original_track_node, reconstructed_track_node)
         error = [
             np.mean(np.abs((x_rw[n] - x_ew[n])), 0)
-            for n in self.progress_monitor(range(len(x_rw)), desc=str(self))
+            for n in self.progress_monitor(range(len(x_rw)), desc=f"{str(self)}|{id}")
         ]
         return SimpleCalculatorData(error)
 
@@ -163,6 +165,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs: DataFile = None,
+        id: str = "",
     ):
         """
         Calculate a difference magnitude signal from the DFT energies of the
@@ -195,7 +198,7 @@ class SpectralEnergyCalculator(OutputAnalyser):
         x_rk = []
         x_ek = []
         for sample in self.progress_monitor(
-            range(0, num_samples - N, hop), desc=str(self)
+            range(0, num_samples - N, hop), desc=f"{str(self)}|{id}"
         ):
             x_r_win = w * x_r[sample : sample + N]
             x_e_win = w * x_e[sample : sample + N]
@@ -223,6 +226,7 @@ class PEAQCalculator(OutputAnalyser):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs: DataFile = None,
+        id: str = "",
     ) -> PEAQData:
         peaq_mode: PEAQMode = self.settings.get("peaq_mode")
         if peaq_mode == PEAQMode.basic:
@@ -262,7 +266,7 @@ class PEAQCalculator(OutputAnalyser):
 
         peaq_output = completed_process.stdout
 
-        dummy_progress_bar(self)
+        dummy_progress_bar(self, desc=f"{str(self)}|{id}")
 
         peaq_odg_text = "Objective Difference Grade: "
         peaq_di_text = "Distortion Index: "
@@ -302,6 +306,7 @@ class WindowedPEAQCalculator(OutputAnalyser):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs_data: DataFile = None,
+        id: str = "",
     ) -> SimpleCalculatorData:
         path = original_track_node.get_path()
         new_path = path[:-4] + "_norm" + path[-4:]
@@ -340,7 +345,7 @@ class WindowedPEAQCalculator(OutputAnalyser):
         for idx, intorno_original, intorno_reconstructed in self.progress_monitor(
             zip(intorni_original[0], intorni_original[1], intorni_reconstructed[1]),
             total=len(intorni_original[1]),
-            desc=str(self),
+            desc=f"{str(self)}|{id}",
         ):
             original_intorno_file = AudioFile.from_audio_file(
                 original_track_norm_file,
@@ -436,6 +441,7 @@ class PerceptualCalculator(OutputAnalyser):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs_data: DataFile = None,
+        id: str = "",
     ):
         lost_samples_idxs = lost_samples_idxs_data.get_data()
         intorni_original = extract_intorni(
@@ -469,7 +475,7 @@ class PerceptualCalculator(OutputAnalyser):
             for idx, original, reconstructed in self.progress_monitor(
                 zip(intorni_original[0], intorni_original[1], intorni_reconstructed[1]),
                 total=len(intorni_original[1]),
-                desc=str(self),
+                desc=f"{str(self)}|{id}",
             )
         ]
 
@@ -504,6 +510,7 @@ class HumanCalculator(OutputAnalyser):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs_data: DataFile = None,
+        id: str = "",
     ):
 
         def transpose(matrix):
@@ -599,7 +606,7 @@ class HumanCalculator(OutputAnalyser):
         results = self.listening_test.get_results()
 
         metric = np.zeros(len(original_track_node.get_data()) // self.packet_size)
-        for idx, mean, _ in self.progress_monitor(results, desc=str(self)):
+        for idx, mean, _ in self.progress_monitor(results, desc=f"{str(self)}|{id}"):
             metric[int(idx.split("-")[-1])] = mean
 
         return SimpleCalculatorData(metric)
@@ -618,6 +625,7 @@ class PLCMOSCalculator(OutputAnalyser):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs: DataFile = None,
+        id: str = "",
     ) -> SimpleCalculatorData:
         plcmos_model: PLCMOSModel = self.settings.get("plcmos_model")
         request_intrusive: PLCMOSModel = self.settings.get("request_intrusive")
@@ -650,7 +658,7 @@ class PLCMOSCalculator(OutputAnalyser):
                 original_track_node_resampled[:, channel_idx] if is_intrusive else None,
             )
 
-        dummy_progress_bar(self)
+        dummy_progress_bar(self, desc=f"{str(self)}|{id}")
 
         score /= original_track_node.get_channels()
         return SimpleCalculatorData(score)
@@ -669,6 +677,7 @@ class PESQCalculator(OutputAnalyser):
         original_track_node: AudioFile,
         reconstructed_track_node: AudioFile,
         lost_samples_idxs: DataFile = None,
+        id: str = "",
     ) -> SimpleCalculatorData:
         pesq_mode: PESQMode = self.settings.get("pesq_mode")
 
@@ -698,6 +707,6 @@ class PESQCalculator(OutputAnalyser):
             mode=pesq_mode.value,
         )
 
-        dummy_progress_bar(self)
+        dummy_progress_bar(self, desc=f"{str(self)}|{id}")
 
         return SimpleCalculatorData(score)

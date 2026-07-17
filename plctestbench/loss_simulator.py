@@ -26,13 +26,13 @@ class PacketLossSimulator(Worker):
         super().__init__(settings)
         self.packet_size = settings.get("packet_size")
 
-    def run(self, num_samples) -> np.ndarray:
+    def run(self, num_samples, id) -> np.ndarray:
         """
         This function computes and returns an array of indexes representing
         the position of lost samples in the original audio track.
         """
         lost_samples_idx = []
-        for idx in self.progress_monitor(range(num_samples), desc=str(self)):
+        for idx in self.progress_monitor(range(num_samples), desc=f"{str(self)}|{id}"):
             if (idx % self.packet_size) == 0:
                 lost_packet = self.tick()
             if lost_packet:

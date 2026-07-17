@@ -62,7 +62,7 @@ class PLCAlgorithm(Worker):
         except:
             self.algorithm_context_length = self.packet_size
 
-    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
+    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray, id):
         """ """
 
         def zero_pad(original_track: np.ndarray):
@@ -81,7 +81,7 @@ class PLCAlgorithm(Worker):
         self._prepare_to_play()
 
         j = 0
-        for i in self.progress_monitor(range(n_packets), desc=str(self)):
+        for i in self.progress_monitor(range(n_packets), desc=f"{str(self)}|{id}"):
             if i > lost_packets_idx[j] and j < len(lost_packets_idx) - 1:
                 j += 1
             start_idx = i * self.packet_size

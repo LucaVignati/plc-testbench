@@ -1,7 +1,9 @@
+from queue import deque
+
 from .data_manager import DataManager
 from .loss_simulator import PacketLossSimulator
 from .models import TestbenchConfiguration
-from .node import OriginalTrackNode
+from .node import OriginalTrackNode, Node
 from .plot_manager import PlotManager
 from .settings import Settings
 
@@ -44,11 +46,9 @@ class PLCTestbench(object):
             or plc_algorithms is None
             or output_analysers is None
         ):
-            raise ValueError(
-                "packet_loss_simulators, \
+            raise ValueError("packet_loss_simulators, \
                               plc_algorithms and output_analysers \
-                              must be provided if no run_id is provided"
-            )
+                              must be provided if no run_id is provided")
         else:
             self.data_manager.set_workers(
                 original_audio_tracks,
@@ -64,6 +64,18 @@ class PLCTestbench(object):
         Run the testbench.
         """
         self.data_manager.run_testbench()
+
+    def get_nodes_by_depth(self, root_node: Node) -> dict[int, list[str]]:
+        levels: dict[int, list[str]] = {}
+        queue = deque([(root_node, 0)])
+
+        while queue:
+            node, depth = queue.popleft()
+            levels.setdefault(depth, []).append(node)
+            for child in getattr(node, "children", []):
+                queue.append((child, depth + 1))
+
+        return levels
 
     def plot(
         self,
