@@ -87,8 +87,6 @@ class Node(BaseNode, NodeMixin):
         return str(hash(self.settings))
 
     def run(self):
-
-        # Load from database if possible, otherwise run the worker
         current_node = self._load_from_database()
         if current_node:
             self.persistent = current_node["persistent"]
@@ -98,7 +96,6 @@ class Node(BaseNode, NodeMixin):
         else:
             self.file = FileWrapper.from_path(current_node["filepath"])
 
-            # Manage consistency between database and filesystem
             if str(hash(self.file)) != current_node["file_hash"]:
                 if self.parent is None:
                     raise Exception(
@@ -108,8 +105,7 @@ class Node(BaseNode, NodeMixin):
                     self._get_database().delete_node(self.get_id())
                     self.run()
             else:
-                # Dummy progress bar needed when not running the worker
-                dummy_progress_bar(self.worker)
+                dummy_progress_bar(self.worker, desc=f"{self.worker}|{self.get_id()}")
 
     def __str__(self) -> str:
         return (

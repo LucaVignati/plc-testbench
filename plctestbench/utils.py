@@ -108,11 +108,12 @@ def escape_email(email):
     return email.replace("@", "_at_").replace(".", "_dot_")
 
 
-def dummy_progress_bar(worker):
+def dummy_progress_bar(worker, desc: str = None):
     """
     This function is used to create a dummy progress bar.
     """
-    for _ in worker.progress_monitor(range(10), desc=str(worker)):
+    desc = desc if desc is not None else str(worker)
+    for _ in worker.progress_monitor(range(10), desc=desc):
         sleep(DUMMY_BAR_SLEEP)
 
 

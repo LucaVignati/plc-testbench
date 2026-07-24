@@ -195,7 +195,7 @@ class AdvancedPLC(PLCAlgorithm):
         )
         self.mid_side_codec = MidSideCodec()
 
-    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray):
+    def run(self, original_track: np.ndarray, lost_samples_idx: np.ndarray, id):
         """ """
         original_track = force_2d(original_track)
         original_track = (
@@ -228,7 +228,7 @@ class AdvancedPLC(PLCAlgorithm):
             * n_packets
         )
         progress_monitor = self.progress_monitor(
-            total=number_of_iterations, desc=str(self)
+            total=number_of_iterations, desc=f"{str(self)}|{id}"
         )
         composite_progress_monitor = prepare_progress_monitor(progress_monitor)
 
@@ -239,7 +239,7 @@ class AdvancedPLC(PLCAlgorithm):
                     f"{self} - {channel} - {plc_algorithm}"
                 )
                 reconstructed_track_bands[channel] += plc_algorithm.run(
-                    processed_track[channel][idx], lost_samples_idx
+                    processed_track[channel][idx], lost_samples_idx, id
                 )
         progress_monitor.set_description(f"{self}")
         progress_monitor.close()
