@@ -4,6 +4,13 @@ import numpy as np
 import numpy.random as npr
 import soundfile as sf
 
+# TEMP
+# TODO REMOVE
+try:
+    from pesqc2 import pesq
+except:
+    pass
+
 from .file_wrapper import AudioFile, DataFile, PEAQData, SimpleCalculatorData
 from .listening_tests import ListeningTest
 from .plcmos import PLCMOSEstimator
@@ -45,7 +52,9 @@ class OutputAnalyser(Worker):
 class SimpleCalculator(OutputAnalyser):
 
     def run(
-        self, original_track_node: AudioFile, reconstructed_track_node: AudioFile
+        self,
+        original_track_node: AudioFile,
+        reconstructed_track_node: AudioFile,
     ) -> SimpleCalculatorData:
         """
         Calculation of Mean Square Error between the reference and signal

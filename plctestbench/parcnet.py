@@ -6,9 +6,15 @@ from numba import njit
 
 
 from copy import deepcopy
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+
+# TEMP
+# TODO REMOVE
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except:
+    print("eh ")
 
 
 @njit

@@ -9,7 +9,12 @@ import numpy as np
 from numpy.fft import rfft
 from numpy.lib.stride_tricks import as_strided
 
-import onnxruntime as ort
+# TEMP
+# TODO REMOVE
+try:
+    import onnxruntime as ort
+except:
+    pass
 
 
 class PLCMOSEstimator:
