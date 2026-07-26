@@ -117,16 +117,15 @@ def dummy_progress_bar(worker, desc: str = None):
         sleep(DUMMY_BAR_SLEEP)
 
 
-def recursive_split_audio(audio: np.ndarray, xovers: list, band: list = None) -> list:
+def recursive_split_audio(audio: np.ndarray, xovers: list, bands: list = None) -> list:
     if bands is None:
         bands = []
     lp_audio, hp_audio = xovers[0].split(audio)
     bands.append(lp_audio)
     if len(xovers) == 1:
         bands.append(hp_audio)
-    else:
-        recursive_split_audio(hp_audio, xovers[1:], bands)
-    return bands
+        return bands
+    return recursive_split_audio(hp_audio, xovers[1:], bands)
 
 
 def force_2d(arr):
